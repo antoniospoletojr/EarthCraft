@@ -7,8 +7,8 @@
 using namespace std;
 
 GLdouble xVal = 0.0; // x position of the camera
-GLdouble zVal = 0.0; // z position of the camera
-GLdouble yVal = 40.0; // y position of the camera
+GLdouble zVal = 100.0; // z position of the camera
+GLdouble yVal = 30.0; // y position of the camera
 GLdouble angle = 0.0; // angle of rotation for the camera direction with respect to the z axis
 
 bool keys[256];  // an array to keep track of regular key presses
@@ -27,7 +27,7 @@ void drawScene()
     glLoadIdentity();
     
     gluLookAt(xVal - 10 * sin((M_PI / 180.0) * angle), yVal, zVal - 10 * cos((M_PI / 180.0) * angle),
-              xVal - 20 * sin((M_PI / 180.0) * angle), 0.0, zVal - 20 * cos((M_PI / 180.0) * angle),
+              xVal - 20 * sin((M_PI / 180.0) * angle), yVal, zVal - 20 * cos((M_PI / 180.0) * angle),
               0.0, 1.0, 0.0);
     
     glLineWidth(1.0);
@@ -145,21 +145,22 @@ void update()
     {
         fullscreen = !fullscreen;
         if (fullscreen)
+            glutFullScreen();
+        else
         {
-            glutReshapeWindow(500, 500);
+            glutReshapeWindow(700, 700);
             glutPositionWindow(50, 50);
         }
-        else
-            glutFullScreen();
+        
+        keys['f'] = false;
     }
-
-
+    
     // Angle correction.
     if (angle > 360.0)
         angle -= 360.0;
     if (angle < 0.0)
         angle += 360.0;
-
+    
     glutPostRedisplay();
 }
 
@@ -189,10 +190,9 @@ int main(int argc, char **argv)
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH);
 
     // Create the window
-    glutInitWindowSize(500, 500);
+    glutInitWindowSize(700, 700);
     glutInitWindowPosition(100, 100);
     glutCreateWindow("Window");
-    //glutFullScreen();
     
     // Register the callback functions.
     glutReshapeFunc(resize);
