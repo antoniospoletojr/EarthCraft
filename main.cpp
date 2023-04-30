@@ -5,6 +5,9 @@
 #include <iostream>
 #include "terrain.h"
 
+#define VERTICES 0
+#define INDICES 1
+
 using namespace std;
 
 GLdouble x_val = 0.0;   // x position of the camera
@@ -26,7 +29,8 @@ bool fullscreen = true; // keeps track of whether or not the window is in fullsc
 
 static float *vertices; // an array to keep track of the vertices of the terrain
 static float *colors;   // an array to keep track of the colors of the terrain
-static unsigned int *indices;    // an array to keep track of the indices of the terrain
+
+static unsigned int buffer[1]; // Array of buffer ids.
 
 Terrain *terrain;
 
@@ -47,8 +51,7 @@ void drawScene()
     //Increment point size
     glPointSize(2.0);
     
-    // Store the size of the array of vertices in a variable
-    //glDrawElements(GL_POINTS, terrain->getDim() * terrain->getDim(), GL_UNSIGNED_INT, indices);
+    // Draw the terrain
     glDrawArrays(GL_POINTS, 0, terrain->getDim() * terrain->getDim());
     
     // Swap buffers
@@ -62,7 +65,7 @@ void setup()
     glClearColor(0.0, 0.0, 0.0, 0.0);
     
     // Enable the depth test to ensure that polygons that are behind others are not drawn
-    glEnable(GL_DEPTH_TEST);
+    // glEnable(GL_DEPTH_TEST);
     
     // // Enable lighting calculations for polygons
     // glEnable(GL_LIGHTING);worldScale
@@ -75,6 +78,8 @@ void setup()
     
     // Set the polygon rasterization mode for front and back faces to solid filled mode
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    
+    glGenBuffers(1, buffer);
 
     glEnableClientState(GL_VERTEX_ARRAY);
     glEnableClientState(GL_COLOR_ARRAY);
@@ -108,15 +113,18 @@ void setup()
         }
     }
     
-    // Set the indices
-    indices = new unsigned int[dim * dim];
-    for (int i = 0; i < dim * dim; i++)
-    {
-        indices[i] = i;
-    }
+    // Bind vertex buffer and reserve space.
+    glBindBuffer(GL_ARRAY_BUFFER, buffer[VERTICES]);
+    glBufferData(GL_ARRAY_BUFFER, dim*dim*3*sizeof(float)*2, NULL, GL_STATIC_DRAW);
+    
+    // Copy vertex coordinates data into first half of vertex buffer.
+    glBufferSubData(GL_ARRAY_BUFFER, 0, dim*dim*3*sizeof(float), vertices);
+    
+    // Copy vertex color data into second half of vertex buffer.
+    glBufferSubData(GL_ARRAY_BUFFER, dim*dim*3*sizeof(float), dim*dim*3*sizeof(float), colors);
 
-    glVertexPointer(3, GL_FLOAT, 0, vertices);
-    glColorPointer(3, GL_FLOAT, 0, colors);
+    glVertexPointer(3, GL_FLOAT, 0, 0);
+    glColorPointer(3, GL_FLOAT, 0, (GLvoid*)(dim*dim*3*sizeof(float)));
 }
 
 // OpenGL window reshape routine.
