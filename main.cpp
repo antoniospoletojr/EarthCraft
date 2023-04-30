@@ -10,7 +10,9 @@ using namespace std;
 GLdouble x_val = 0.0;   // x position of the camera
 GLdouble z_val = 900.0; // z position of the camera
 GLdouble y_val = 30.0;  // y position of the camera
-GLdouble angle = 0.0;  // angle of rotation for the camera direction with respect to the z axis
+
+GLdouble horizontal_angle = 0.0;  // horizontal_angle of rotation for the camera direction on the xz plane with respect to the z axis
+GLdouble vertical_angle = 0.0;    // vertical_angle of rotation for the camera direction on the yz plane with respect to the y axis
 
 GLint mouse_x; // keeps track of the x position of the mouse
 GLint mouse_y; // keeps track of the y position of the mouse
@@ -34,19 +36,20 @@ void drawScene()
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     
     glColor3f(1.0, 1.0, 1.0);
-
+    
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
     
-    gluLookAt(x_val - 10 * sin((M_PI / 180.0) * angle), y_val, z_val - 10 * cos((M_PI / 180.0) * angle),
-              x_val - 20 * sin((M_PI / 180.0) * angle), y_val, z_val - 20 * cos((M_PI / 180.0) * angle),
+    gluLookAt(x_val - 1 * sin((M_PI / 180.0) * horizontal_angle), y_val , z_val - 1 * cos((M_PI / 180.0) * horizontal_angle),
+              x_val - 2 * sin((M_PI / 180.0) * horizontal_angle), y_val + 0.01 * vertical_angle, z_val - 2 * cos((M_PI / 180.0) * horizontal_angle),
               0.0, 1.0, 0.0);
     
     //Increment point size
     glPointSize(2.0);
-
+    
     // Store the size of the array of vertices in a variable
-    glDrawElements(GL_POINTS, terrain->getDim() * terrain->getDim(), GL_UNSIGNED_INT, indices);
+    //glDrawElements(GL_POINTS, terrain->getDim() * terrain->getDim(), GL_UNSIGNED_INT, indices);
+    glDrawArrays(GL_POINTS, 0, terrain->getDim() * terrain->getDim());
     
     // Swap buffers
     glutSwapBuffers();
@@ -121,20 +124,20 @@ void resize(int w, int h)
 {
     // Set up the viewport to cover the entire window.
     glViewport(0, 0, w, h);
-
+    
     // Switch to the projection matrix.
     glMatrixMode(GL_PROJECTION);
-
+    
     // Reset the projection matrix.
     glLoadIdentity();
-
+    
     // Set up a perspective projection with a field of view of 118 degrees, an aspect ratio of w/h, and a near/far clipping plane of 30.0 and 100.0 respectively.
     gluPerspective(50, (GLfloat)w / h, 1.0, 3000.0);
     // glOrtho(-100.0, 100.0, -100.0, 100.0, -100.0, 100.0);
-
+    
     // Switch back to the modelview matrix.
     glMatrixMode(GL_MODELVIEW);
-
+    
     // Reset the modelview matrix.
     glLoadIdentity();
     
@@ -142,40 +145,43 @@ void resize(int w, int h)
     glutPostRedisplay();
 }
 
-// Idle function
-void update()
+void handleCamera()
 {
-    // Exit the program if the Esc key is pressed.
-    if (keys[27])
-        exit(0);
-
     // Increment the x and z positions. Notice how the cos is 1 when I'm moving on the z axis and the sin is 1 when I'm moving on the x axis.
     if (keys['w'])
     {
-        x_val = x_val - sin(angle * M_PI / 180.0);
-        z_val = z_val - cos(angle * M_PI / 180.0);
+        x_val = x_val - sin(horizontal_angle * M_PI / 180.0);
+        z_val = z_val - cos(horizontal_angle * M_PI / 180.0);
     }
     if (keys['s'])
     {
-        x_val = x_val + sin(angle * M_PI / 180.0);
-        z_val = z_val + cos(angle * M_PI / 180.0);
+        x_val = x_val + sin(horizontal_angle * M_PI / 180.0);
+        z_val = z_val + cos(horizontal_angle * M_PI / 180.0);
     }
     if (keys['a'])
     {
-        x_val = x_val - cos(angle * M_PI / 180.0);
-        z_val = z_val + sin(angle * M_PI / 180.0);
+        x_val = x_val - cos(horizontal_angle * M_PI / 180.0);
+        z_val = z_val + sin(horizontal_angle * M_PI / 180.0);
     }
     if (keys['d'])
     {
-        x_val = x_val + cos(angle * M_PI / 180.0);
-        z_val = z_val - sin(angle * M_PI / 180.0);
+        x_val = x_val + cos(horizontal_angle * M_PI / 180.0);
+        z_val = z_val - sin(horizontal_angle * M_PI / 180.0);
     }
     
-    // Rotate the camera angle
+    // Rotate the camera horizontal_angle
     if (special_keys[GLUT_KEY_LEFT])
-        angle = angle + 1.0;
+        horizontal_angle = horizontal_angle + 1.0;
     if (special_keys[GLUT_KEY_RIGHT])
-        angle = angle - 1.0;
+        horizontal_angle = horizontal_angle - 1.0;
+    // Rotate the camera vertical_angle
+    if (special_keys[GLUT_KEY_UP])
+        if (vertical_angle < 180.0)
+            vertical_angle = vertical_angle + 1.0;
+    if (special_keys[GLUT_KEY_DOWN])
+        if (vertical_angle > -180.0)
+            vertical_angle = vertical_angle - 1.0;
+
     // If Spacebar is pressed then increase the y value of the camera
     if (keys[32] && !special_keys[GLUT_KEY_SHIFT_L])
         y_val = y_val + 1.0;
@@ -183,6 +189,21 @@ void update()
     if (keys[32] && special_keys[GLUT_KEY_SHIFT_L])
         if (y_val > 1.0)
             y_val = y_val - 1.0;
+
+    // horizontal_angle correction.
+    if (horizontal_angle > 360.0)
+        horizontal_angle -= 360.0;
+    if (horizontal_angle < 0.0)
+        horizontal_angle += 360.0;
+}
+
+// Idle function
+void update()
+{
+    // Exit the program if the Esc key is pressed.
+    if (keys[27] || keys['q'])
+        exit(0);
+
     // If tab is pressed toggle full screen mode on/off
     if (keys['f'])
     {
@@ -194,16 +215,12 @@ void update()
             glutReshapeWindow(700, 700);
             glutPositionWindow(50, 50);
         }
-
+        
         keys['f'] = false;
     }
 
-    // Angle correction.
-    if (angle > 360.0)
-        angle -= 360.0;
-    if (angle < 0.0)
-        angle += 360.0;
-
+    handleCamera();
+    
     glutPostRedisplay();
 }
 
@@ -246,11 +263,13 @@ void mouseMotion(int x, int y)
 {
     if (mouse_down)
     {
-        // Update the camera angle based on the mouse movement
-        angle = angle - (x - mouse_x) * 0.1;
+        // Update the camera horizontal_angle based on the mouse movement
+        horizontal_angle = horizontal_angle - (x - mouse_x) * 0.1;
         mouse_x = x;
-        // Update the camera y value based on the mouse movement
-        // y_val = y_val + (mouse_y - y) * 0.1;
+
+        // Update the camera vertical_angle based on the mouse movement
+        vertical_angle = vertical_angle - (y - mouse_y) * 0.1;
+        mouse_y = y;
     }
     glutPostRedisplay();
 }

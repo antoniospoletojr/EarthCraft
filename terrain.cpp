@@ -5,6 +5,7 @@
 #include <sys/stat.h>
 #include <cerrno>
 #include <string.h>
+#include <cmath>
 #include "SOIL/SOIL.h"
 #include "terrain.h"
 
@@ -46,7 +47,7 @@ void Terrain::loadFromFile(const char* filename)
         {
             // Set the vertices
             this->map[i * dim + j].x = (i - dim / 2) * world_scale;
-            this->map[i * dim + j].y = image[(i * dim + j)]*2;
+            this->map[i * dim + j].y = image[(i * dim + j)] * (1 + log(world_scale));
             this->map[i * dim + j].z = (j - dim / 2) * world_scale;
         }
     }
@@ -83,6 +84,8 @@ void Terrain::getInfo()
     }
     
     printf("Map size: {%d}x{%d}\n", dim, dim);
+    printf("World scale: %f\n", world_scale);
+    printf("Height scale: %f\n", 1 + log10(world_scale));
     printf("Min x: %f, Max x: %f\n", min_x, max_x);
     printf("Min y: %f, Max y: %f\n", min_y, max_y);
     printf("Min z: %f, Max z: %f\n", min_z, max_z);

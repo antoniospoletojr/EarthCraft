@@ -8,15 +8,15 @@ CFLAGS = -g
 LDFLAGS = -lGL -lGLU -lglut -lGLEW -lSOIL
 
 # Source files
-SRCS = template.cpp terrain.cpp
+SRCS = main.cpp terrain.cpp
 
 # Object files
 OBJS = $(SRCS:.cpp=.o)
 
 # Executable name
-EXEC = template
+EXEC = main
 
-all: $(EXEC)
+all: $(EXEC) clean_obj
 
 $(EXEC): $(OBJS)
 	$(CC) $(OBJS) $(LDFLAGS) -o $(EXEC)
@@ -24,8 +24,11 @@ $(EXEC): $(OBJS)
 .cpp.o:
 	$(CC) $(CFLAGS) -c $< -o $@
 
-clean:
-	rm -f $(OBJS) $(EXEC) 
-
-run: $(EXEC)
+run: $(EXEC) clean_obj
 	./$(EXEC)
+
+clean_obj:
+	rm -f $(OBJS)
+
+clean:
+	rm -f $(OBJS) $(EXEC)
