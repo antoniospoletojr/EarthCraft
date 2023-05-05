@@ -32,7 +32,6 @@ private:
 	int dim;
 	float world_scale;
 	Vertex *map;
-	
 };
 
 

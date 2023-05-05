@@ -18,7 +18,7 @@ GLdouble y_val = 30.0;  // y position of the camera
 GLdouble horizontal_angle = 0.0;  // horizontal_angle of rotation for the camera direction on the xz plane with respect to the z axis
 GLdouble vertical_angle = 0.0;    // vertical_angle of rotation for the camera direction on the yz plane with respect to the y axis
 
-GLdouble velocity = 1;
+GLdouble velocity = 3;
 
 GLint mouse_x; // keeps track of the x position of the mouse
 GLint mouse_y; // keeps track of the y position of the mouse
@@ -28,14 +28,14 @@ bool special_keys[256]; // an array to keep track of special key presses
 
 bool is_mouse_down = false; // keeps track of whether or not the mouse is down
 
-bool is_polygon_filled = true; // keeps track of whether or not the polygon is filled
+bool is_polygon_filled = false; // keeps track of whether or not the polygon is filled
 
 bool is_fullscreen = true; // keeps track of whether or not the window is in is_fullscreen mode
 
-static float *vertices; // an array to keep track of the vertices of the terrain
-static float *colors;   // an array to keep track of the colors of the terrain
-//static unsigned int *indices;    // an array to keep track of the indices of the terrain
-std::vector<GLuint> indices;
+std::vector<float> vertices; // an array to keep track of the vertices of the terrain
+std::vector<float> colors; // an array to keep track of the colors of the terrain
+std::vector<GLuint> indices; // an array to keep track of the indices of the terrain
+
 
 static GLuint vbo[2]; // Array of buffer ids.
 
@@ -62,7 +62,7 @@ void drawScene()
     glEnable(GL_PRIMITIVE_RESTART); // Enable primitive restart
     glDrawElements(GL_TRIANGLE_STRIP, indices.size(), GL_UNSIGNED_INT, 0);
     glDisable(GL_PRIMITIVE_RESTART); // Disable primitive restart
-
+    
     // Swap buffers
     glutSwapBuffers();
 }
@@ -79,11 +79,14 @@ void setup()
     // // Enable lighting calculations for polygons
     // glEnable(GL_LIGHTING);
     
-    // // Enable light source 0
+    // // // Enable light source 0
     // glEnable(GL_LIGHT0);
     
     // // Enable automatic normalization of surface normals to unit length
     // glEnable(GL_NORMALIZE);
+    
+    // Set polygon mode to be not filled
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     
     glGenBuffers(2, vbo);
 
@@ -101,23 +104,21 @@ void setup()
     terrain->getInfo();
     
     // Allocate memory for the vertices and colors
-    vertices = new float[dim * dim * 3];
-    colors = new float[dim * dim * 3];
-    
-    
-    // Set the vertices and colors
+    vertices.reserve(dim * dim * 3);
+    colors.reserve(dim * dim * 3);
+  
     for (int i = 0; i < dim; i++)
     {
         for (int j = 0; j < dim; j++)
         {
-            vertices[(i * dim + j) * 3] = map[i * dim + j].x;
-            vertices[(i * dim + j) * 3 + 1] = map[i * dim + j].y;
-            vertices[(i * dim + j) * 3 + 2] = map[i * dim + j].z;
+        vertices.emplace_back(map[i * dim + j].x);
+        vertices.emplace_back(map[i * dim + j].y);
+        vertices.emplace_back(map[i * dim + j].z);
 
-            // Set che colors to be proportional to the height of the terrain and range from brown to white
-            colors[(i * dim + j) * 3] = map[i * dim + j].y / 255.0;
-            colors[(i * dim + j) * 3 + 1] = map[i * dim + j].y / 255.0;
-            colors[(i * dim + j) * 3 + 2] = 255.0;
+        // Set the colors to be proportional to the height of the terrain and range from brown to white
+        colors.emplace_back(map[i * dim + j].y / 255.0);
+        colors.emplace_back(map[i * dim + j].y / 255.0);
+        colors.emplace_back(255.0);
         }
     }
     
@@ -128,31 +129,33 @@ void setup()
     for (int z = 0; z < dim - 1; z++)
     {
         // Start a new strip
-        indices.push_back(z * dim);
+        indices.emplace_back(z * dim);
         for (int x = 0; x < dim; x++)
         {
             // Add vertices to strip
-            indices.push_back(z * dim + x);
-            indices.push_back((z + 1) * dim + x);
+            indices.emplace_back(z * dim + x);
+            indices.emplace_back((z + 1) * dim + x);
         }
         // Use primitive restart to start a new strip
-        indices.push_back(0xFFFFFFFFu);
+        indices.emplace_back(0xFFFFFFFFu);
     }
     
     // Bind vertex buffer and reserve space.
     glBindBuffer(GL_ARRAY_BUFFER, vbo[VERTICES]);
-    glBufferData(GL_ARRAY_BUFFER, dim*dim*3*sizeof(float)*2, NULL, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, (vertices.size()+colors.size())*sizeof(float), NULL, GL_STATIC_DRAW);
+    
     // Copy vertex coordinates data into first half of vertex buffer.
-    glBufferSubData(GL_ARRAY_BUFFER, 0, dim*dim*3*sizeof(float), vertices);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, vertices.size()*sizeof(float), vertices.data());
+    
     // Copy vertex color data into second half of vertex buffer.
-    glBufferSubData(GL_ARRAY_BUFFER, dim*dim*3*sizeof(float), dim*dim*3*sizeof(float), colors);
+    glBufferSubData(GL_ARRAY_BUFFER, vertices.size()*sizeof(float), colors.size()*sizeof(float), colors.data());
     
     // Bind and fill indices buffer.
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo[INDICES]);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size()*sizeof(GLuint), indices.data(), GL_STATIC_DRAW);
 
     glVertexPointer(3, GL_FLOAT, 0, 0);
-    glColorPointer(3, GL_FLOAT, 0, (GLvoid*)(dim*dim*3*sizeof(float)));
+    glColorPointer(3, GL_FLOAT, 0, (GLvoid*)(vertices.size()*sizeof(float)));
 }
 
 // OpenGL window reshape routine.
@@ -264,7 +267,6 @@ void update()
             glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
         keys['p'] = false;
     }
-
     
     handleCamera();
     
@@ -355,7 +357,7 @@ int main(int argc, char **argv)
 
     // Set up the scene.
     setup();
-
+    
     // Enter the main loop.
     glutMainLoop();
 }
