@@ -69,7 +69,7 @@ void Camera::moveUp()
 // Move the camera down
 void Camera::moveDown()
 {
-    if (position[1] > 1)
+    if (position[1] > 10)
         position[1] -= movement_speed;
 }
 

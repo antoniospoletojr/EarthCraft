@@ -31,9 +31,7 @@ void InputHandler::handleKeyboard()
 {
     // Increment the x and z positions. Notice how the cos is 1 when I'm moving on the z axis and the sin is 1 when I'm moving on the x axis.
     if (keys['w'])
-    {
         camera.moveForward();
-    }
     if (keys['s'])
         camera.moveBackward();
     if (keys['a'])
@@ -41,14 +39,12 @@ void InputHandler::handleKeyboard()
     if (keys['d'])
         camera.moveRight();
 
-    // If Spacebar is pressed then increase/decrease the y value of the camera
+    // If Spacebar is pressed then increase the y value of the camera
     if (keys[32])
-    {
-        if(!special_keys[GLUT_KEY_SHIFT_L])
-            camera.moveUp();
-        else
-            camera.moveDown();
-    }
+        camera.moveUp();
+    // If left Shift is pressed then decrease the y value of the camera
+    if (special_keys[GLUT_KEY_SHIFT_L])
+        camera.moveDown();
     
     // Rotate the camera horizontal_angle
     if (special_keys[GLUT_KEY_LEFT])
@@ -66,7 +62,7 @@ void InputHandler::handleKeyboard()
     if (keys[27] || keys['q'])
         exit(0);
 
-    // If tab is pressed toggle full screen mode on/off
+    // If f is pressed toggle full screen mode on/off
     if (keys['f'])
     {
         is_fullscreen = !is_fullscreen;
@@ -80,10 +76,10 @@ void InputHandler::handleKeyboard()
         keys['f'] = false;
     }
     
+    // Set the polygon rasterization mode for front and back faces to filled or line mode
     if (keys['p'])
     {
         is_polygon_filled = !is_polygon_filled;
-        // Set the polygon rasterization mode for front and back faces to solid filled mode
         if (is_polygon_filled)
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
         else
@@ -122,8 +118,6 @@ void InputHandler::mouseClick(int button, int state, int x, int y)
     }
     else if (button == GLUT_LEFT_BUTTON && state == GLUT_UP)
         instance->is_mouse_down = false;
-
-    glutPostRedisplay();
 }
 
 // Mouse motion callback routine.
@@ -139,5 +133,4 @@ void InputHandler::mouseMotion(int x, int y)
         instance->camera.rotateUpDown((y - instance->mouse_y)*0.1);
         instance->mouse_y = y;
     }
-    //glutPostRedisplay();
 }
