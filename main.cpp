@@ -7,6 +7,7 @@
 
 #include "Terrain.h"
 #include "Camera.h"
+#include "InputHandler.h"
 
 #define VERTICES 0
 #define INDICES 1
@@ -14,26 +15,16 @@
 using namespace std;
 
 
-GLint mouse_x; // keeps track of the x position of the mouse
-GLint mouse_y; // keeps track of the y position of the mouse
-
-bool keys[256];         // an array to keep track of regular key presses
-bool special_keys[256]; // an array to keep track of special key presses
-
-bool is_mouse_down = false; // keeps track of whether or not the mouse is down
-
-bool is_polygon_filled = false; // keeps track of whether or not the polygon is filled
-
-bool is_fullscreen = true; // keeps track of whether or not the window is in is_fullscreen mode
-
-std::vector<float> vertices; // an array to keep track of the vertices of the terrain
-std::vector<float> colors; // an array to keep track of the colors of the terrain
-std::vector<GLuint> indices; // an array to keep track of the indices of the terrain
+std::vector<float> vertices;    // an array to keep track of the vertices of the terrain
+std::vector<float> colors;      // an array to keep track of the colors of the terrain
+std::vector<GLuint> indices;    // an array to keep track of the indices of the terrain
 
 static GLuint vbo[2]; // Array of buffer ids.
 
 Terrain *terrain;
 Camera camera;
+InputHandler input_handler(camera);
+
 
 // Drawing routine.
 void drawScene()
@@ -46,10 +37,6 @@ void drawScene()
     glLoadIdentity();
     
     camera.update();
-    
-    //Increment point size
-    // glPointSize(2.0);
-    // glDrawArrays(GL_POINTS, 0, terrain->getDim() * terrain->getDim());
     
     glEnable(GL_PRIMITIVE_RESTART); // Enable primitive restart
     glDrawElements(GL_TRIANGLE_STRIP, indices.size(), GL_UNSIGNED_INT, 0);
@@ -176,120 +163,10 @@ void resize(int w, int h)
     glutPostRedisplay();
 }
 
-void handleCamera()
-{
-    // Increment the x and z positions. Notice how the cos is 1 when I'm moving on the z axis and the sin is 1 when I'm moving on the x axis.
-    if (keys['w'])
-        camera.moveForward();
-    if (keys['s'])
-        camera.moveBackward();
-    if (keys['a'])
-        camera.moveLeft();
-    if (keys['d'])
-        camera.moveRight();
-    // If Spacebar is pressed then increase the y value of the camera
-    if (keys[32] && !special_keys[GLUT_KEY_SHIFT_L])
-        camera.moveUp();
-    // If SHIFT_L and spacebar are pressed together then decrease the y value of the camera
-    if (keys[32] && special_keys[GLUT_KEY_SHIFT_L])
-        camera.moveDown();
-    // Rotate the camera horizontal_angle
-    if (special_keys[GLUT_KEY_LEFT])
-       camera.rotateLeft();
-    if (special_keys[GLUT_KEY_RIGHT])
-       camera.rotateRight();
-    // Rotate the camera vertical_angle
-    if (special_keys[GLUT_KEY_UP])
-        camera.rotateUp();
-    if (special_keys[GLUT_KEY_DOWN])
-        camera.rotateDown();
-}
-
-
 // Idle function
 void update()
-{
-    // Exit the program if the Esc key is pressed.
-    if (keys[27] || keys['q'])
-        exit(0);
-
-    // If tab is pressed toggle full screen mode on/off
-    if (keys['f'])
-    {
-        is_fullscreen = !is_fullscreen;
-        if (is_fullscreen)
-            glutFullScreen();
-        else
-        {
-            glutReshapeWindow(700, 700);
-            glutPositionWindow(50, 50);
-        }
-        keys['f'] = false;
-    }
-    
-    if (keys['p'])
-    {
-        is_polygon_filled = !is_polygon_filled;
-        // Set the polygon rasterization mode for front and back faces to solid filled mode
-        if (is_polygon_filled)
-            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-        else
-            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-        keys['p'] = false;
-    }
-    
-    handleCamera();
-    
-    glutPostRedisplay();
-}
-
-void handleRegularKeyPress(unsigned char key, int x, int y)
-{
-    keys[key] = true;
-}
-
-void handleRegularKeyRelease(unsigned char key, int x, int y)
-{
-    keys[key] = false;
-}
-
-void handleSpecialKeyPress(int key, int x, int y)
-{
-    special_keys[key] = true;
-}
-
-void handleSpecialKeyRelease(int key, int x, int y)
-{
-    special_keys[key] = false;
-}
-
-void mouseClick(int button, int state, int x, int y)
-{
-    if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN)
-    {
-        is_mouse_down = true;
-        mouse_x = x;
-        mouse_y = y;
-    }
-    else if (button == GLUT_LEFT_BUTTON && state == GLUT_UP)
-        is_mouse_down = false;
-
-    glutPostRedisplay();
-}
-
-// Mouse motion callback routine.
-void mouseMotion(int x, int y)
-{
-    // if (is_mouse_down)
-    // {
-    //     // Update the camera horizontal_angle based on the mouse movement
-    //     horizontal_angle = horizontal_angle - (x - mouse_x) * 0.1;
-    //     mouse_x = x;
-        
-    //     // Update the camera vertical_angle based on the mouse movement
-    //     vertical_angle = vertical_angle - (y - mouse_y) * 0.1;
-    //     mouse_y = y;
-    // }
+{  
+    input_handler.handleKeyboard();
     glutPostRedisplay();
 }
 
@@ -304,24 +181,16 @@ int main(int argc, char **argv)
     glutCreateWindow("Window");
     glutFullScreen();
     
-    // Register the callback functions.
     glutReshapeFunc(resize);
-
-    glutKeyboardFunc(handleRegularKeyPress);
-    glutKeyboardUpFunc(handleRegularKeyRelease);
-    glutSpecialFunc(handleSpecialKeyPress);
-    glutSpecialUpFunc(handleSpecialKeyRelease);
-
-    glutMouseFunc(mouseClick);
-    glutMotionFunc(mouseMotion);
+    input_handler.init();
     
     glutDisplayFunc(drawScene);
     glutIdleFunc(update);
-
+    
     // Initialize GLEW.
     glewExperimental = GL_TRUE;
     glewInit();
-
+    
     // Set up the scene.
     setup();
     

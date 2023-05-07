@@ -1,6 +1,7 @@
 #include <GL/glut.h>
 #include <cmath>
 #include "Camera.h"
+#include <stdio.h>
 
 #define LOS_DISTANCE 2
 
@@ -29,10 +30,7 @@ Camera::Camera(GLdouble x, GLdouble y, GLdouble z, GLdouble alfa, GLdouble beta,
 }
 
 // Destructor
-Camera::~Camera()
-{
-
-}
+Camera::~Camera(){}
 
 // Move the camera forward
 void Camera::moveForward()
@@ -101,6 +99,16 @@ void Camera::rotateUp()
 void Camera::rotateDown()
 {
     beta -= (M_PI / 180.0) * rotation_speed;
+}
+
+void Camera::rotateLeftRight(GLdouble delta)
+{
+    alfa -= delta*(M_PI / 180.0);
+}
+
+void Camera::rotateUpDown(GLdouble delta)
+{
+    beta -= delta*(M_PI / 180.0);
 }
 
 // Update the camera

@@ -18,6 +18,8 @@ class Camera
         void rotateRight();
         void rotateUp();
         void rotateDown();
+        void rotateLeftRight(GLdouble delta);
+        void rotateUpDown(GLdouble delta);
         void update();
     
     private:

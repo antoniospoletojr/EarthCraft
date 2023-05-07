@@ -7,20 +7,12 @@ class Terrain
 {
 public:
 	Terrain();
-	
 	Terrain(const char *filename, float worldScale);
-
 	~Terrain();
-
-	void loadFromFile(const char *filename);
 	
-	// Getter for the height map
+	void loadFromFile(const char *filename); 
 	Vec3<float>* getMap() const { return map;}
-	
-	// Getter of the dimension of the height map
 	int getDim() const { return dim; }
-	
-	// Print the min and max values for x,y,z
 	void getInfo();
 
 private:
