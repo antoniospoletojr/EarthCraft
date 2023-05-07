@@ -5,22 +5,14 @@
 #include <iostream>
 #include <vector>
 
-#include "terrain.h"
-#include "camera.h"
+#include "Terrain.h"
+#include "Camera.h"
 
 #define VERTICES 0
 #define INDICES 1
 
 using namespace std;
 
-GLdouble x_val = 0.0;   // x position of the camera
-GLdouble z_val = 900.0; // z position of the camera
-GLdouble y_val = 30.0;  // y position of the camera
-
-GLdouble horizontal_angle = 0.0;  // horizontal_angle of rotation for the camera direction on the xz plane with respect to the z axis
-GLdouble vertical_angle = 0.0;    // vertical_angle of rotation for the camera direction on the yz plane with respect to the y axis
-
-GLdouble velocity = 3;
 
 GLint mouse_x; // keeps track of the x position of the mouse
 GLint mouse_y; // keeps track of the y position of the mouse
@@ -54,9 +46,6 @@ void drawScene()
     glLoadIdentity();
     
     camera.update();
-    //gluLookAt(x_val - 1 * sin((M_PI / 180.0) * horizontal_angle), y_val , z_val - 1 * cos((M_PI / 180.0) * horizontal_angle),
-    //          x_val - 2 * sin((M_PI / 180.0) * horizontal_angle), y_val + 0.01 * vertical_angle, z_val - 2 * cos((M_PI / 180.0) * horizontal_angle),
-    //          0.0, 1.0, 0.0);
     
     //Increment point size
     // glPointSize(2.0);
@@ -216,6 +205,7 @@ void handleCamera()
         camera.rotateDown();
 }
 
+
 // Idle function
 void update()
 {
@@ -290,16 +280,16 @@ void mouseClick(int button, int state, int x, int y)
 // Mouse motion callback routine.
 void mouseMotion(int x, int y)
 {
-    if (is_mouse_down)
-    {
-        // Update the camera horizontal_angle based on the mouse movement
-        horizontal_angle = horizontal_angle - (x - mouse_x) * 0.1;
-        mouse_x = x;
-
-        // Update the camera vertical_angle based on the mouse movement
-        vertical_angle = vertical_angle - (y - mouse_y) * 0.1;
-        mouse_y = y;
-    }
+    // if (is_mouse_down)
+    // {
+    //     // Update the camera horizontal_angle based on the mouse movement
+    //     horizontal_angle = horizontal_angle - (x - mouse_x) * 0.1;
+    //     mouse_x = x;
+        
+    //     // Update the camera vertical_angle based on the mouse movement
+    //     vertical_angle = vertical_angle - (y - mouse_y) * 0.1;
+    //     mouse_y = y;
+    // }
     glutPostRedisplay();
 }
 
@@ -310,13 +300,10 @@ int main(int argc, char **argv)
     glutInit(&argc, argv);
     glutInitContextProfile(GLUT_COMPATIBILITY_PROFILE);
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH);
-
-    // Create the window
-    // glutInitWindowSize(700, 700);
-    // glutInitWindowPosition(100, 100);
+    
     glutCreateWindow("Window");
     glutFullScreen();
-
+    
     // Register the callback functions.
     glutReshapeFunc(resize);
 

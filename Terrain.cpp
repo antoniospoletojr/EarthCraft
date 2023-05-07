@@ -1,15 +1,8 @@
 #include <stdio.h>
-#include <stdlib.h>
 #include <assert.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <cerrno>
-#include <string.h>
 #include <cmath>
 #include "SOIL/SOIL.h"
-#include "terrain.h"
-
-using namespace std;
+#include "Terrain.h"
 
 // Default constructor
 Terrain::Terrain()

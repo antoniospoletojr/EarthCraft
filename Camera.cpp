@@ -1,7 +1,8 @@
 #include <GL/glut.h>
-#include <GL/freeglut.h>
 #include <cmath>
-#include "camera.h"
+#include "Camera.h"
+
+#define LOS_DISTANCE 2
 
 // Constructor
 Camera::Camera()
@@ -12,7 +13,7 @@ Camera::Camera()
     alfa = 0.0f;
     beta = 0.0f;
     movement_speed = 4.0f;
-    rotation_speed = 2.0f;
+    rotation_speed = 1.5f;
 }
 
 // Parametrized constructor
@@ -36,29 +37,29 @@ Camera::~Camera()
 // Move the camera forward
 void Camera::moveForward()
 {
-    position[0] -= sin(alfa * M_PI / 180.0) * movement_speed;
-    position[2] -= cos(alfa * M_PI / 180.0) * movement_speed;
+    position[0] -= sin(alfa) * movement_speed;
+    position[2] -= cos(alfa) * movement_speed;
 }
 
 // Move the camera backward
 void Camera::moveBackward()
 {
-    position[0] += sin(alfa * M_PI / 180.0) * movement_speed;
-    position[2] += cos(alfa * M_PI / 180.0) * movement_speed;
+    position[0] += sin(alfa) * movement_speed;
+    position[2] += cos(alfa) * movement_speed;
 }
 
 // Move the camera left
 void Camera::moveLeft()
 {
-    position[0] -= cos(alfa * M_PI / 180.0) * movement_speed;
-    position[2] += sin(alfa * M_PI / 180.0) * movement_speed;
+    position[0] -= cos(alfa ) * movement_speed;
+    position[2] += sin(alfa) * movement_speed;
 }
 
 // Move the camera right
 void Camera::moveRight()
 {
-    position[0] += cos(alfa * M_PI / 180.0) * movement_speed;
-    position[2] -= sin(alfa * M_PI / 180.0) * movement_speed;
+    position[0] += cos(alfa) * movement_speed;
+    position[2] -= sin(alfa) * movement_speed;
 }
 
 // Move the camera up
@@ -77,37 +78,46 @@ void Camera::moveDown()
 // Rotate the camera left
 void Camera::rotateLeft()
 {
-    alfa += (M_PI / 180.0)*rotation_speed;
-    if (alfa > 2*M_PI)
-        alfa -= 2*M_PI;
+    alfa += (M_PI / 180.0) * rotation_speed;
+    if (alfa > 2 * M_PI)
+        alfa -= 2 * M_PI;
 }
 
 // Rotate the camera right
 void Camera::rotateRight()
 {
-    alfa -= (M_PI / 180.0)*rotation_speed;
+    alfa -= (M_PI / 180.0) * rotation_speed;
     if (alfa < 0.0)
-        alfa += 2*M_PI;
+        alfa += 2 * M_PI;
 }
 
 // Rotate the camera up
 void Camera::rotateUp()
-{   
-    if (beta < 180.0)
-        beta += rotation_speed;
+{       
+    beta += (M_PI / 180.0) * rotation_speed;
 }
 
 // Rotate the camera down
 void Camera::rotateDown()
 {
-    if (beta > -180.0)
-        beta -= rotation_speed;
+    beta -= (M_PI / 180.0) * rotation_speed;
 }
 
 // Update the camera
 void Camera::update()
 {
-    gluLookAt(position[0] - 1 * sin(alfa), position[1] , position[2] - 1 * cos(alfa),
-              position[0] - 2 * sin(alfa), position[1] + 0.01 * beta, position[2] - 2 * cos(alfa),
-              0.0, 1.0, 0.0);
+    // Explicitly set gluLookAt() parameters
+    GLdouble eyeX = position[0] - sin(alfa);
+    GLdouble eyeY = position[1];
+    GLdouble eyeZ = position[2] - cos(alfa);
+    
+    GLdouble centerX = position[0] - LOS_DISTANCE * sin(alfa);
+    GLdouble centerY = position[1] + beta;
+    GLdouble centerZ = position[2] - LOS_DISTANCE * cos(alfa);
+    
+    GLdouble upX = 0.0;
+    GLdouble upY = 1.0;
+    GLdouble upZ = 0.0;
+    
+    gluLookAt(eyeX, eyeY, eyeZ, centerX, centerY, centerZ, upX, upY, upZ);
 }
