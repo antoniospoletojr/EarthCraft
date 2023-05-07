@@ -1,12 +1,7 @@
 #ifndef TERRAIN_H
 #define TERRAIN_H
 
-#include "stdio.h"
-
-typedef struct
-{
-	float x, y, z;
-} Vertex;
+#include "vec3.hpp"
 
 class Terrain
 {
@@ -15,12 +10,12 @@ public:
 	
 	Terrain(const char *filename, float worldScale);
 
-	~Terrain() { delete[] map; }
+	~Terrain();
 
 	void loadFromFile(const char *filename);
 	
 	// Getter for the height map
-	Vertex* getMap() const { return map;}
+	Vec3<float>* getMap() const { return map;}
 	
 	// Getter of the dimension of the height map
 	int getDim() const { return dim; }
@@ -31,7 +26,7 @@ public:
 private:
 	int dim;
 	float world_scale;
-	Vertex *map;
+	Vec3<float> *map;
 };
 
 

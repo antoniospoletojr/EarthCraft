@@ -11,18 +11,26 @@
 
 using namespace std;
 
-
+// Default constructor
 Terrain::Terrain()
 {
-    this->world_scale = 1.0f;
-    this->loadFromFile("1.png");
+    world_scale = 1.0f;
+    loadFromFile("1.png");
 }
 
+// Parametrized constructor
 Terrain::Terrain(const char* filename, float worldScale)
 {
     this->world_scale = worldScale;
-    this->loadFromFile(filename);
+    loadFromFile(filename);
 }
+
+// Destructor
+Terrain::~Terrain()
+{
+    delete[] map;
+}
+
 
 void Terrain::loadFromFile(const char* filename)
 {
@@ -32,13 +40,13 @@ void Terrain::loadFromFile(const char* filename)
     
     // Assert image is square
     assert(width == height);
-    this->dim = width;
+    dim = width;
 
     // Check for an error during the load process
     assert (image != nullptr);
     
     // Allocate memory for the height map
-    this->map = new Vertex[dim * dim];
+    map = new Vec3<float>[dim * dim];
     
     // Fill in the height map 
     for (int i = 0; i < dim; i++)
@@ -46,9 +54,9 @@ void Terrain::loadFromFile(const char* filename)
         for (int j = 0; j < dim; j++)
         {
             // Set the vertices
-            this->map[i * dim + j].x = (i - dim / 2) * world_scale;
-            this->map[i * dim + j].y = image[(i * dim + j)] * (1 + log(world_scale));
-            this->map[i * dim + j].z = (j - dim / 2) * world_scale;
+            map[i * dim + j].set_x((i - dim / 2) * world_scale);
+            map[i * dim + j].set_y(image[(i * dim + j)] * (1 + log(world_scale)));
+            map[i * dim + j].set_z((j - dim / 2) * world_scale);
         }
     }
 }
@@ -66,20 +74,20 @@ void Terrain::getInfo()
         for (int j = 0; j < dim; j++)
         {
             
-            if (map[i * dim + j].x < min_x)
-                min_x = map[i * dim + j].x;
-            if (map[i * dim + j].x > max_x)
-                max_x = map[i * dim + j].x;
+            if (map[i * dim + j].x() < min_x)
+                min_x = map[i * dim + j].x();
+            if (map[i * dim + j].x() > max_x)
+                max_x = map[i * dim + j].x();
             
-            if (map[i * dim + j].y < min_y)
-                min_y = map[i * dim + j].y;
-            if (map[i * dim + j].y > max_y)
-                max_y = map[i * dim + j].y;
+            if (map[i * dim + j].y() < min_y)
+                min_y = map[i * dim + j].y();
+            if (map[i * dim + j].y() > max_y)
+                max_y = map[i * dim + j].y();
             
-            if (map[i * dim + j].z < min_z)
-                min_z = map[i * dim + j].z;
-            if (map[i * dim + j].z > max_z)
-                max_z = map[i * dim + j].z;
+            if (map[i * dim + j].z() < min_z)
+                min_z = map[i * dim + j].z();
+            if (map[i * dim + j].z() > max_z)
+                max_z = map[i * dim + j].z();
         }
     }
     

@@ -4,7 +4,9 @@
 #include <GL/freeglut.h>
 #include <iostream>
 #include <vector>
+
 #include "terrain.h"
+#include "camera.h"
 
 #define VERTICES 0
 #define INDICES 1
@@ -36,10 +38,10 @@ std::vector<float> vertices; // an array to keep track of the vertices of the te
 std::vector<float> colors; // an array to keep track of the colors of the terrain
 std::vector<GLuint> indices; // an array to keep track of the indices of the terrain
 
-
 static GLuint vbo[2]; // Array of buffer ids.
 
 Terrain *terrain;
+Camera camera;
 
 // Drawing routine.
 void drawScene()
@@ -51,9 +53,10 @@ void drawScene()
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
     
-    gluLookAt(x_val - 1 * sin((M_PI / 180.0) * horizontal_angle), y_val , z_val - 1 * cos((M_PI / 180.0) * horizontal_angle),
-              x_val - 2 * sin((M_PI / 180.0) * horizontal_angle), y_val + 0.01 * vertical_angle, z_val - 2 * cos((M_PI / 180.0) * horizontal_angle),
-              0.0, 1.0, 0.0);
+    camera.update();
+    //gluLookAt(x_val - 1 * sin((M_PI / 180.0) * horizontal_angle), y_val , z_val - 1 * cos((M_PI / 180.0) * horizontal_angle),
+    //          x_val - 2 * sin((M_PI / 180.0) * horizontal_angle), y_val + 0.01 * vertical_angle, z_val - 2 * cos((M_PI / 180.0) * horizontal_angle),
+    //          0.0, 1.0, 0.0);
     
     //Increment point size
     // glPointSize(2.0);
@@ -97,7 +100,7 @@ void setup()
     terrain = new Terrain("1.png", 8.0);
     
     // Get the map
-    Vertex *map = terrain->getMap();
+    Vec3<float> *map = terrain->getMap();
     
     // Get the dimension of the map
     int dim = terrain->getDim();
@@ -111,13 +114,13 @@ void setup()
     {
         for (int j = 0; j < dim; j++)
         {
-        vertices.emplace_back(map[i * dim + j].x);
-        vertices.emplace_back(map[i * dim + j].y);
-        vertices.emplace_back(map[i * dim + j].z);
+        vertices.emplace_back(map[i * dim + j].x());
+        vertices.emplace_back(map[i * dim + j].y());
+        vertices.emplace_back(map[i * dim + j].z());
 
         // Set the colors to be proportional to the height of the terrain and range from brown to white
-        colors.emplace_back(map[i * dim + j].y / 255.0);
-        colors.emplace_back(map[i * dim + j].y / 255.0);
+        colors.emplace_back(map[i * dim + j].y() / 255.0);
+        colors.emplace_back(map[i * dim + j].y() / 255.0);
         colors.emplace_back(255.0);
         }
     }
@@ -188,52 +191,29 @@ void handleCamera()
 {
     // Increment the x and z positions. Notice how the cos is 1 when I'm moving on the z axis and the sin is 1 when I'm moving on the x axis.
     if (keys['w'])
-    {
-        x_val = x_val - sin(horizontal_angle * M_PI / 180.0)*velocity;
-        z_val = z_val - cos(horizontal_angle * M_PI / 180.0)*velocity;
-    }
+        camera.moveForward();
     if (keys['s'])
-    {
-        x_val = x_val + sin(horizontal_angle * M_PI / 180.0)*velocity;
-        z_val = z_val + cos(horizontal_angle * M_PI / 180.0)*velocity;
-    }
+        camera.moveBackward();
     if (keys['a'])
-    {
-        x_val = x_val - cos(horizontal_angle * M_PI / 180.0)*velocity;
-        z_val = z_val + sin(horizontal_angle * M_PI / 180.0)*velocity;
-    }
+        camera.moveLeft();
     if (keys['d'])
-    {
-        x_val = x_val + cos(horizontal_angle * M_PI / 180.0)*velocity;
-        z_val = z_val - sin(horizontal_angle * M_PI / 180.0)*velocity;
-    }
-    
-    // Rotate the camera horizontal_angle
-    if (special_keys[GLUT_KEY_LEFT])
-        horizontal_angle = horizontal_angle + 1.0*velocity;
-    if (special_keys[GLUT_KEY_RIGHT])
-        horizontal_angle = horizontal_angle - 1.0*velocity;
-    // Rotate the camera vertical_angle
-    if (special_keys[GLUT_KEY_UP])
-        if (vertical_angle < 180.0)
-            vertical_angle = vertical_angle + 1.0*velocity;
-    if (special_keys[GLUT_KEY_DOWN])
-        if (vertical_angle > -180.0)
-            vertical_angle = vertical_angle - 1.0*velocity;
-
+        camera.moveRight();
     // If Spacebar is pressed then increase the y value of the camera
     if (keys[32] && !special_keys[GLUT_KEY_SHIFT_L])
-        y_val = y_val + 1.0*velocity;
+        camera.moveUp();
     // If SHIFT_L and spacebar are pressed together then decrease the y value of the camera
     if (keys[32] && special_keys[GLUT_KEY_SHIFT_L])
-        if (y_val > 1.0)
-            y_val = y_val - 1.0*velocity;
-
-    // horizontal_angle correction.
-    if (horizontal_angle > 360.0)
-        horizontal_angle -= 360.0;
-    if (horizontal_angle < 0.0)
-        horizontal_angle += 360.0;
+        camera.moveDown();
+    // Rotate the camera horizontal_angle
+    if (special_keys[GLUT_KEY_LEFT])
+       camera.rotateLeft();
+    if (special_keys[GLUT_KEY_RIGHT])
+       camera.rotateRight();
+    // Rotate the camera vertical_angle
+    if (special_keys[GLUT_KEY_UP])
+        camera.rotateUp();
+    if (special_keys[GLUT_KEY_DOWN])
+        camera.rotateDown();
 }
 
 // Idle function
@@ -347,7 +327,7 @@ int main(int argc, char **argv)
 
     glutMouseFunc(mouseClick);
     glutMotionFunc(mouseMotion);
-
+    
     glutDisplayFunc(drawScene);
     glutIdleFunc(update);
 

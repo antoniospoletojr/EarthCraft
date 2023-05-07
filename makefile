@@ -8,7 +8,7 @@ CFLAGS = -g
 LDFLAGS = -lGL -lGLU -lglut -lGLEW -lSOIL
 
 # Source files
-SRCS = main.cpp terrain.cpp
+SRCS = main.cpp terrain.cpp camera.cpp
 
 # Object files
 OBJS = $(SRCS:.cpp=.o)
