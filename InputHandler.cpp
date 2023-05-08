@@ -1,13 +1,13 @@
-#include <GL/glut.h>
 #include <GL/freeglut.h>
 #include "InputHandler.h"
 
 InputHandler* InputHandler::instance = nullptr;
 
-// Parametrized constructor
-InputHandler::InputHandler(Camera& camera):camera(camera)
+// Default constructor
+InputHandler::InputHandler()
 {
-    InputHandler::instance = this;
+    if (InputHandler::instance == nullptr)
+        InputHandler::instance = this;
 }
 
 // Destructor
@@ -16,8 +16,9 @@ InputHandler::~InputHandler()
     InputHandler::instance = nullptr;
 }
 
-void InputHandler::init()
+void InputHandler::initialize(Camera *camera)
 {
+    this->camera = camera;
     glutKeyboardFunc(InputHandler::handleRegularKeyPress);
     glutKeyboardUpFunc(InputHandler::handleRegularKeyRelease);
     glutSpecialFunc(InputHandler::handleSpecialKeyPress);
@@ -31,37 +32,37 @@ void InputHandler::handleKeyboard()
 {
     // Increment the x and z positions. Notice how the cos is 1 when I'm moving on the z axis and the sin is 1 when I'm moving on the x axis.
     if (keys['w'])
-        camera.moveForward();
+        camera->moveForward();
     if (keys['s'])
-        camera.moveBackward();
+        camera->moveBackward();
     if (keys['a'])
-        camera.moveLeft();
+        camera->moveLeft();
     if (keys['d'])
-        camera.moveRight();
+        camera->moveRight();
 
     // If Spacebar is pressed then increase the y value of the camera
     if (keys[32])
-        camera.moveUp();
+        camera->moveUp();
     // If left Shift is pressed then decrease the y value of the camera
     if (special_keys[GLUT_KEY_SHIFT_L])
-        camera.moveDown();
+        camera->moveDown();
     
     // Rotate the camera horizontal_angle
     if (special_keys[GLUT_KEY_LEFT])
-       camera.rotateLeft();
+       camera->rotateLeft();
     if (special_keys[GLUT_KEY_RIGHT])
-       camera.rotateRight();
+       camera->rotateRight();
     
     // Rotate the camera vertical_angle
     if (special_keys[GLUT_KEY_UP])
-        camera.rotateUp();
+        camera->rotateUp();
     if (special_keys[GLUT_KEY_DOWN])
-        camera.rotateDown();
-
+        camera->rotateDown();
+     
      // Exit the program if the Esc key is pressed.
     if (keys[27] || keys['q'])
         exit(0);
-
+    
     // If f is pressed toggle full screen mode on/off
     if (keys['f'])
     {
@@ -126,11 +127,11 @@ void InputHandler::mouseMotion(int x, int y)
     if (instance->is_mouse_down)
     {
         // Update the camera horizontal_angle based on the mouse movement
-        instance->camera.rotateLeftRight((x - instance->mouse_x)*0.1);
+        instance->camera->rotateLeftRight((x - instance->mouse_x)*0.1);
         instance->mouse_x = x;
         
         // Update the camera vertical_angle based on the mouse movement
-        instance->camera.rotateUpDown((y - instance->mouse_y)*0.1);
+        instance->camera->rotateUpDown((y - instance->mouse_y)*0.1);
         instance->mouse_y = y;
     }
 }

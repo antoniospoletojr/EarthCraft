@@ -1,13 +1,13 @@
-#include <cstdlib>
 #include <cmath>
 #include <GL/glew.h>
 #include <GL/freeglut.h>
-#include <iostream>
 #include <vector>
+#include "SOIL/SOIL.h"
 
 #include "Terrain.h"
 #include "Camera.h"
 #include "InputHandler.h"
+#include "GlutFramework.h"
 
 #define VERTICES 0
 #define INDICES 1
@@ -21,9 +21,11 @@ std::vector<GLuint> indices;    // an array to keep track of the indices of the 
 
 static GLuint vbo[2]; // Array of buffer ids.
 
+// Global variables
 Terrain *terrain;
 Camera camera;
-InputHandler input_handler(camera);
+InputHandler input_handler;
+GlutFramework framework;
 
 
 // Drawing routine.
@@ -135,65 +137,17 @@ void setup()
 
     glVertexPointer(3, GL_FLOAT, 0, 0);
     glColorPointer(3, GL_FLOAT, 0, (GLvoid*)(vertices.size()*sizeof(float)));
-}
 
-// OpenGL window reshape routine.
-void resize(int w, int h)
-{
-    // Set up the viewport to cover the entire window.
-    glViewport(0, 0, w, h);
-    
-    // Switch to the projection matrix.
-    glMatrixMode(GL_PROJECTION);
-    
-    // Reset the projection matrix.
-    glLoadIdentity();
-    
-    // Set up a perspective projection with a field of view of 118 degrees, an aspect ratio of w/h, and a near/far clipping plane of 30.0 and 100.0 respectively.
-    gluPerspective(50, (GLfloat)w / h, 1.0, 3000.0);
-    // glOrtho(-100.0, 100.0, -100.0, 100.0, -100.0, 100.0);
-    
-    // Switch back to the modelview matrix.
-    glMatrixMode(GL_MODELVIEW);
-    
-    // Reset the modelview matrix.
-    glLoadIdentity();
-    
-    // Mark the window for redisplay.
-    glutPostRedisplay();
-}
-
-// Idle function
-void update()
-{  
-    input_handler.handleKeyboard();
-    glutPostRedisplay();
 }
 
 // Main routine.
 int main(int argc, char **argv)
 {
-    // Initialize GLUT
-    glutInit(&argc, argv);
-    glutInitContextProfile(GLUT_COMPATIBILITY_PROFILE);
-    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH);
-    
-    glutCreateWindow("Window");
-    glutFullScreen();
-    
-    glutReshapeFunc(resize);
-    input_handler.init();
-    
+    framework.initialize(argc, argv, &input_handler);
+    input_handler.initialize(&camera);
+
     glutDisplayFunc(drawScene);
-    glutIdleFunc(update);
     
-    // Initialize GLEW.
-    glewExperimental = GL_TRUE;
-    glewInit();
-    
-    // Set up the scene.
     setup();
-    
-    // Enter the main loop.
-    glutMainLoop();
+    framework.run();
 }

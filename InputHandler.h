@@ -1,13 +1,15 @@
-#include <GL/glut.h>
+#ifndef INPUTHANDLER_H
+#define INPUTHANDLER_H
+
 #include "Camera.h"
 
 class InputHandler
 {
     public:
-        InputHandler(Camera& camera);
+        InputHandler();
         ~InputHandler();
         
-        void init();
+        void initialize(Camera *camera);
         void handleKeyboard();
         static void handleRegularKeyPress(unsigned char key, int x, int y);
         static void handleRegularKeyRelease(unsigned char key, int x, int y);
@@ -18,7 +20,7 @@ class InputHandler
     
     private:
         static InputHandler *instance;  // used as a trick to access the InputHandler object from the static callback functions
-        Camera& camera;                 // a reference to the camera object
+        Camera *camera;                 // a reference to the camera object
         
         bool keys[256];                 // an array to keep track of regular key presses
         bool special_keys[256];         // an array to keep track of special key presses
@@ -28,3 +30,5 @@ class InputHandler
         bool is_polygon_filled = false; // keeps track of whether or not the polygon is filled
         bool is_fullscreen = true;      // keeps track of whether or not the window is in is_fullscreen mode
 };
+
+#endif // INPUTHANDLER_H

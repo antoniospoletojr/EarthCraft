@@ -2,6 +2,7 @@
 #include <assert.h>
 #include <cmath>
 #include "SOIL/SOIL.h"
+
 #include "Terrain.h"
 
 // Default constructor
