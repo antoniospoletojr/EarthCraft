@@ -6,18 +6,7 @@
 #include "Terrain.h"
 
 // Default constructor
-Terrain::Terrain()
-{
-    world_scale = 1.0f;
-    loadFromFile("1.png");
-}
-
-// Parametrized constructor
-Terrain::Terrain(const char* filename, float worldScale)
-{
-    this->world_scale = worldScale;
-    loadFromFile(filename);
-}
+Terrain::Terrain(){}
 
 // Destructor
 Terrain::~Terrain()
@@ -25,6 +14,12 @@ Terrain::~Terrain()
     delete[] map;
 }
 
+// Parametrized constructor
+void Terrain::initialize(const char* filename, float worldScale)
+{
+    this->world_scale = worldScale;
+    loadFromFile(filename);
+}
 
 void Terrain::loadFromFile(const char* filename)
 {
@@ -54,6 +49,12 @@ void Terrain::loadFromFile(const char* filename)
         }
     }
 }
+
+// Return the height map
+Vec3<float>* Terrain::getMap(){return map;}
+
+// Return the dimension of the height map
+int Terrain::getDim(){return dim;}
 
 // Print terrain info
 void Terrain::getInfo()

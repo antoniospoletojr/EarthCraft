@@ -1,18 +1,18 @@
 #ifndef TERRAIN_H
 #define TERRAIN_H
 
-#include "vec3.hpp"
+#include "Vec3.hpp"
 
 class Terrain
 {
 public:
 	Terrain();
-	Terrain(const char *filename, float worldScale);
 	~Terrain();
 	
+	void initialize(const char *filename, float worldScale);
 	void loadFromFile(const char *filename); 
-	Vec3<float>* getMap() const { return map;}
-	int getDim() const { return dim; }
+	Vec3<float>* getMap();
+	int getDim();
 	void getInfo();
 
 private:
@@ -20,7 +20,5 @@ private:
 	float world_scale;
 	Vec3<float> *map;
 };
-
-
 
 #endif
