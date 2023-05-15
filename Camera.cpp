@@ -9,12 +9,12 @@
 Camera::Camera()
 {
     position[0] = 0;
-    position[1] = 30;
+    position[1] = 500;
     position[2] = 900;
     alfa = 0.0f;
     beta = 0.0f;
     movement_speed = 4.0f;
-    rotation_speed = 1.0f;
+    rotation_speed = 1.5f;
 }
 
 // Parametrized constructor

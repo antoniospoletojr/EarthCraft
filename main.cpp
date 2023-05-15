@@ -2,7 +2,7 @@
 #include <GL/freeglut.h>
 
 #include "Terrain.h"
-#include "Mesh.h"
+#include "Renderer.h"
 #include "Camera.h"
 #include "InputHandler.h"
 #include "GlutFramework.h"
@@ -12,7 +12,7 @@ Terrain terrain;
 Camera camera;
 InputHandler input_handler;
 GlutFramework framework;
-Mesh mesh;
+Renderer renderer;
 
 
 // Drawing routine.
@@ -25,7 +25,7 @@ void drawScene()
     glLoadIdentity();
     
     camera.update();
-    mesh.draw();
+    renderer.draw();
     
     glutSwapBuffers();
 }
@@ -52,16 +52,16 @@ void setup()
     // glEnable(GL_NORMALIZE);
     
     // Allocate a terrain object
-    terrain.initialize("1.png", 8.0);
+    terrain.initialize("0.png", 16.0);
     
     // Initialize the mesh
-    mesh.initialize(&terrain);
+    renderer.initialize(&terrain);
 }
 
 // Main routine.
 int main(int argc, char **argv)
 {
-    framework.initialize(argc, argv, &input_handler);
+    framework.initialize(argc, argv);
     input_handler.initialize(&camera);
     
     glutDisplayFunc(drawScene);

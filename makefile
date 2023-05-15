@@ -5,10 +5,10 @@ CC = g++
 CFLAGS = -g
 
 # Linker flags
-LDFLAGS = -lGL -lGLU -lglut -lGLEW -lSOIL
+LDFLAGS = -lGL -lGLU -lglut -lGLEW -lSOIL -lassimp
 
 # Source files
-SRCS = main.cpp Terrain.cpp Camera.cpp InputHandler.cpp GlutFramework.cpp Mesh.cpp
+SRCS = main.cpp Terrain.cpp Camera.cpp InputHandler.cpp GlutFramework.cpp Renderer.cpp
 
 # Object files
 OBJS = $(SRCS:.cpp=.o)

@@ -17,7 +17,7 @@ GlutFramework::~GlutFramework()
     GlutFramework::instance = nullptr;
 }
 
-void GlutFramework::initialize(int argc, char** argv, InputHandler* input_handler)
+void GlutFramework::initialize(int argc, char** argv)
 {
     glutInit(&argc, argv);
     glutInitContextProfile(GLUT_COMPATIBILITY_PROFILE);
@@ -25,8 +25,6 @@ void GlutFramework::initialize(int argc, char** argv, InputHandler* input_handle
     glutCreateWindow("Window");
     glutFullScreen();
     glutReshapeFunc(GlutFramework::resize);
-    this->input_handler = input_handler;
-    glutIdleFunc(GlutFramework::update);
     
     glewExperimental = GL_TRUE;
     glewInit();
@@ -45,7 +43,7 @@ void GlutFramework::resize(int w, int h)
     glLoadIdentity();
     
     // Set up a perspective projection with a field of view of 118 degrees, an aspect ratio of w/h, and a near/far clipping plane of 30.0 and 100.0 respectively.
-    gluPerspective(50, (GLfloat)w / h, 1.0, 3000.0);
+    gluPerspective(50, (GLfloat)w / h, 1.0, 5000.0);
     
     // Switch back to the modelview matrix.
     glMatrixMode(GL_MODELVIEW);
@@ -54,13 +52,6 @@ void GlutFramework::resize(int w, int h)
     glLoadIdentity();
     
     // Mark the window for redisplay.
-    glutPostRedisplay();
-}
-
-// Idle function
-void GlutFramework::update()
-{  
-    instance->input_handler->handleKeyboard();
     glutPostRedisplay();
 }
 

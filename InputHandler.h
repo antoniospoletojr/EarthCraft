@@ -17,6 +17,7 @@ class InputHandler
         static void handleSpecialKeyRelease(int key, int x, int y);
         static void mouseClick(int button, int state, int x, int y);
         static void mouseMotion(int x, int y);
+        static void idleCallback();
     
     private:
         static InputHandler *instance;  // used as a trick to access the InputHandler object from the static callback functions

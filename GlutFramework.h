@@ -9,14 +9,12 @@ class GlutFramework
         GlutFramework();
         ~GlutFramework();
 
-        void initialize(int argc, char** argv, InputHandler* input_handler);
+        void initialize(int argc, char** argv);
         static void resize(int w, int h);
-        static void update();
         void run();
     
     private:
         static GlutFramework* instance;
-        InputHandler* input_handler;
 };
 
 #endif // GLUTFRAMEWORK_H

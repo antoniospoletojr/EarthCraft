@@ -25,6 +25,7 @@ void InputHandler::initialize(Camera *camera)
     glutSpecialUpFunc(InputHandler::handleSpecialKeyRelease);
     glutMouseFunc(InputHandler::mouseClick);
     glutMotionFunc(InputHandler::mouseMotion);
+    glutIdleFunc(InputHandler::idleCallback);
 }
 
 // Handle keyboard input
@@ -134,4 +135,11 @@ void InputHandler::mouseMotion(int x, int y)
         instance->camera->rotateUpDown((y - instance->mouse_y)*0.1);
         instance->mouse_y = y;
     }
+}
+
+// Idle function
+void InputHandler::idleCallback()
+{  
+    instance->handleKeyboard();
+    glutPostRedisplay();
 }
