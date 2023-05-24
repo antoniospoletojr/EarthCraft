@@ -72,6 +72,8 @@ void Renderer::initializeMesh(Terrain *terrain)
 
     // Get the dimension of the map useful for allocations
     int dim = terrain->getDim();
+    float world_scale = terrain->getWorldScale();
+    mesh_dim = dim*world_scale;
     
     // Allocate memory for the vertices and colors
     mesh_vertices.reserve(dim * dim * 3);
@@ -132,7 +134,7 @@ void Renderer::initializeSun()
     glGenBuffers(2, vbo);
     
     Assimp::Importer importer;
-
+    
     // Load the .obj file
     const aiScene* scene = importer.ReadFile("sun.obj", aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_GenNormals);
      // Check if the scene was loaded successfully
@@ -208,11 +210,13 @@ void Renderer::initializeSun()
 
 void Renderer::initialize(Terrain *terrain)
 {
-    glutTimerFunc(100, Renderer::timerCallback, 0);
     // Generate the vertex array objects; we need 2 objects: MESH and SUN
     glGenVertexArrays(3, vao);
     this->initializeMesh(terrain);
     this->initializeSun();
+
+    // Set the glut timer callback for the sun animaton
+    glutTimerFunc(100, Renderer::timerCallback, 0);
 }
 
 void Renderer::timerCallback(int value)
@@ -231,9 +235,25 @@ void Renderer::moveSun()
     GLfloat* vertices = (GLfloat*)glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
     
     // Iterate through each vertex and update its x-coordinate
-    for (int i = 0; i < sun_vertices.size(); i+=3)
-        vertices[i] += 10;
-    
+    bool has_reached_end = false;
+    const int numVertices = sun_vertices.size();
+
+    for (int i = 0; i < numVertices; i += 3)
+    {
+        vertices[i] += 300;
+        if (vertices[i] > mesh_dim / 2 + 300)
+            has_reached_end = true;
+    }
+
+    if (has_reached_end)
+    {
+        for (int i = 0; i < numVertices; i += 3)
+        {
+            vertices[i] -= mesh_dim;
+        }
+    }
+
+
     // Unmap the buffer object
     glUnmapBuffer(GL_ARRAY_BUFFER);
 

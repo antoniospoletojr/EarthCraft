@@ -13,6 +13,7 @@ public:
 	void loadFromFile(const char *filename); 
 	Vec3<float>* getMap();
 	int getDim();
+	float getWorldScale();
 	void getInfo();
 
 private:

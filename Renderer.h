@@ -20,6 +20,8 @@ class Renderer
         std::vector<float> mesh_vertices, sun_vertices, planet_vertices;    // an array to keep track of the vertices of the terrain
         std::vector<float> mesh_colors, sun_colors, planet_colors;          // an array to keep track of the colors of the terrain
         std::vector<GLuint> mesh_indices, sun_indices, planet_indices;      // an array to keep track of the indices of the terrain
+        
+        float mesh_dim;
 
         void initializeMesh(Terrain *terrain);
         void initializeSun();
