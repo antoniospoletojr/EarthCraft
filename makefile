@@ -5,7 +5,7 @@ CC = g++
 CFLAGS = -g
 
 # Linker flags
-LDFLAGS = -lGL -lGLU -lglut -lGLEW -lSOIL -lassimp -ltensorflow -lopencv_core -lopencv_highgui -lopencv_imgproc -lopencv_imgcodecs
+LDFLAGS = -lGL -lGLU -lglut -lGLEW -lSOIL -lassimp -lopencv_core -lopencv_highgui -lopencv_imgproc -lopencv_imgcodecs -lonnxruntime
 
 # Source files
 SRCS = main.cpp Terrain.cpp Camera.cpp InputHandler.cpp GlutFramework.cpp Renderer.cpp
