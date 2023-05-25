@@ -2,10 +2,10 @@
 CC = g++
 
 # Compiler flags
-CFLAGS = -g
+CFLAGS = -O3 -march=native -g
 
 # Linker flags
-LDFLAGS = -lGL -lGLU -lglut -lGLEW -lSOIL -lassimp -lopencv_core -lopencv_highgui -lopencv_imgproc -lopencv_imgcodecs -lonnxruntime
+LDFLAGS = -lGL -lGLU -lglut -lGLEW -lSOIL -lassimp -lopencv_core -lopencv_highgui -lopencv_imgproc -lopencv_imgcodecs
 
 # Source files
 SRCS = main.cpp Terrain.cpp Camera.cpp InputHandler.cpp GlutFramework.cpp Renderer.cpp

@@ -4,10 +4,9 @@
 #include <iostream>
 #include <opencv2/opencv.hpp>
 #include <opencv2/core/core.hpp>
-#include "onnxruntime_cxx_api.h"
 #include "SOIL/SOIL.h"
+#include <fdeep/fdeep.hpp>
 #include <chrono>
-#include "npy.hpp"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image/stb_image.h"
@@ -79,10 +78,6 @@ void setup()
 // Main routine.
 int main(int argc, char **argv)
 {   
-    // Load the model and create InferenceSession
-    Ort::Env env;
-    Ort::Session session(env, "model.onnx", Ort::SessionOptions{ nullptr });
-    
     // Load noise
     std::random_device rd;
     std::mt19937 gen(rd());
@@ -106,70 +101,45 @@ int main(int argc, char **argv)
             for (int col = 0; col < image.cols; ++col)
             {
                 // Get the pixel value at the current position
-                float value = static_cast<float>(image.at<uchar>(row, col)) / 255.0f;
+                float value = static_cast<float>(image.at<uchar>(row, col));
                 
                 // Store the value in the vector
-                sketches_vector.emplace_back(value);
+                sketches_vector.emplace_back(value / 255.0f);
             }
         }
     }
-
-    // define shape
-    const std::array<int64_t, 4> sketch_shape = { 1, 450, 450, 4};
-    const std::array<int64_t, 4> noise_shape = { 1, 28, 28, 1024};
-    const std::array<int64_t, 4> output_shape = { 1, 450, 450, 1};
-
-    // define array
-    std::array<float, 450*450*4> sketches;
-    std::array<float, 28*28*1024> noise;
-    std::array<float, 450*450> output;
+    const auto model = fdeep::load_model("fdeep_model.json", false);
     
-    // define Tensor
-    auto memory_info = Ort::MemoryInfo::CreateCpu(OrtDeviceAllocator, OrtMemTypeCPU);
-
-    auto sketch_tensor = Ort::Value::CreateTensor<float>(memory_info, sketches.data(), sketches.size(), sketch_shape.data(), sketch_shape.size());
-    auto noise_tensor = Ort::Value::CreateTensor<float>(memory_info, noise.data(), noise.size(), noise_shape.data(), noise_shape.size());
-    Ort::Value* input_tensor[2];
-    input_tensor[0] = &sketch_tensor;
-    input_tensor[1] = &noise_tensor;
-
-    std::vector<Ort::Value> ort_inputs;
-    ort_inputs.push_back(std::move(sketch_tensor));
-    ort_inputs.push_back(std::move(noise_tensor));
-    
-    auto output_tensor = Ort::Value::CreateTensor<float>(memory_info, output.data(), output.size(), output_shape.data(), output_shape.size());
-
-    // copy image data to input array
-    std::copy(sketches_vector.begin(), sketches_vector.end(), sketches.begin());
-    std::copy(noise_vector.begin(), noise_vector.end(), noise.begin());
-
-     // define names
-    Ort::AllocatorWithDefaultOptions ort_alloc;
-    // Ort::AllocatedStringPtr input_sketch_name = session.GetInputNameAllocated(0, ort_alloc);
-    // Ort::AllocatedStringPtr input_noise_name = session.GetInputNameAllocated(1, ort_alloc);
-    Ort::AllocatedStringPtr output_name = session.GetOutputNameAllocated(0, ort_alloc);
-    
-    const std::vector<const char*> input_names = {"input_1", "input_2"};
-    const std::array<const char*, 1> output_names = {output_name.get()};
-    
-    output_name.release();
+    const fdeep::tensor sketches_tensor(fdeep::tensor_shape(450, 450, 4), sketches_vector);
+    const fdeep::tensor noise_tensor(fdeep::tensor_shape(28, 28, 1024), noise_vector);
     
     
-    std::vector<Ort::Value> ort_outputs = session.Run(Ort::RunOptions{nullptr}, input_names.data(), ort_inputs.data(), ort_inputs.size(), output_names.data(), output_names.size());
+    const auto output_tensor = model.predict({sketches_tensor, noise_tensor});
     
-    const float* data = ort_outputs[0].GetTensorData<float>();
-    std::vector<float> output_vector(data, data + 450*450);
-
-    // convert output_vector to uint8_t
+    std::cout << fdeep::show_tensor_shape(output_tensor.front().shape());
+    
+    
+    const std::vector<float> output_vector = output_tensor.front().to_vector();
+    cout << output_vector.size() << endl;
     std::vector<uint8_t> output_vector_uint8;
     for (auto& value : output_vector)
         output_vector_uint8.emplace_back(static_cast<uint8_t>(value * 127.5f + 127.5f));
     
-    // save output_vector_uint8 to png
-    stbi_write_png("output.png", 450, 450, 1, output_vector_uint8.data(), 0);
-    
-
-    
+    // Show image with opencv
+    cv::Mat output_image(450, 450, CV_8U);
+    for (int row = 0; row < output_image.rows; ++row)
+    {
+        for (int col = 0; col < output_image.cols; ++col)
+        {
+            // Get the pixel value at the current position
+            uint8_t value = output_vector_uint8[row * output_image.cols + col];
+            
+            // Store the value in the vector
+            output_image.at<uchar>(row, col) = value;
+        }
+    }
+    cv::imshow("Image", output_image);
+    cv::waitKey(0);
     
     framework.initialize(argc, argv);
     input_handler.initialize(&camera);
