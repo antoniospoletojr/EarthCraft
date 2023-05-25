@@ -18,12 +18,12 @@ GlutFramework::~GlutFramework()
 }
 
 void GlutFramework::initialize(int argc, char** argv)
-{
+{    
     glutInit(&argc, argv);
     glutInitContextProfile(GLUT_COMPATIBILITY_PROFILE);
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH);
     glutCreateWindow("Window");
-    //glutFullScreen();
+    glutFullScreen();
     glutReshapeFunc(GlutFramework::resize);
     
     glewExperimental = GL_TRUE;
