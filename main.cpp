@@ -18,49 +18,7 @@ GlutFramework framework;
 Renderer renderer;
 
 
-// Drawing routine.
-void drawScene()
-{
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glColor3f(1.0, 1.0, 1.0);
-    
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
-    
-    camera.update();
-    renderer.draw();
-    
-    glutSwapBuffers();
-}
-
-// This function sets up the initial state for OpenGL rendering.
-void setup()
-{
-    // Set the clear color for the color buffer to white with 0 alpha (fully opaque)
-    glClearColor(0.0, 0.0, 0.0, 0.0);
-    
-    // Set polygon mode to be not filled
-    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-    
-    // Enable the depth test to ensure that polygons that are behind others are not drawn
-    glEnable(GL_DEPTH_TEST);
-    
-    // // Enable lighting calculations for polygons
-    // glEnable(GL_LIGHTING);
-    
-    // // Enable light source 0
-    // glEnable(GL_LIGHT0);
-    
-    // // Enable automatic normalization of surface normals to unit length
-    // glEnable(GL_NORMALIZE);
-    
-    // Allocate a terrain object
-    terrain.initialize("./data/heightmap.png", 8.0);
-    
-    // Initialize the mesh
-    renderer.initialize(&terrain);
-}
-
+// Function to execute the Python script
 void predict()
 {
     // Execute the Python script
@@ -75,12 +33,18 @@ void predict()
 // Main routine.
 int main(int argc, char **argv)
 {   
-    // Initialize the framework and input handler
+    // Initialize the framework
     framework.initialize(argc, argv);
+    
+    // Initialize the inputs
     input_handler.initialize(&camera);
+
+    // Allocate a terrain object
+    terrain.initialize("./data/heightmap.png", 8.0);
     
-    glutDisplayFunc(drawScene);
-    
-    setup();
+    // Initialize the mesh
+    renderer.initialize(&terrain, &camera);
+
+    // Run the framework
     framework.run();
 }

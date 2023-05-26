@@ -49,11 +49,11 @@ Renderer::~Renderer()
     Renderer::instance = nullptr;
 }
 
-void Renderer::initializeMesh(Terrain *terrain)
+void Renderer::initializeMesh()
 {
     // Bind the vertex array object for the mesh
     glBindVertexArray(vao[MESH]); 
-
+    
     // Generate the vertex buffer objects
     glGenBuffers(2, vbo);
     
@@ -208,15 +208,24 @@ void Renderer::initializeSun()
     glColorPointer(3, GL_FLOAT, 0, (GLvoid*)(sun_vertices.size()*sizeof(float))); 
 }
 
-void Renderer::initialize(Terrain *terrain)
+void Renderer::initialize(Terrain *terrain, Camera *camera)
 {
+    // Set the terrain
+    this->terrain = terrain;
+    
+    // Set the camera
+    this->camera = camera;
+
     // Generate the vertex array objects; we need 2 objects: MESH and SUN
     glGenVertexArrays(3, vao);
-    this->initializeMesh(terrain);
+    this->initializeMesh();
     this->initializeSun();
-
+    
     // Set the glut timer callback for the sun animaton
     glutTimerFunc(100, Renderer::timerCallback, 0);
+
+    glutDisplayFunc(Renderer::draw);
+
 }
 
 void Renderer::timerCallback(int value)
@@ -265,14 +274,29 @@ void Renderer::moveSun()
 }
 
 void Renderer::draw()
-{    
-    glBindVertexArray(vao[MESH]);
-    glEnable(GL_PRIMITIVE_RESTART);                                          // Enable primitive restart
-    glDrawElements(GL_QUAD_STRIP, mesh_indices.size(), GL_UNSIGNED_INT, 0);  // Draw the triangles
-    glDisable(GL_PRIMITIVE_RESTART);                                         // Disable primitive restart
+{   
+
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glColor3f(1.0, 1.0, 1.0);
     
-    glBindVertexArray(vao[SUN]);
-    glEnable(GL_PRIMITIVE_RESTART);                                         // Enable primitive restart
-    glDrawElements(GL_TRIANGLE_STRIP, sun_indices.size(), GL_UNSIGNED_INT, 0);  // Draw the triangles
+    // Set the modelview matrix
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+    
+    // Update the camera based on the inputs
+    instance->camera->update();
+    
+    // Draw the terrain
+    glBindVertexArray(instance->vao[MESH]);
+    glEnable(GL_PRIMITIVE_RESTART);                                                         // Enable primitive restart
+    glDrawElements(GL_QUAD_STRIP, instance->mesh_indices.size(), GL_UNSIGNED_INT, 0);       // Draw the triangles
+    glDisable(GL_PRIMITIVE_RESTART);                                                        // Disable primitive restart
+    
+    // Draw the sun
+    glBindVertexArray(instance->vao[SUN]);
+    glEnable(GL_PRIMITIVE_RESTART);                                                         // Enable primitive restart
+    glDrawElements(GL_TRIANGLE_STRIP, instance->sun_indices.size(), GL_UNSIGNED_INT, 0);    // Draw the triangles
     glDisable(GL_PRIMITIVE_RESTART);
+
+    glutSwapBuffers();
 }

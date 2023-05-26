@@ -28,6 +28,24 @@ void GlutFramework::initialize(int argc, char** argv)
     
     glewExperimental = GL_TRUE;
     glewInit();
+
+     // Set the clear color for the color buffer to white with 0 alpha (fully opaque)
+    glClearColor(0.0, 0.0, 0.0, 0.0);
+    
+    // Set polygon mode to be not filled
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    
+    // Enable the depth test to ensure that polygons that are behind others are not drawn
+    glEnable(GL_DEPTH_TEST);
+    
+    // // Enable lighting calculations for polygons
+    // glEnable(GL_LIGHTING);
+    
+    // // Enable light source 0
+    // glEnable(GL_LIGHT0);
+    
+    // // Enable automatic normalization of surface normals to unit length
+    // glEnable(GL_NORMALIZE);
 }
 
 // OpenGL window reshape routine.
