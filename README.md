@@ -1,1 +1,1 @@
-# Landscape-Generator
+# EarthCraft
