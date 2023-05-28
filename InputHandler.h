@@ -2,6 +2,7 @@
 #define INPUTHANDLER_H
 
 #include "Camera.h"
+#include "Renderer.h"
 
 class InputHandler
 {
@@ -9,7 +10,7 @@ class InputHandler
         InputHandler();
         ~InputHandler();
         
-        void initialize(Camera *camera);
+        void initialize(Camera *camera, Renderer *renderer);
         void handleKeyboard();
         static void handleRegularKeyPress(unsigned char key, int x, int y);
         static void handleRegularKeyRelease(unsigned char key, int x, int y);
@@ -22,6 +23,7 @@ class InputHandler
     private:
         static InputHandler *instance;  // used as a trick to access the InputHandler object from the static callback functions
         Camera *camera;                 // a reference to the camera object
+        Renderer *renderer;             // a reference to the renderer object
         
         bool keys[256];                 // an array to keep track of regular key presses
         bool special_keys[256];         // an array to keep track of special key presses

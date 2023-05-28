@@ -8,6 +8,7 @@ class Camera
         Camera(GLdouble x, GLdouble y, GLdouble z, GLdouble alfa, GLdouble beta, GLdouble movement_speed, GLdouble rotation_speed);
         ~Camera();
         
+        void setPosition(GLdouble x, GLdouble y, GLdouble z);
         void moveForward();
         void moveBackward();
         void moveLeft();

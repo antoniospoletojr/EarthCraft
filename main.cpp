@@ -37,10 +37,10 @@ int main(int argc, char **argv)
     framework.initialize(argc, argv);
     
     // Initialize the inputs
-    input_handler.initialize(&camera);
-
+    input_handler.initialize(&camera, &renderer);
+    
     // Allocate a terrain object
-    terrain.initialize("./data/heightmap.png", 8.0);
+    terrain.initialize("./data/heightmap.png", 16.0);
     
     // Initialize the mesh
     renderer.initialize(&terrain, &camera);

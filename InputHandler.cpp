@@ -16,9 +16,11 @@ InputHandler::~InputHandler()
     InputHandler::instance = nullptr;
 }
 
-void InputHandler::initialize(Camera *camera)
+void InputHandler::initialize(Camera *camera, Renderer *renderer)
 {
     this->camera = camera;
+    this->renderer = renderer;
+
     glutKeyboardFunc(InputHandler::handleRegularKeyPress);
     glutKeyboardUpFunc(InputHandler::handleRegularKeyRelease);
     glutSpecialFunc(InputHandler::handleSpecialKeyPress);
@@ -72,7 +74,7 @@ void InputHandler::handleKeyboard()
             glutFullScreen();
         else
         {
-            glutReshapeWindow(700, 700);
+            glutReshapeWindow(960, 540);
             glutPositionWindow(50, 50);
         }
         keys['f'] = false;
@@ -87,7 +89,15 @@ void InputHandler::handleKeyboard()
         else
             glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
         keys['p'] = false;
-    }  
+    }
+
+    // If enter is pressed
+    if (keys[13])
+    {
+        // Toggle the rendering mode
+        renderer->toggleSplashscreen();
+        keys[13] = false;
+    }
 }
 
 void InputHandler::handleRegularKeyPress(unsigned char key, int x, int y)

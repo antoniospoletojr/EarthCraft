@@ -38,14 +38,17 @@ void GlutFramework::initialize(int argc, char** argv)
     // Enable the depth test to ensure that polygons that are behind others are not drawn
     glEnable(GL_DEPTH_TEST);
     
+    // Enable 2D texturing
+    glEnable(GL_TEXTURE_2D);
+    
     // // Enable lighting calculations for polygons
     // glEnable(GL_LIGHTING);
     
     // // Enable light source 0
     // glEnable(GL_LIGHT0);
     
-    // // Enable automatic normalization of surface normals to unit length
-    // glEnable(GL_NORMALIZE);
+    // Enable automatic normalization of surface normals to unit length
+    glEnable(GL_NORMALIZE);
 }
 
 // OpenGL window reshape routine.
@@ -61,7 +64,7 @@ void GlutFramework::resize(int w, int h)
     glLoadIdentity();
     
     // Set up a perspective projection with a field of view of 118 degrees, an aspect ratio of w/h, and a near/far clipping plane of 30.0 and 100.0 respectively.
-    gluPerspective(50, (GLfloat)w / h, 1.0, 5000.0);
+    gluPerspective(50, (GLfloat)w / h, 1.0, 10000.0);
     
     // Switch back to the modelview matrix.
     glMatrixMode(GL_MODELVIEW);
