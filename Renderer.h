@@ -22,9 +22,9 @@ class Renderer
         ~Renderer();
         
         void initialize(Terrain *terrain, Camera *camera);
-        void toggleSplashscreen();
-
-        
+        void incrementMenuPage();
+        short getCurrentMenuPage();
+    
     private:
         static Renderer* instance;
         Camera *camera;
@@ -38,6 +38,7 @@ class Renderer
         
         float mesh_dim;
         bool splashscreen_playing = true;
+        short current_menu_page = 0; // keeps track of the current page in the menu
 
         GLuint textureID;
         cv::VideoCapture splashscreen;
@@ -46,10 +47,14 @@ class Renderer
         void initializeMesh();
         void initializeSun();
         void initializeSplashscreen();
+        
         void moveSun();
+
         static void drawMesh();
         static void drawSun();
         static void drawSplashscreen();
+        static void drawCanvas();
+        
         static void timerCallback(int value);
         static void draw();
 };

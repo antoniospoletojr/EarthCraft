@@ -2,8 +2,7 @@
 #include <cmath>
 #include "Camera.h"
 #include <stdio.h>
-
-#define LOS_DISTANCE 2
+#include "Constants.h"
 
 // Constructor
 Camera::Camera()

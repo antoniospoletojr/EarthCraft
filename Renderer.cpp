@@ -8,10 +8,8 @@
 #include "random"
 #include "Terrain.h"
 #include "Renderer.h"
+#include "Constants.h"
 
-#define MESH 0
-#define SUN 1
-#define GUI 2
 
 using namespace std;
 
@@ -345,6 +343,19 @@ void Renderer::moveSun()
     glBindVertexArray(0);
 }
 
+void Renderer::incrementMenuPage()
+{
+    current_menu_page++;
+    // If the current page is the last one, go back to the first one
+    if (current_menu_page > 4)
+        current_menu_page = -1;
+}
+
+short Renderer::getCurrentMenuPage()
+{
+    return current_menu_page;
+}
+
 void Renderer::timerCallback(int value)
 {  
     if (instance->splashscreen_playing)
@@ -415,16 +426,16 @@ void Renderer::drawSplashscreen()
         glBindVertexArray(0);
         
         glBindTexture(GL_TEXTURE_2D, 0);
-        
-        // Restore the previous projection matrix
+
+        // Restore the previous projectiosplashscreen_playingn matrix
         glMatrixMode(GL_PROJECTION);
         glPopMatrix();
     }
 }
 
-void Renderer::toggleSplashscreen()
+void Renderer::drawCanvas()
 {
-    instance->splashscreen_playing = !instance->splashscreen_playing;
+    
 }
 
 void Renderer::draw()
@@ -439,18 +450,30 @@ void Renderer::draw()
     // Update the camera based on the inputs
     instance->camera->update();
     
-    if (instance->splashscreen_playing)
+    // Switch on the current menu page
+    switch (instance->getCurrentMenuPage())
     {
-        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-        // Set the camera position to the origin
-        instance->camera->reset();
-        instance->drawSplashscreen();
-    }
-    else
-    {
-        // Set the camera position to the origin
-        instance->drawMesh();
-        instance->drawSun();
+        case 0:
+            instance->drawSplashscreen();
+            break;
+        case 1:
+            instance->drawSplashscreen();
+            break;
+        case 2:
+            instance->drawSplashscreen();
+            break;
+        case 3:
+            instance->drawSplashscreen();
+            break;
+        case 4:
+            instance->drawSplashscreen();
+            break;
+        case -1:
+            instance->drawMesh();
+            instance->drawSun();
+            break;
+        default:
+            break;
     }
 
     glutSwapBuffers();

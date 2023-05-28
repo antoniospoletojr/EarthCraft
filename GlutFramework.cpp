@@ -33,7 +33,7 @@ void GlutFramework::initialize(int argc, char** argv)
     glClearColor(0.0, 0.0, 0.0, 0.0);
     
     // Set polygon mode to be not filled
-    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     
     // Enable the depth test to ensure that polygons that are behind others are not drawn
     glEnable(GL_DEPTH_TEST);

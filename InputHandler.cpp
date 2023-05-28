@@ -1,5 +1,8 @@
 #include <GL/freeglut.h>
 #include "InputHandler.h"
+#include "Constants.h"
+
+
 
 InputHandler* InputHandler::instance = nullptr;
 
@@ -34,7 +37,7 @@ void InputHandler::initialize(Camera *camera, Renderer *renderer)
 void InputHandler::handleKeyboard()
 {
     // If the splashscreen is not shown then handle the movement keyboard inputs
-    if(!is_splashscreen_shown)
+    if (!(renderer->getCurrentMenuPage() >= 0))
     {
         // Increment the x and z positions. Notice how the cos is 1 when I'm moving on the z axis and the sin is 1 when I'm moving on the x axis.
         if (keys['w'])
@@ -94,20 +97,43 @@ void InputHandler::handleKeyboard()
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
         keys['p'] = false;
     }
-
-    // If enter is pressed toggle the splashscreen on/off
+    
+    // If enter is pressed travel to the next page in the menu
     if (keys[13])
     {
-        is_splashscreen_shown = !is_splashscreen_shown;
-        if (is_splashscreen_shown)
+        
+        renderer->incrementMenuPage();
+        printf("Enter pressed: %d\n", renderer->getCurrentMenuPage());
+
+        if (renderer->getCurrentMenuPage() == LANDIND_SCREEN)
         {
-            renderer->toggleSplashscreen();
+            // Restore the polygon rasterization mode to filled
+            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+            // Set the camera position to the origin
+            instance->camera->reset();
         }
-        else
+        else if (renderer->getCurrentMenuPage() == RIDGES_SCREEN)
         {
-            renderer->toggleSplashscreen();
+            
+        }
+        else if (renderer->getCurrentMenuPage() == PEAKS_SCREEN)
+        {
+
+        }
+        else if (renderer->getCurrentMenuPage() == RIVERS_SCREEN)
+        {
+
+        }
+        else if (renderer->getCurrentMenuPage() == BASINS_SCREEN)
+        {
+            
+        }
+        else // Otherwise you are in the rendering screen
+        {
+            // Set the camera position for the rendering screen
             camera->setPosition(0,500,2000);
         }
+
         keys[13] = false;
     }
 }
@@ -148,7 +174,7 @@ void InputHandler::mouseClick(int button, int state, int x, int y)
 void InputHandler::mouseMotion(int x, int y)
 {
     // If the splashscreen is not shown then update the camera angles based on the mouse movement
-    if (!instance->is_splashscreen_shown)
+    if (!(instance->renderer->getCurrentMenuPage() >= 0))
     {
         if (instance->is_mouse_down)
         {
