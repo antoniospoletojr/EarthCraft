@@ -50,7 +50,6 @@ class Renderer
         static void drawMesh();
         static void drawSun();
         static void drawSplashscreen();
-        static void loadVideoFrames();
         static void timerCallback(int value);
         static void draw();
 };

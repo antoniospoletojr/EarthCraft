@@ -20,7 +20,7 @@ void InputHandler::initialize(Camera *camera, Renderer *renderer)
 {
     this->camera = camera;
     this->renderer = renderer;
-
+    
     glutKeyboardFunc(InputHandler::handleRegularKeyPress);
     glutKeyboardUpFunc(InputHandler::handleRegularKeyRelease);
     glutSpecialFunc(InputHandler::handleSpecialKeyPress);
@@ -33,34 +33,38 @@ void InputHandler::initialize(Camera *camera, Renderer *renderer)
 // Handle keyboard input
 void InputHandler::handleKeyboard()
 {
-    // Increment the x and z positions. Notice how the cos is 1 when I'm moving on the z axis and the sin is 1 when I'm moving on the x axis.
-    if (keys['w'])
-        camera->moveForward();
-    if (keys['s'])
-        camera->moveBackward();
-    if (keys['a'])
-        camera->moveLeft();
-    if (keys['d'])
-        camera->moveRight();
+    // If the splashscreen is not shown then handle the movement keyboard inputs
+    if(!is_splashscreen_shown)
+    {
+        // Increment the x and z positions. Notice how the cos is 1 when I'm moving on the z axis and the sin is 1 when I'm moving on the x axis.
+        if (keys['w'])
+            camera->moveForward();
+        if (keys['s'])
+            camera->moveBackward();
+        if (keys['a'])
+            camera->moveLeft();
+        if (keys['d'])
+            camera->moveRight();
 
-    // If Spacebar is pressed then increase the y value of the camera
-    if (keys[32])
-        camera->moveUp();
-    // If left Shift is pressed then decrease the y value of the camera
-    if (special_keys[GLUT_KEY_SHIFT_L])
-        camera->moveDown();
-    
-    // Rotate the camera horizontal_angle
-    if (special_keys[GLUT_KEY_LEFT])
-       camera->rotateLeft();
-    if (special_keys[GLUT_KEY_RIGHT])
-       camera->rotateRight();
-    
-    // Rotate the camera vertical_angle
-    if (special_keys[GLUT_KEY_UP])
-        camera->rotateUp();
-    if (special_keys[GLUT_KEY_DOWN])
-        camera->rotateDown();
+        // If Spacebar is pressed then increase the y value of the camera
+        if (keys[32])
+            camera->moveUp();
+        // If left Shift is pressed then decrease the y value of the camera
+        if (special_keys[GLUT_KEY_SHIFT_L])
+            camera->moveDown();
+        
+        // Rotate the camera horizontal_angle
+        if (special_keys[GLUT_KEY_LEFT])
+        camera->rotateLeft();
+        if (special_keys[GLUT_KEY_RIGHT])
+        camera->rotateRight();
+        
+        // Rotate the camera vertical_angle
+        if (special_keys[GLUT_KEY_UP])
+            camera->rotateUp();
+        if (special_keys[GLUT_KEY_DOWN])
+            camera->rotateDown();
+    }
      
      // Exit the program if the Esc key is pressed.
     if (keys[27] || keys['q'])
@@ -85,17 +89,25 @@ void InputHandler::handleKeyboard()
     {
         is_polygon_filled = !is_polygon_filled;
         if (is_polygon_filled)
-            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-        else
             glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+        else
+            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
         keys['p'] = false;
     }
 
-    // If enter is pressed
+    // If enter is pressed toggle the splashscreen on/off
     if (keys[13])
     {
-        // Toggle the rendering mode
-        renderer->toggleSplashscreen();
+        is_splashscreen_shown = !is_splashscreen_shown;
+        if (is_splashscreen_shown)
+        {
+            renderer->toggleSplashscreen();
+        }
+        else
+        {
+            renderer->toggleSplashscreen();
+            camera->setPosition(0,500,2000);
+        }
         keys[13] = false;
     }
 }
@@ -121,7 +133,7 @@ void InputHandler::handleSpecialKeyRelease(int key, int x, int y)
 }
 
 void InputHandler::mouseClick(int button, int state, int x, int y)
-{
+{    
     if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN)
     {
         instance->is_mouse_down = true;
@@ -135,15 +147,19 @@ void InputHandler::mouseClick(int button, int state, int x, int y)
 // Mouse motion callback routine.
 void InputHandler::mouseMotion(int x, int y)
 {
-    if (instance->is_mouse_down)
+    // If the splashscreen is not shown then update the camera angles based on the mouse movement
+    if (!instance->is_splashscreen_shown)
     {
-        // Update the camera horizontal_angle based on the mouse movement
-        instance->camera->rotateLeftRight((x - instance->mouse_x)*0.1);
-        instance->mouse_x = x;
-        
-        // Update the camera vertical_angle based on the mouse movement
-        instance->camera->rotateUpDown((y - instance->mouse_y)*0.1);
-        instance->mouse_y = y;
+        if (instance->is_mouse_down)
+        {
+            // Update the camera horizontal_angle based on the mouse movement
+            instance->camera->rotateLeftRight((x - instance->mouse_x)*0.1);
+            instance->mouse_x = x;
+            
+            // Update the camera vertical_angle based on the mouse movement
+            instance->camera->rotateUpDown((y - instance->mouse_y)*0.1);
+            instance->mouse_y = y;
+        }
     }
 }
 

@@ -228,7 +228,10 @@ void Renderer::initializeSun()
 
 void Renderer::initializeSplashscreen()
 {
-    
+    // Load the splashscreen video and the first frame
+    instance->splashscreen.open("intro.mp4");
+    instance->splashscreen.read(instance->splashscreen_frame);
+
     // Generate the vertex array object for the GUI
     glGenVertexArrays(1, &objects[GUI].vao);
     // Bind the vertex array object for the GUI
@@ -277,7 +280,7 @@ void Renderer::initializeSplashscreen()
     glDisableClientState(GL_VERTEX_ARRAY);
     glDisableClientState(GL_COLOR_ARRAY);
     glDisableClientState(GL_TEXTURE_COORD_ARRAY);
-
+    
     glGenTextures(1, &textureID);
     glBindTexture(GL_TEXTURE_2D, textureID);
 }
@@ -298,7 +301,6 @@ void Renderer::initialize(Terrain *terrain, Camera *camera)
     this->initializeMesh();
     this->initializeSun();
     this->initializeSplashscreen();
-    loadVideoFrames();
 
     // Set the glut timer callback for the sun animaton
     glutTimerFunc(100, Renderer::timerCallback, 0);
@@ -383,10 +385,7 @@ void Renderer::drawSun()
 void Renderer::drawSplashscreen()
 {
     if (!instance->splashscreen_frame.empty())
-    {   
-        // Set the camera position to the origin
-        instance->camera->setPosition(0, 0, 0);
-        
+    {           
         // Save the previous projection matrix
         glMatrixMode(GL_PROJECTION);
         glPushMatrix();
@@ -428,12 +427,6 @@ void Renderer::toggleSplashscreen()
     instance->splashscreen_playing = !instance->splashscreen_playing;
 }
 
-void Renderer::loadVideoFrames()
-{
-    instance->splashscreen.open("intro.mp4");
-    instance->splashscreen.read(instance->splashscreen_frame);
-}
-
 void Renderer::draw()
 {   
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -449,11 +442,13 @@ void Renderer::draw()
     if (instance->splashscreen_playing)
     {
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+        // Set the camera position to the origin
+        instance->camera->reset();
         instance->drawSplashscreen();
     }
     else
     {
-        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+        // Set the camera position to the origin
         instance->drawMesh();
         instance->drawSun();
     }

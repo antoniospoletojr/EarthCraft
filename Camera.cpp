@@ -9,7 +9,7 @@
 Camera::Camera()
 {
     position[0] = 0;
-    position[1] = 500;
+    position[1] = 0;
     position[2] = 0;
     alfa = 0.0f;
     beta = 0.0f;
@@ -31,6 +31,17 @@ Camera::Camera(GLdouble x, GLdouble y, GLdouble z, GLdouble alfa, GLdouble beta,
 
 // Destructor
 Camera::~Camera(){}
+
+void Camera::reset()
+{
+    position[0] = 0;
+    position[1] = 0;
+    position[2] = 0;
+    alfa = 0.0f;
+    beta = 0.0f;
+    movement_speed = 4.0f;
+    rotation_speed = 1.5f;
+}
 
 // Set the position of the camera
 void Camera::setPosition(GLdouble x, GLdouble y, GLdouble z)
