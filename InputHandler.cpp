@@ -167,14 +167,16 @@ void InputHandler::mouseClick(int button, int state, int x, int y)
         instance->mouse_y = y;
     }
     else if (button == GLUT_LEFT_BUTTON && state == GLUT_UP)
+    {
         instance->is_mouse_down = false;
+    }
 }
 
 // Mouse motion callback routine.
 void InputHandler::mouseMotion(int x, int y)
 {
-    // If the splashscreen is not shown then update the camera angles based on the mouse movement
-    if (!(instance->renderer->getCurrentMenuPage() >= 0))
+    // If the rendering screen is shown then update the camera angles based on the mouse movement
+    if (instance->renderer->getCurrentMenuPage() == RENDERING_SCREEN)
     {
         if (instance->is_mouse_down)
         {
@@ -185,6 +187,17 @@ void InputHandler::mouseMotion(int x, int y)
             // Update the camera vertical_angle based on the mouse movement
             instance->camera->rotateUpDown((y - instance->mouse_y)*0.1);
             instance->mouse_y = y;
+        }
+    }
+    
+    if (instance->renderer->getCurrentMenuPage() == RIDGES_SCREEN)
+    {
+        if (instance->is_mouse_down)
+        {
+            float width = glutGet(GLUT_WINDOW_WIDTH);
+            float height = glutGet(GLUT_WINDOW_HEIGHT);
+            instance->renderer->sketch(x/width, 1-y/height);
+            printf("x: %f, y: %f\n", x / width, 1 - y / height);
         }
     }
 }

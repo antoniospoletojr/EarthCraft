@@ -13,6 +13,7 @@ typedef struct Object
     GLuint tbo;
     GLuint ibo;
     GLuint cbo;
+    GLuint texture;
 } Object;
 
 class Renderer
@@ -24,6 +25,7 @@ class Renderer
         void initialize(Terrain *terrain, Camera *camera);
         void incrementMenuPage();
         short getCurrentMenuPage();
+        void sketch(float x, float y);
     
     private:
         static Renderer* instance;
@@ -35,18 +37,21 @@ class Renderer
         std::vector<float> mesh_vertices, sun_vertices, planet_vertices;    // an array to keep track of the vertices of the terrain
         std::vector<float> mesh_colors, sun_colors, planet_colors;          // an array to keep track of the colors of the terrain
         std::vector<int> mesh_indices, sun_indices, planet_indices;         // an array to keep track of the indices of the terrain
-        
-        float mesh_dim;
-        bool splashscreen_playing = true;
-        short current_menu_page = 0; // keeps track of the current page in the menu
+        std::vector<float> sketch_vertices, sketch_colors;
 
-        GLuint textureID;
+        float mesh_dim;
+        short current_menu_page = 0; // keeps track of the current page in the menu
+        
         cv::VideoCapture splashscreen;
+        cv::VideoCapture canvas;
         cv::Mat splashscreen_frame;
+        cv::Mat canvas_frame;
 
         void initializeMesh();
         void initializeSun();
         void initializeSplashscreen();
+        void initializeCanvas();
+        void initializeSketch();
         
         void moveSun();
 
@@ -54,6 +59,7 @@ class Renderer
         static void drawSun();
         static void drawSplashscreen();
         static void drawCanvas();
+        static void drawSketch();
         
         static void timerCallback(int value);
         static void draw();

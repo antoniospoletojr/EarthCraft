@@ -28,6 +28,7 @@ Renderer::~Renderer()
     // Disable the vertex arrays
     glDisableClientState(GL_VERTEX_ARRAY);
     glDisableClientState(GL_COLOR_ARRAY);
+    glDisableClientState(GL_TEXTURE_COORD_ARRAY);
     
     // Unbind any buffers
     glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -37,8 +38,24 @@ Renderer::~Renderer()
     mesh_vertices.clear();
     mesh_colors.clear();
     mesh_indices.clear();
+    sun_vertices.clear();
+    sun_colors.clear();
+    sun_indices.clear();
+    sketch_vertices.clear();
     objects.clear();
-
+    
+    // Delete the vertex array objects
+    glDeleteVertexArrays(1, &objects[MESH].vao);
+    glDeleteVertexArrays(1, &objects[SUN].vao);
+    glDeleteVertexArrays(1, &objects[SPLASHSCREEN].vao);
+    glDeleteVertexArrays(1, &objects[CANVAS].vao);
+    
+    // Deallocate opencv objects
+    splashscreen.release();
+    canvas.release();
+    splashscreen_frame.release();
+    canvas_frame.release();
+    
     Renderer::instance = nullptr;
 }
 
@@ -49,8 +66,9 @@ void Renderer::initializeMesh()
     // Bind the vertex array object for the mesh
     glBindVertexArray(objects[MESH].vao);
 
-    // Generate the vertex buffer objects
+    // Generate the buffer objects
     glGenBuffers(1, &objects[MESH].vbo);
+    glGenBuffers(1, &objects[MESH].cbo);
     glGenBuffers(1, &objects[MESH].ibo);
     
     // Retrieve the map
@@ -106,17 +124,15 @@ void Renderer::initializeMesh()
     // Use maximum unsigned int as restart index
     glPrimitiveRestartIndex(0xFFFFFFFFu);
     
-    // Bind the vertex buffer object
+    // Bind and fill the vertex buffer object
     glBindBuffer(GL_ARRAY_BUFFER, objects[MESH].vbo);
-    // Reserve space for the vertex buffer
-    glBufferData(GL_ARRAY_BUFFER, (mesh_vertices.size()+mesh_colors.size())*sizeof(float), NULL, GL_STATIC_DRAW);
-    // Copy vertex coordinates data into first half of vertex buffer.
-    glBufferSubData(GL_ARRAY_BUFFER, 0, mesh_vertices.size()*sizeof(float), mesh_vertices.data());
-    // Copy vertex color data into second half of vertex buffer.
-    glBufferSubData(GL_ARRAY_BUFFER, mesh_vertices.size()*sizeof(float), mesh_colors.size()*sizeof(float), mesh_colors.data());
-    // Specify vertex and color pointers to the start of the respective data
+    glBufferData(GL_ARRAY_BUFFER, mesh_vertices.size() * sizeof(float), mesh_vertices.data(), GL_STATIC_DRAW);
     glVertexPointer(3, GL_FLOAT, 0, 0);
-    glColorPointer(3, GL_FLOAT, 0, (GLvoid*)(mesh_vertices.size()*sizeof(float)));
+
+    // Bind and fill the color buffer object
+    glBindBuffer(GL_ARRAY_BUFFER, objects[MESH].cbo);
+    glBufferData(GL_ARRAY_BUFFER, mesh_colors.size() * sizeof(float), mesh_colors.data(), GL_STATIC_DRAW);
+    glColorPointer(3, GL_FLOAT, 0, 0);
     
     // Bind and fill indices buffer.
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, objects[MESH].ibo);
@@ -134,11 +150,12 @@ void Renderer::initializeSun()
     glGenVertexArrays(1, &objects[SUN].vao);
     // Bind the vertex array object for the sun
     glBindVertexArray(objects[SUN].vao);
-    
-    // Generate the vertex buffer objects
-    glGenBuffers(1, &objects[SUN].vbo);
-    glGenBuffers(1, &objects[SUN].ibo);
 
+    // Generate the buffer objects
+    glGenBuffers(1, &objects[SUN].vbo);
+    glGenBuffers(1, &objects[SUN].cbo);
+    glGenBuffers(1, &objects[SUN].ibo);
+    
     Assimp::Importer importer;
     
     // Load the .obj file
@@ -200,47 +217,44 @@ void Renderer::initializeSun()
     // Enable two vertex arrays: co-ordinates and color.
     glEnableClientState(GL_VERTEX_ARRAY);
     glEnableClientState(GL_COLOR_ARRAY);
-    
-    // Bind the vertex buffer object
+
+    // Bind and fill the vertex buffer object
     glBindBuffer(GL_ARRAY_BUFFER, objects[SUN].vbo);
-    // Reserve space for the vertex buffer
-    glBufferData(GL_ARRAY_BUFFER, (sun_vertices.size() + sun_colors.size()) * sizeof(GLfloat), NULL, GL_STATIC_DRAW);
-    // Copy vertex coordinates data into first half of vertex buffer.
-    glBufferSubData(GL_ARRAY_BUFFER, 0, sun_vertices.size()*sizeof(float), sun_vertices.data());
-    // Copy vertex color data into second half of vertex buffer.
-    glBufferSubData(GL_ARRAY_BUFFER, sun_vertices.size()*sizeof(float), sun_colors.size() * sizeof(float), sun_colors.data());
-    // Specify vertex and color pointers to the start of the respective data
-    glVertexPointer(3, GL_FLOAT, 0, 0); 
-    glColorPointer(3, GL_FLOAT, 0, (GLvoid*)(sun_vertices.size()*sizeof(float)));
-    
+    glBufferData(GL_ARRAY_BUFFER, sun_vertices.size() * sizeof(float), sun_vertices.data(), GL_STATIC_DRAW);
+    glVertexPointer(3, GL_FLOAT, 0, 0);
+
+    // Bind and fill the color buffer object
+    glBindBuffer(GL_ARRAY_BUFFER, objects[SUN].cbo);
+    glBufferData(GL_ARRAY_BUFFER, sun_colors.size() * sizeof(float), sun_colors.data(), GL_STATIC_DRAW);
+    glColorPointer(3, GL_FLOAT, 0, 0);
+
     // Bind and fill indices buffer.
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, objects[SUN].ibo);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sun_indices.size() * sizeof(GLuint), sun_indices.data(), GL_STATIC_DRAW);
-    
+
     // Unbind everything
     glBindVertexArray(0);
     glDisableClientState(GL_VERTEX_ARRAY);
     glDisableClientState(GL_COLOR_ARRAY);
-    
 }
 
 void Renderer::initializeSplashscreen()
 {
     // Load the splashscreen video and the first frame
-    instance->splashscreen.open("intro.mp4");
+    instance->splashscreen.open("splashscreen.mp4");
     instance->splashscreen.read(instance->splashscreen_frame);
-
-    // Generate the vertex array object for the GUI
-    glGenVertexArrays(1, &objects[GUI].vao);
-    // Bind the vertex array object for the GUI
-    glBindVertexArray(objects[GUI].vao);
+    
+    // Generate the vertex array object for the SPLASHSCREEN
+    glGenVertexArrays(1, &objects[SPLASHSCREEN].vao);
+    // Bind the vertex array object for the SPLASHSCREEN
+    glBindVertexArray(objects[SPLASHSCREEN].vao);
     
     // Generate the vertex buffer objects
-    glGenBuffers(1, &objects[GUI].vbo);
+    glGenBuffers(1, &objects[SPLASHSCREEN].vbo);
     // Generate the texture buffer objects
-    glGenBuffers(1, &objects[GUI].tbo);
+    glGenBuffers(1, &objects[SPLASHSCREEN].tbo);
     // Generate the texture buffer objects
-    glGenBuffers(1, &objects[GUI].cbo);
+    glGenBuffers(1, &objects[SPLASHSCREEN].cbo);
     
     // Create vertex data for the quad
     std::vector<GLfloat> vertices(8);    
@@ -253,21 +267,21 @@ void Renderer::initializeSplashscreen()
     glEnableClientState(GL_TEXTURE_COORD_ARRAY);
     
     // Bind the vertex buffer object
-    glBindBuffer(GL_ARRAY_BUFFER, objects[GUI].vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, objects[SPLASHSCREEN].vbo);
     // Copy data into the vertex buffer
     glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(GLfloat), NULL, GL_STATIC_DRAW);
     // Specify vertex pointer location
     glVertexPointer(2, GL_FLOAT, 0, 0);
-
+    
     // Bind the color buffer object
-    glBindBuffer(GL_ARRAY_BUFFER, objects[GUI].cbo);
+    glBindBuffer(GL_ARRAY_BUFFER, objects[SPLASHSCREEN].cbo);
     // Copy data into the color buffer
     glBufferData(GL_ARRAY_BUFFER, colors.size() * sizeof(GLfloat), colors.data(), GL_STATIC_DRAW);
     // Specify color pointer location
     glColorPointer(4, GL_FLOAT, 0, 0);
     
     // Bind the texture buffer object
-    glBindBuffer(GL_ARRAY_BUFFER, objects[GUI].tbo);
+    glBindBuffer(GL_ARRAY_BUFFER, objects[SPLASHSCREEN].tbo);
     // Copy data into the texture buffer
     glBufferData(GL_ARRAY_BUFFER, texture_coords.size() * sizeof(GLfloat), texture_coords.data(), GL_STATIC_DRAW);
     // Specify texture pointer location
@@ -279,10 +293,96 @@ void Renderer::initializeSplashscreen()
     glDisableClientState(GL_COLOR_ARRAY);
     glDisableClientState(GL_TEXTURE_COORD_ARRAY);
     
-    glGenTextures(1, &textureID);
-    glBindTexture(GL_TEXTURE_2D, textureID);
+    glGenTextures(1, &objects[SPLASHSCREEN].texture);
 }
     
+
+void Renderer::initializeCanvas()
+{
+    // Load the splashscreen video and the first frame
+    instance->canvas.open("canvas.mp4");
+    instance->canvas.read(instance->canvas_frame);
+
+    // Generate the vertex array object for the canvas
+    glGenVertexArrays(1, &objects[CANVAS].vao);
+    // Bind the vertex array object for the canvas
+    glBindVertexArray(objects[CANVAS].vao);
+    
+    // Generate the vertex buffer objects
+    glGenBuffers(1, &objects[CANVAS].vbo);
+    // Generate the texture buffer objects
+    glGenBuffers(1, &objects[CANVAS].tbo);
+    // Generate the texture buffer objects
+    glGenBuffers(1, &objects[CANVAS].cbo);
+
+    // Create vertex data for the quad
+    std::vector<GLfloat> vertices(8);
+    std::vector<GLfloat> colors = {1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f};
+    std::vector<GLfloat> texture_coords = {0, 1, 1, 1, 1, 0, 0, 0};
+
+    // Enable the vertex arrays
+    glEnableClientState(GL_VERTEX_ARRAY);
+    glEnableClientState(GL_COLOR_ARRAY);
+    glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+
+    // Bind the vertex buffer object
+    glBindBuffer(GL_ARRAY_BUFFER, objects[CANVAS].vbo);
+    // Copy data into the vertex buffer
+    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(GLfloat), NULL, GL_STATIC_DRAW);
+    // Specify vertex pointer location
+    glVertexPointer(2, GL_FLOAT, 0, 0);
+
+    // Bind the color buffer object
+    glBindBuffer(GL_ARRAY_BUFFER, objects[CANVAS].cbo);
+    // Copy data into the color buffer
+    glBufferData(GL_ARRAY_BUFFER, colors.size() * sizeof(GLfloat), colors.data(), GL_STATIC_DRAW);
+    // Specify color pointer location
+    glColorPointer(4, GL_FLOAT, 0, 0);
+    
+    // Bind the texture buffer object
+    glBindBuffer(GL_ARRAY_BUFFER, objects[CANVAS].tbo);
+    // Copy data into the texture buffer
+    glBufferData(GL_ARRAY_BUFFER, texture_coords.size() * sizeof(GLfloat), texture_coords.data(), GL_STATIC_DRAW);
+    // Specify texture pointer location
+    glTexCoordPointer(2, GL_FLOAT, 0, 0);
+
+    // Unbind everything
+    glBindVertexArray(0);
+    glDisableClientState(GL_VERTEX_ARRAY);
+    glDisableClientState(GL_COLOR_ARRAY);
+    glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+
+    glGenTextures(1, &objects[CANVAS].texture);
+}
+
+void Renderer::initializeSketch()
+{
+    // Generate the vertex array object for the sketch
+    glGenVertexArrays(1, &objects[SKETCH].vao);
+    // Bind the vertex array object for the sketch
+    glBindVertexArray(objects[SKETCH].vao);
+
+    // Generate the buffer objects
+    glGenBuffers(1, &objects[SKETCH].vbo);
+    glGenBuffers(1, &objects[SKETCH].tbo);
+    glGenBuffers(1, &objects[SKETCH].cbo);
+
+    glEnableClientState(GL_VERTEX_ARRAY);
+    glEnableClientState(GL_COLOR_ARRAY);
+
+    // Bind the vertex buffer object
+    glBindBuffer(GL_ARRAY_BUFFER, objects[SKETCH].vbo);
+    glVertexPointer(3, GL_FLOAT, 0, 0);
+    
+    // Bind the color buffer object
+    glBindBuffer(GL_ARRAY_BUFFER, objects[SKETCH].cbo);
+    glColorPointer(3, GL_FLOAT, 0, 0);
+
+    // Unbind everything
+    glBindVertexArray(0);
+    glDisableClientState(GL_VERTEX_ARRAY);
+    glDisableClientState(GL_COLOR_ARRAY);
+}
 
 void Renderer::initialize(Terrain *terrain, Camera *camera)
 {
@@ -292,14 +392,15 @@ void Renderer::initialize(Terrain *terrain, Camera *camera)
     // Set the camera
     this->camera = camera;
     
-    // Allocate space for 3 objects (Mesh, Sun, Splashscreen)
-    objects.resize(3);
+    // Allocate space for 5 objects (Mesh, Sun, Splashscreen, Canvas, Sketch)
+    objects.resize(5);
 
     // Generate the vertex array objects; we need 2 objects: MESH and SUN
     this->initializeMesh();
     this->initializeSun();
     this->initializeSplashscreen();
-
+    this->initializeCanvas();
+    
     // Set the glut timer callback for the sun animaton
     glutTimerFunc(100, Renderer::timerCallback, 0);
     
@@ -356,15 +457,46 @@ short Renderer::getCurrentMenuPage()
     return current_menu_page;
 }
 
+void Renderer::sketch(float x, float y)
+{
+    sketch_vertices.emplace_back(x);
+    sketch_vertices.emplace_back(y);
+    // The sketch must be drawn together with the canvas; to ensure 
+    // that the depth buffer is updated correctly, the sketch is drawn with a non 0 z-coordinate
+    sketch_vertices.emplace_back(0.5);
+    
+    // Set the color to brown
+    sketch_colors.emplace_back(0.6f);
+    sketch_colors.emplace_back(0.3f); 
+    sketch_colors.emplace_back(0.0f);
+}
+
 void Renderer::timerCallback(int value)
-{  
-    if (instance->splashscreen_playing)
+{
+    switch (instance->getCurrentMenuPage())
     {
-        if (!instance->splashscreen.read(instance->splashscreen_frame))
-        {
-            instance->splashscreen.set(cv::CAP_PROP_POS_FRAMES, 0);
-            instance->splashscreen.read(instance->splashscreen_frame);
-        }
+        case LANDIND_SCREEN:
+            if (!instance->splashscreen.read(instance->splashscreen_frame))
+            {
+                instance->splashscreen.set(cv::CAP_PROP_POS_FRAMES, 0);
+                instance->splashscreen.read(instance->splashscreen_frame);
+            }
+            break;
+        case RIDGES_SCREEN:
+            if (!instance->canvas.read(instance->canvas_frame))
+            {
+                instance->canvas.set(cv::CAP_PROP_POS_FRAMES, 0);
+                instance->canvas.read(instance->canvas_frame);
+            }
+            break;
+        case PEAKS_SCREEN:
+            break;
+        case RIVERS_SCREEN:
+            break;
+        case BASINS_SCREEN:
+            break;
+        default:
+            break;
     }
     
     instance->moveSun();
@@ -408,7 +540,7 @@ void Renderer::drawSplashscreen()
         glOrtho(-width/2, width/2, -height/2, height/2, -1, 1);
         
         // Update texture data
-        glBindTexture(GL_TEXTURE_2D, instance->textureID);
+        glBindTexture(GL_TEXTURE_2D, instance->objects[SPLASHSCREEN].texture);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, instance->splashscreen_frame.cols, instance->splashscreen_frame.rows, 0, GL_BGR, GL_UNSIGNED_BYTE, instance->splashscreen_frame.data);
@@ -416,18 +548,18 @@ void Renderer::drawSplashscreen()
         // Update width and height values in a single line
         std::vector<GLfloat> vertices = {-width / 2, -height / 2, width / 2, -height / 2, width / 2, height / 2, -width / 2, height / 2};
         // Bind the vertex buffer object
-        glBindBuffer(GL_ARRAY_BUFFER, instance->objects[GUI].vbo);
+        glBindBuffer(GL_ARRAY_BUFFER, instance->objects[SPLASHSCREEN].vbo);
         // Update the vertex buffer data
         glBufferSubData(GL_ARRAY_BUFFER, 0, vertices.size() * sizeof(GLfloat), vertices.data());
 
         // Render the splash screen
-        glBindVertexArray(instance->objects[GUI].vao);
+        glBindVertexArray(instance->objects[SPLASHSCREEN].vao);
         glDrawArrays(GL_QUADS, 0, 4);
         glBindVertexArray(0);
         
         glBindTexture(GL_TEXTURE_2D, 0);
-
-        // Restore the previous projectiosplashscreen_playingn matrix
+        
+        // Restore the previous projection matrix
         glMatrixMode(GL_PROJECTION);
         glPopMatrix();
     }
@@ -435,7 +567,113 @@ void Renderer::drawSplashscreen()
 
 void Renderer::drawCanvas()
 {
+    if (!instance->canvas_frame.empty())
+    {
+        // Reset the modelview matrix
+        glMatrixMode(GL_MODELVIEW);
+        glLoadIdentity();
+
+        // Save the previous projection matrix
+        glMatrixMode(GL_PROJECTION);
+        glPushMatrix();
+
+        // Set the projection matrix to orthographic
+        float width = glutGet(GLUT_WINDOW_WIDTH);
+        float height = glutGet(GLUT_WINDOW_HEIGHT);
+        glLoadIdentity();
+        glOrtho(0, width, 0, height, -1, 1);
+        
+        // Update texture dataz
+        glBindTexture(GL_TEXTURE_2D, instance->objects[CANVAS].texture);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, instance->canvas_frame.cols, instance->canvas_frame.rows, 0, GL_BGR, GL_UNSIGNED_BYTE, instance->canvas_frame.data);
+        
+        // Update width and height values in a single line
+        std::vector<GLfloat> vertices = {0, 0, width, 0, width, height, 0, height};
+        
+
+        // Render the splash screen
+        glBindVertexArray(instance->objects[CANVAS].vao);
+        // Bind the vertex buffer object
+        glBindBuffer(GL_ARRAY_BUFFER, instance->objects[CANVAS].vbo);
+        // Update the vertex buffer data
+        glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(GLfloat), vertices.data(), GL_STATIC_DRAW);
+
+        glDrawArrays(GL_QUADS, 0, 4);
+
+        glBindVertexArray(0);
+
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        glBindTexture(GL_TEXTURE_2D, 0);
+        
+        // Restore the previous projection matrix
+        glMatrixMode(GL_PROJECTION);
+        glPopMatrix();
+    }
+}
+
+void Renderer::drawSketch()
+{
+    if (!instance->canvas_frame.empty())
+    {
+        // Reset the modelview matrix
+        glMatrixMode(GL_MODELVIEW);
+        glLoadIdentity();
+
+        // Save the previous projection matrix
+        glMatrixMode(GL_PROJECTION);
+        glPushMatrix();
+        
+        // Set the projection matrix to orthographic
+        float width = glutGet(GLUT_WINDOW_WIDTH);
+        float height = glutGet(GLUT_WINDOW_HEIGHT);
+        glLoadIdentity();
+        glOrtho(0, width, 0, height, -1, 1);
+        
+        float *vertices = new float[instance->sketch_vertices.size()];
+        for (int i = 0; i < instance->sketch_vertices.size(); i = i + 3)
+        {
+                vertices[i] = instance->sketch_vertices[i] * width;
+                vertices[i + 1] = instance->sketch_vertices[i + 1] * height;
+                vertices[i + 2] = instance->sketch_vertices[i + 2];
+        }
+        
+        // Render the sketch
+        glBindVertexArray(instance->objects[SKETCH].vao);
+
+        // Enable the vertex arrays
+        glEnableClientState(GL_VERTEX_ARRAY);
+        glEnableClientState(GL_COLOR_ARRAY);
+        glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+        
+        // Bind the vertex buffer object
+        glBindBuffer(GL_ARRAY_BUFFER, instance->objects[SKETCH].vbo);
+        // Update the vertex buffer data for points
+        glBufferData(GL_ARRAY_BUFFER, instance->sketch_vertices.size() * sizeof(GLfloat), vertices, GL_STATIC_DRAW);
+        // Set the vertex attribute pointer for positions
+        glVertexPointer(3, GL_FLOAT, 0, vertices);
+        
+        // Bind the vertex buffer object
+        glBindBuffer(GL_ARRAY_BUFFER, instance->objects[SKETCH].cbo);
+        // Update the vertex buffer data for points
+        glBufferData(GL_ARRAY_BUFFER, instance->sketch_colors.size() * sizeof(GLfloat), instance->sketch_colors.data(), GL_STATIC_DRAW);
+        // Set the vertex attribute pointer for colors
+        glColorPointer(3, GL_FLOAT, 0, instance->sketch_colors.data());
+        
+        // Increment point size
+        glPointSize(3.0f);
+        // Draw the sketch
+        glDrawArrays(GL_POINTS, 0, instance->sketch_vertices.size() / 3);
     
+        
+        // Deallocate memory
+        delete[] vertices;
+    
+        // Restore the previous projection matrix
+        glMatrixMode(GL_PROJECTION);
+        glPopMatrix();
+    }
 }
 
 void Renderer::draw()
@@ -457,16 +695,17 @@ void Renderer::draw()
             instance->drawSplashscreen();
             break;
         case 1:
-            instance->drawSplashscreen();
+            instance->drawCanvas();
+            instance->drawSketch();
             break;
         case 2:
-            instance->drawSplashscreen();
+            instance->drawSketch();
             break;
         case 3:
-            instance->drawSplashscreen();
+            //instance->drawCanvas();
             break;
         case 4:
-            instance->drawSplashscreen();
+            //instance->drawCanvas();
             break;
         case -1:
             instance->drawMesh();
