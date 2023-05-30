@@ -65,7 +65,7 @@ void Renderer::initializeMesh()
     glGenVertexArrays(1, &objects[MESH].vao);
     // Bind the vertex array object for the mesh
     glBindVertexArray(objects[MESH].vao);
-
+    
     // Generate the buffer objects
     glGenBuffers(1, &objects[MESH].vbo);
     glGenBuffers(1, &objects[MESH].cbo);
@@ -122,8 +122,9 @@ void Renderer::initializeMesh()
     glEnableClientState(GL_COLOR_ARRAY);
 
     // Use maximum unsigned int as restart index
+    glEnable(GL_PRIMITIVE_RESTART);
     glPrimitiveRestartIndex(0xFFFFFFFFu);
-    
+
     // Bind and fill the vertex buffer object
     glBindBuffer(GL_ARRAY_BUFFER, objects[MESH].vbo);
     glBufferData(GL_ARRAY_BUFFER, mesh_vertices.size() * sizeof(float), mesh_vertices.data(), GL_STATIC_DRAW);
@@ -358,30 +359,34 @@ void Renderer::initializeCanvas()
 void Renderer::initializeSketch()
 {
     // Generate the vertex array object for the sketch
-    glGenVertexArrays(1, &objects[SKETCH].vao);
-    // Bind the vertex array object for the sketch
-    glBindVertexArray(objects[SKETCH].vao);
+    // glGenVertexArrays(1, &objects[SKETCH].vao);
+    // // Bind the vertex array object for the sketch
+    // glBindVertexArray(objects[SKETCH].vao);
 
     // Generate the buffer objects
-    glGenBuffers(1, &objects[SKETCH].vbo);
-    glGenBuffers(1, &objects[SKETCH].tbo);
-    glGenBuffers(1, &objects[SKETCH].cbo);
+    // glGenBuffers(1, &objects[SKETCH].vbo);
+    // glGenBuffers(1, &objects[SKETCH].tbo);
+    // glGenBuffers(1, &objects[SKETCH].cbo);
+    //glGenBuffers(1, &objects[SKETCH].ibo);
 
-    glEnableClientState(GL_VERTEX_ARRAY);
-    glEnableClientState(GL_COLOR_ARRAY);
-
-    // Bind the vertex buffer object
-    glBindBuffer(GL_ARRAY_BUFFER, objects[SKETCH].vbo);
-    glVertexPointer(3, GL_FLOAT, 0, 0);
+    // glEnableClientState(GL_VERTEX_ARRAY);
+    // glEnableClientState(GL_COLOR_ARRAY);
     
-    // Bind the color buffer object
-    glBindBuffer(GL_ARRAY_BUFFER, objects[SKETCH].cbo);
-    glColorPointer(3, GL_FLOAT, 0, 0);
+    // // Bind the vertex buffer object
+    // glBindBuffer(GL_ARRAY_BUFFER, objects[SKETCH].vbo);
+    // glVertexPointer(3, GL_FLOAT, 0, 0);
+    
+    // // Bind the color buffer object
+    // glBindBuffer(GL_ARRAY_BUFFER, objects[SKETCH].cbo);
+    // glColorPointer(3, GL_FLOAT, 0, 0);
+
+    // Bind the index buffer object
+    //glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, instance->objects[SKETCH].ibo);
 
     // Unbind everything
-    glBindVertexArray(0);
-    glDisableClientState(GL_VERTEX_ARRAY);
-    glDisableClientState(GL_COLOR_ARRAY);
+    // glBindVertexArray(0);
+    // glDisableClientState(GL_VERTEX_ARRAY);
+    // glDisableClientState(GL_COLOR_ARRAY);
 }
 
 void Renderer::initialize(Terrain *terrain, Camera *camera)
@@ -469,6 +474,18 @@ void Renderer::sketch(float x, float y)
     sketch_colors.emplace_back(0.6f);
     sketch_colors.emplace_back(0.3f); 
     sketch_colors.emplace_back(0.0f);
+
+    static GLuint counter;
+    if (x != 0xFFFFFFFFu)
+    {
+        sketch_indices.emplace_back(counter);
+        counter = counter + 1;
+    }
+    else
+    {
+        sketch_indices.emplace_back(0xFFFFFFFFu);
+        counter = counter + 1;
+    }
 }
 
 void Renderer::timerCallback(int value)
@@ -631,7 +648,7 @@ void Renderer::drawSketch()
         glLoadIdentity();
         glOrtho(0, width, 0, height, -1, 1);
         
-        float *vertices = new float[instance->sketch_vertices.size()];
+        vector<float> vertices(instance->sketch_vertices.size());
         for (int i = 0; i < instance->sketch_vertices.size(); i = i + 3)
         {
                 vertices[i] = instance->sketch_vertices[i] * width;
@@ -646,13 +663,13 @@ void Renderer::drawSketch()
         glEnableClientState(GL_VERTEX_ARRAY);
         glEnableClientState(GL_COLOR_ARRAY);
         glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-        
+
         // Bind the vertex buffer object
         glBindBuffer(GL_ARRAY_BUFFER, instance->objects[SKETCH].vbo);
         // Update the vertex buffer data for points
-        glBufferData(GL_ARRAY_BUFFER, instance->sketch_vertices.size() * sizeof(GLfloat), vertices, GL_STATIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, instance->sketch_vertices.size() * sizeof(GLfloat), vertices.data(), GL_STATIC_DRAW);
         // Set the vertex attribute pointer for positions
-        glVertexPointer(3, GL_FLOAT, 0, vertices);
+        glVertexPointer(3, GL_FLOAT, 0, vertices.data());
         
         // Bind the vertex buffer object
         glBindBuffer(GL_ARRAY_BUFFER, instance->objects[SKETCH].cbo);
@@ -661,15 +678,23 @@ void Renderer::drawSketch()
         // Set the vertex attribute pointer for colors
         glColorPointer(3, GL_FLOAT, 0, instance->sketch_colors.data());
         
-        // Increment point size
-        glPointSize(3.0f);
-        // Draw the sketch
-        glDrawArrays(GL_POINTS, 0, instance->sketch_vertices.size() / 3);
-    
+        // Bind the index buffer object
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, instance->objects[SKETCH].ibo);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, instance->sketch_indices.size() * sizeof(GLuint), instance->sketch_indices.data(), GL_STATIC_DRAW);
+
+        // Increment line width
+        glLineWidth(3.0f);
+        
+        // Enable primitive restart
+        glEnable(GL_PRIMITIVE_RESTART);
+        glPrimitiveRestartIndex(0xFFFFFFFFu);
+        // Draw the sketch using indices
+        glDrawElements(GL_LINE_STRIP, instance->sketch_indices.size(), GL_UNSIGNED_INT, instance->sketch_indices.data());
+        glDisable(GL_PRIMITIVE_RESTART);
         
         // Deallocate memory
-        delete[] vertices;
-    
+        vertices.clear();
+        
         // Restore the previous projection matrix
         glMatrixMode(GL_PROJECTION);
         glPopMatrix();

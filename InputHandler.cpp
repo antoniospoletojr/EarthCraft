@@ -169,6 +169,10 @@ void InputHandler::mouseClick(int button, int state, int x, int y)
     else if (button == GLUT_LEFT_BUTTON && state == GLUT_UP)
     {
         instance->is_mouse_down = false;
+        if (instance->renderer->getCurrentMenuPage() == RIDGES_SCREEN)
+        {
+            instance->renderer->sketch(0xFFFFFFFFu, 0xFFFFFFFFu);
+        }
     }
 }
 
@@ -196,6 +200,10 @@ void InputHandler::mouseMotion(int x, int y)
         {
             float width = glutGet(GLUT_WINDOW_WIDTH);
             float height = glutGet(GLUT_WINDOW_HEIGHT);
+            // If the mouse is outside the sketch area then return
+            if (x < width * LEFT_SKETCH_BORDER || x > width * RIGHT_SKETCH_BORDER || y < height * TOP_SKETCH_BORDER || y > height * BOTTOM_SKETCH_BORDER)
+                return;
+            // Otherwise sketch the pixel
             instance->renderer->sketch(x/width, 1-y/height);
             printf("x: %f, y: %f\n", x / width, 1 - y / height);
         }
