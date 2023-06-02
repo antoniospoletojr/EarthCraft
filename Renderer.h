@@ -26,7 +26,8 @@ class Renderer
         void incrementMenuPage();
         short getCurrentMenuPage();
         void sketch(float x, float y);
-    
+        void takeSnapshot();
+
     private:
         static Renderer* instance;
         Camera *camera;
@@ -39,13 +40,12 @@ class Renderer
         std::vector<GLuint> mesh_indices, sun_indices, planet_indices, sketch_indices;      // an array to keep track of the indices of the terrain
 
         float mesh_dim;
-        short current_menu_page = 0; // keeps track of the current page in the menu
-        
-        cv::VideoCapture splashscreen;
-        cv::VideoCapture canvas;
-        cv::Mat splashscreen_frame;
-        cv::Mat canvas_frame;
 
+        // Menu variables and assets
+        short current_menu_page = 0; // keeps track of the current page in the menu
+        cv::VideoCapture menu_clips[5];
+        cv::Mat menu_frame;
+        
         void initializeMesh();
         void initializeSun();
         void initializeSplashscreen();

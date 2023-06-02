@@ -51,10 +51,12 @@ Renderer::~Renderer()
     glDeleteVertexArrays(1, &objects[CANVAS].vao);
     
     // Deallocate opencv objects
-    splashscreen.release();
-    canvas.release();
-    splashscreen_frame.release();
-    canvas_frame.release();
+    menu_clips[LANDING_SCREEN].release();
+    menu_clips[RIDGES_SCREEN].release();
+    menu_clips[PEAKS_SCREEN].release();
+    menu_clips[RIVERS_SCREEN].release();
+    menu_clips[BASINS_SCREEN].release();
+    menu_frame.release();
     
     Renderer::instance = nullptr;
 }
@@ -242,9 +244,9 @@ void Renderer::initializeSun()
 void Renderer::initializeSplashscreen()
 {
     // Load the splashscreen video and the first frame
-    instance->splashscreen.open("splashscreen.mp4");
-    instance->splashscreen.read(instance->splashscreen_frame);
-    
+    instance->menu_clips[LANDING_SCREEN].open("./assets/menu/Splashscreen.mp4");
+    instance->menu_clips[LANDING_SCREEN].read(instance->menu_frame);
+
     // Generate the vertex array object for the SPLASHSCREEN
     glGenVertexArrays(1, &objects[SPLASHSCREEN].vao);
     // Bind the vertex array object for the SPLASHSCREEN
@@ -300,9 +302,18 @@ void Renderer::initializeSplashscreen()
 
 void Renderer::initializeCanvas()
 {
-    // Load the splashscreen video and the first frame
-    instance->canvas.open("canvas.mp4");
-    instance->canvas.read(instance->canvas_frame);
+    // Load assets for the canvas pages
+    instance->menu_clips[RIDGES_SCREEN].open("./assets/menu/Ridges.mp4");
+    instance->menu_clips[RIDGES_SCREEN].read(instance->menu_frame);
+
+    instance->menu_clips[PEAKS_SCREEN].open("./assets/menu/Peaks.mp4");
+    instance->menu_clips[PEAKS_SCREEN].read(instance->menu_frame);
+
+    instance->menu_clips[RIVERS_SCREEN].open("./assets/menu/Rivers.mp4");
+    instance->menu_clips[RIVERS_SCREEN].read(instance->menu_frame);
+
+    instance->menu_clips[BASINS_SCREEN].open("./assets/menu/Basins.mp4");
+    instance->menu_clips[BASINS_SCREEN].read(instance->menu_frame);
 
     // Generate the vertex array object for the canvas
     glGenVertexArrays(1, &objects[CANVAS].vao);
@@ -412,6 +423,32 @@ void Renderer::initialize(Terrain *terrain, Camera *camera)
     glutDisplayFunc(Renderer::draw);
 }
 
+void Renderer::takeSnapshot()
+{
+    // Get the window size
+    int width = glutGet(GLUT_WINDOW_WIDTH);
+    int height = glutGet(GLUT_WINDOW_HEIGHT);
+    
+    // Create a buffer to store the pixel data
+    std::vector<uchar> pixels(width * height * 3); // Assuming RGB format
+    
+    // Read the pixel data from the framebuffer
+    glReadPixels(0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, pixels.data());
+
+    // Create an OpenCV Mat from the pixel data
+    cv::Mat image(height, width, CV_8UC3, pixels.data());
+
+    // Flip the image vertically (if needed)
+    cv::flip(image, image, 0);
+
+    // Convert BGR to RGB
+    cv::cvtColor(image, image, cv::COLOR_BGR2RGB);
+
+    // Save the image as a file
+    cv::imwrite("./screenshot.png", image);
+    glutPostRedisplay();
+}
+
 void Renderer::moveSun()
 {
     glBindVertexArray(objects[SUN].vao);
@@ -492,25 +529,40 @@ void Renderer::timerCallback(int value)
 {
     switch (instance->getCurrentMenuPage())
     {
-        case LANDIND_SCREEN:
-            if (!instance->splashscreen.read(instance->splashscreen_frame))
+        case LANDING_SCREEN:
+            if (!instance->menu_clips[LANDING_SCREEN].read(instance->menu_frame))
             {
-                instance->splashscreen.set(cv::CAP_PROP_POS_FRAMES, 0);
-                instance->splashscreen.read(instance->splashscreen_frame);
+                instance->menu_clips[LANDING_SCREEN].set(cv::CAP_PROP_POS_FRAMES, 0);
+                instance->menu_clips[LANDING_SCREEN].read(instance->menu_frame);
             }
             break;
         case RIDGES_SCREEN:
-            if (!instance->canvas.read(instance->canvas_frame))
+            if (!instance->menu_clips[RIDGES_SCREEN].read(instance->menu_frame))
             {
-                instance->canvas.set(cv::CAP_PROP_POS_FRAMES, 0);
-                instance->canvas.read(instance->canvas_frame);
+                instance->menu_clips[RIDGES_SCREEN].set(cv::CAP_PROP_POS_FRAMES, 0);
+                instance->menu_clips[RIDGES_SCREEN].read(instance->menu_frame);
             }
             break;
         case PEAKS_SCREEN:
+            if (!instance->menu_clips[PEAKS_SCREEN].read(instance->menu_frame))
+            {
+                instance->menu_clips[PEAKS_SCREEN].set(cv::CAP_PROP_POS_FRAMES, 0);
+                instance->menu_clips[PEAKS_SCREEN].read(instance->menu_frame);
+            }
             break;
         case RIVERS_SCREEN:
+            if (!instance->menu_clips[RIVERS_SCREEN].read(instance->menu_frame))
+            {
+                instance->menu_clips[RIVERS_SCREEN].set(cv::CAP_PROP_POS_FRAMES, 0);
+                instance->menu_clips[RIVERS_SCREEN].read(instance->menu_frame);
+            }
             break;
         case BASINS_SCREEN:
+            if (!instance->menu_clips[BASINS_SCREEN].read(instance->menu_frame))
+            {
+                instance->menu_clips[BASINS_SCREEN].set(cv::CAP_PROP_POS_FRAMES, 0);
+                instance->menu_clips[BASINS_SCREEN].read(instance->menu_frame);
+            }
             break;
         default:
             break;
@@ -544,7 +596,7 @@ void Renderer::drawSun()
 
 void Renderer::drawSplashscreen()
 {
-    if (!instance->splashscreen_frame.empty())
+    if (!instance->menu_frame.empty())
     {           
         // Save the previous projection matrix
         glMatrixMode(GL_PROJECTION);
@@ -560,7 +612,7 @@ void Renderer::drawSplashscreen()
         glBindTexture(GL_TEXTURE_2D, instance->objects[SPLASHSCREEN].texture);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, instance->splashscreen_frame.cols, instance->splashscreen_frame.rows, 0, GL_BGR, GL_UNSIGNED_BYTE, instance->splashscreen_frame.data);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, instance->menu_frame.cols, instance->menu_frame.rows, 0, GL_BGR, GL_UNSIGNED_BYTE, instance->menu_frame.data);
 
         // Update width and height values in a single line
         std::vector<GLfloat> vertices = {-width / 2, -height / 2, width / 2, -height / 2, width / 2, height / 2, -width / 2, height / 2};
@@ -584,7 +636,7 @@ void Renderer::drawSplashscreen()
 
 void Renderer::drawCanvas()
 {
-    if (!instance->canvas_frame.empty())
+    if (!instance->menu_frame.empty())
     {
         // Reset the modelview matrix
         glMatrixMode(GL_MODELVIEW);
@@ -604,8 +656,8 @@ void Renderer::drawCanvas()
         glBindTexture(GL_TEXTURE_2D, instance->objects[CANVAS].texture);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, instance->canvas_frame.cols, instance->canvas_frame.rows, 0, GL_BGR, GL_UNSIGNED_BYTE, instance->canvas_frame.data);
-        
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, instance->menu_frame.cols, instance->menu_frame.rows, 0, GL_BGR, GL_UNSIGNED_BYTE, instance->menu_frame.data);
+
         // Update width and height values in a single line
         std::vector<GLfloat> vertices = {0, 0, width, 0, width, height, 0, height};
         
@@ -632,7 +684,7 @@ void Renderer::drawCanvas()
 
 void Renderer::drawSketch()
 {
-    if (!instance->canvas_frame.empty())
+    if (!instance->menu_frame.empty())
     {
         // Reset the modelview matrix
         glMatrixMode(GL_MODELVIEW);
@@ -697,9 +749,10 @@ void Renderer::drawSketch()
         
         // Restore the previous projection matrix
         glMatrixMode(GL_PROJECTION);
-        glPopMatrix();
+        glPopMatrix();        
     }
 }
+
 
 void Renderer::draw()
 {   
@@ -713,24 +766,32 @@ void Renderer::draw()
     // Update the camera based on the inputs
     instance->camera->update();
     
-    // Switch on the current menu page
+    // Switch on the current menu page ---------MAYBE USELESS!!!!!
     switch (instance->getCurrentMenuPage())
     {
+        // Draw splashscreen
         case 0:
             instance->drawSplashscreen();
             break;
+        // Draw ridges
         case 1:
             instance->drawCanvas();
             instance->drawSketch();
             break;
+        // Draw peaks
         case 2:
+            instance->drawCanvas();
             instance->drawSketch();
             break;
+        // Draw rivers
         case 3:
-            //instance->drawCanvas();
+            instance->drawCanvas();
+            instance->drawSketch();
             break;
+        // Draw basins
         case 4:
-            //instance->drawCanvas();
+            instance->drawCanvas();
+            instance->drawSketch();
             break;
         case -1:
             instance->drawMesh();

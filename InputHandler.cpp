@@ -1,5 +1,6 @@
 #include <GL/freeglut.h>
 #include "InputHandler.h"
+#include "unistd.h"
 #include "Constants.h"
 
 
@@ -101,11 +102,10 @@ void InputHandler::handleKeyboard()
     // If enter is pressed travel to the next page in the menu
     if (keys[13])
     {
-        
         renderer->incrementMenuPage();
-        printf("Enter pressed: %d\n", renderer->getCurrentMenuPage());
+        printf("Entering page %d\n", renderer->getCurrentMenuPage());
 
-        if (renderer->getCurrentMenuPage() == LANDIND_SCREEN)
+        if (renderer->getCurrentMenuPage() == LANDING_SCREEN)
         {
             // Restore the polygon rasterization mode to filled
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
@@ -114,15 +114,16 @@ void InputHandler::handleKeyboard()
         }
         else if (renderer->getCurrentMenuPage() == RIDGES_SCREEN)
         {
-            
+
         }
         else if (renderer->getCurrentMenuPage() == PEAKS_SCREEN)
-        {
-
+        {   
+            // Right after pressing enter, but before the new screen is rendered, take a snapshot of the screen
+            renderer->takeSnapshot();
         }
         else if (renderer->getCurrentMenuPage() == RIVERS_SCREEN)
         {
-
+            
         }
         else if (renderer->getCurrentMenuPage() == BASINS_SCREEN)
         {
@@ -136,6 +137,7 @@ void InputHandler::handleKeyboard()
 
         keys[13] = false;
     }
+    
 }
 
 void InputHandler::handleRegularKeyPress(unsigned char key, int x, int y)
@@ -205,7 +207,7 @@ void InputHandler::mouseMotion(int x, int y)
                 return;
             // Otherwise sketch the pixel
             instance->renderer->sketch(x/width, 1-y/height);
-            printf("x: %f, y: %f\n", x / width, 1 - y / height);
+            //printf("x: %f, y: %f\n", x / width, 1 - y / height);
         }
     }
 }
