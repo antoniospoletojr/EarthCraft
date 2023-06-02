@@ -41,7 +41,14 @@ Renderer::~Renderer()
     sun_vertices.clear();
     sun_colors.clear();
     sun_indices.clear();
-    sketch_vertices.clear();
+
+    for (auto &vertices : sketch_vertices)
+        vertices.clear();
+    for (auto &vertices : sketch_colors)
+        vertices.clear();
+    for (auto &vertices : sketch_indices)
+        vertices.clear();
+
     objects.clear();
     
     // Delete the vertex array objects
@@ -304,16 +311,9 @@ void Renderer::initializeCanvas()
 {
     // Load assets for the canvas pages
     instance->menu_clips[RIDGES_SCREEN].open("./assets/menu/Ridges.mp4");
-    instance->menu_clips[RIDGES_SCREEN].read(instance->menu_frame);
-
     instance->menu_clips[PEAKS_SCREEN].open("./assets/menu/Peaks.mp4");
-    instance->menu_clips[PEAKS_SCREEN].read(instance->menu_frame);
-
     instance->menu_clips[RIVERS_SCREEN].open("./assets/menu/Rivers.mp4");
-    instance->menu_clips[RIVERS_SCREEN].read(instance->menu_frame);
-
     instance->menu_clips[BASINS_SCREEN].open("./assets/menu/Basins.mp4");
-    instance->menu_clips[BASINS_SCREEN].read(instance->menu_frame);
 
     // Generate the vertex array object for the canvas
     glGenVertexArrays(1, &objects[CANVAS].vao);
@@ -433,20 +433,45 @@ void Renderer::takeSnapshot()
     std::vector<uchar> pixels(width * height * 3); // Assuming RGB format
     
     // Read the pixel data from the framebuffer
-    glReadPixels(0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, pixels.data());
-
+    glReadPixels(123, 140, 800, 800, GL_RGB, GL_UNSIGNED_BYTE, pixels.data());
+    
     // Create an OpenCV Mat from the pixel data
-    cv::Mat image(height, width, CV_8UC3, pixels.data());
-
+    cv::Mat image(800, 800, CV_8UC3, pixels.data());
+    
     // Flip the image vertically (if needed)
     cv::flip(image, image, 0);
+    
+    // Convert BGR to GRAY
+    cv::cvtColor(image, image, cv::COLOR_BGR2GRAY);
 
-    // Convert BGR to RGB
-    cv::cvtColor(image, image, cv::COLOR_BGR2RGB);
+    // Binary threshold
+    cv::threshold(image, image, 0, 255, cv::THRESH_BINARY | cv::THRESH_OTSU);
+    
+    // Invert images
+    cv::bitwise_not(image, image);
 
+    // Rescale to 450x450
+    cv::resize(image, image, cv::Size(450, 450), 0, 0, cv::INTER_AREA);
+    
+    // Define filename string based on current menu page
+    std::string filename;
+    switch (current_menu_page)
+    {
+        case RIDGES_SCREEN:
+            filename = "./assets/sketches/ridges.png";
+            break;
+        case PEAKS_SCREEN:
+            filename = "./assets/sketches/peaks.png";
+            break;
+        case RIVERS_SCREEN:
+            filename = "./assets/sketches/rivers.png";
+            break;
+        case BASINS_SCREEN:
+            filename = "./assets/sketches/basins.png";
+            break;
+    }
     // Save the image as a file
-    cv::imwrite("./screenshot.png", image);
-    glutPostRedisplay();
+    cv::imwrite(filename, image);
 }
 
 void Renderer::moveSun()
@@ -501,33 +526,35 @@ short Renderer::getCurrentMenuPage()
 
 void Renderer::sketch(float x, float y)
 {
-    sketch_vertices.emplace_back(x);
-    sketch_vertices.emplace_back(y);
+    // current page is used as index for the sketch_vertices, sketch_colors and sketch_indices arrays and "-1" removes the case of the landing screen
+    short current_page = current_menu_page-1;
+    sketch_vertices[current_page].emplace_back(x);
+    sketch_vertices[current_page].emplace_back(y);
     // The sketch must be drawn together with the canvas; to ensure 
     // that the depth buffer is updated correctly, the sketch is drawn with a non 0 z-coordinate
-    sketch_vertices.emplace_back(0.5);
+    sketch_vertices[current_page].emplace_back(0.5);
     
     // Set the color to brown
-    sketch_colors.emplace_back(0.6f);
-    sketch_colors.emplace_back(0.3f); 
-    sketch_colors.emplace_back(0.0f);
-
-    static GLuint counter;
+    sketch_colors[current_page].emplace_back(0);
+    sketch_colors[current_page].emplace_back(0);
+    sketch_colors[current_page].emplace_back(0);
+    
+    static GLuint counter[4];
     if (x != 0xFFFFFFFFu)
     {
-        sketch_indices.emplace_back(counter);
-        counter = counter + 1;
+        sketch_indices[current_page].emplace_back(counter[current_page]);
+        counter[current_page] = counter[current_page] + 1;
     }
     else
     {
-        sketch_indices.emplace_back(0xFFFFFFFFu);
-        counter = counter + 1;
+        sketch_indices[current_page].emplace_back(0xFFFFFFFFu);
+        counter[current_page] = counter[current_page] + 1;
     }
 }
 
 void Renderer::timerCallback(int value)
 {
-    switch (instance->getCurrentMenuPage())
+    switch (instance->current_menu_page)
     {
         case LANDING_SCREEN:
             if (!instance->menu_clips[LANDING_SCREEN].read(instance->menu_frame))
@@ -661,7 +688,6 @@ void Renderer::drawCanvas()
         // Update width and height values in a single line
         std::vector<GLfloat> vertices = {0, 0, width, 0, width, height, 0, height};
         
-
         // Render the splash screen
         glBindVertexArray(instance->objects[CANVAS].vao);
         // Bind the vertex buffer object
@@ -700,12 +726,15 @@ void Renderer::drawSketch()
         glLoadIdentity();
         glOrtho(0, width, 0, height, -1, 1);
         
-        vector<float> vertices(instance->sketch_vertices.size());
-        for (int i = 0; i < instance->sketch_vertices.size(); i = i + 3)
+        short current_page = instance->current_menu_page-1;
+
+        // Update sketch_vertices to fit the screen: vertices is the non-normalized version of sketch_vertices
+        vector<float> vertices(instance->sketch_vertices[current_page].size());
+        for (int i = 0; i < instance->sketch_vertices[current_page].size(); i = i + 3)
         {
-                vertices[i] = instance->sketch_vertices[i] * width;
-                vertices[i + 1] = instance->sketch_vertices[i + 1] * height;
-                vertices[i + 2] = instance->sketch_vertices[i + 2];
+                vertices[i] = instance->sketch_vertices[current_page][i] * width;
+                vertices[i + 1] = instance->sketch_vertices[current_page][i + 1] * height;
+                vertices[i + 2] = instance->sketch_vertices[current_page][i + 2];
         }
         
         // Render the sketch
@@ -719,29 +748,39 @@ void Renderer::drawSketch()
         // Bind the vertex buffer object
         glBindBuffer(GL_ARRAY_BUFFER, instance->objects[SKETCH].vbo);
         // Update the vertex buffer data for points
-        glBufferData(GL_ARRAY_BUFFER, instance->sketch_vertices.size() * sizeof(GLfloat), vertices.data(), GL_STATIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, instance->sketch_vertices[current_page].size() * sizeof(GLfloat), vertices.data(), GL_STATIC_DRAW);
         // Set the vertex attribute pointer for positions
         glVertexPointer(3, GL_FLOAT, 0, vertices.data());
         
         // Bind the vertex buffer object
         glBindBuffer(GL_ARRAY_BUFFER, instance->objects[SKETCH].cbo);
         // Update the vertex buffer data for points
-        glBufferData(GL_ARRAY_BUFFER, instance->sketch_colors.size() * sizeof(GLfloat), instance->sketch_colors.data(), GL_STATIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, instance->sketch_colors[current_page].size() * sizeof(GLfloat), instance->sketch_colors[current_page].data(), GL_STATIC_DRAW);
         // Set the vertex attribute pointer for colors
-        glColorPointer(3, GL_FLOAT, 0, instance->sketch_colors.data());
-        
+        glColorPointer(3, GL_FLOAT, 0, instance->sketch_colors[current_page].data());
+
         // Bind the index buffer object
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, instance->objects[SKETCH].ibo);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, instance->sketch_indices.size() * sizeof(GLuint), instance->sketch_indices.data(), GL_STATIC_DRAW);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, instance->sketch_indices[current_page].size() * sizeof(GLuint), instance->sketch_indices[current_page].data(), GL_STATIC_DRAW);
 
-        // Increment line width
-        glLineWidth(3.0f);
-        
         // Enable primitive restart
         glEnable(GL_PRIMITIVE_RESTART);
         glPrimitiveRestartIndex(0xFFFFFFFFu);
-        // Draw the sketch using indices
-        glDrawElements(GL_LINE_STRIP, instance->sketch_indices.size(), GL_UNSIGNED_INT, instance->sketch_indices.data());
+        // If the current page is rivers or ridges, draw lines
+        if (instance->current_menu_page == RIDGES_SCREEN || instance->current_menu_page == RIVERS_SCREEN)
+        {
+            // Increment line width
+            glLineWidth(5.0f);
+            // Draw the sketch using indices
+            glDrawElements(GL_LINE_STRIP, instance->sketch_indices[current_page].size(), GL_UNSIGNED_INT, instance->sketch_indices[current_page].data());
+        }
+        if (instance->current_menu_page == PEAKS_SCREEN || instance->current_menu_page == BASINS_SCREEN)
+        {
+            // Increment points size
+            glPointSize(5.0f);
+            // Draw the sketch using indices
+            glDrawElements(GL_POINTS, instance->sketch_indices[current_page].size(), GL_UNSIGNED_INT, instance->sketch_indices[current_page].data());
+        }
         glDisable(GL_PRIMITIVE_RESTART);
         
         // Deallocate memory
@@ -767,38 +806,19 @@ void Renderer::draw()
     instance->camera->update();
     
     // Switch on the current menu page ---------MAYBE USELESS!!!!!
-    switch (instance->getCurrentMenuPage())
+    switch (instance->current_menu_page)
     {
-        // Draw splashscreen
-        case 0:
-            instance->drawSplashscreen();
-            break;
-        // Draw ridges
-        case 1:
-            instance->drawCanvas();
-            instance->drawSketch();
-            break;
-        // Draw peaks
-        case 2:
-            instance->drawCanvas();
-            instance->drawSketch();
-            break;
-        // Draw rivers
-        case 3:
-            instance->drawCanvas();
-            instance->drawSketch();
-            break;
-        // Draw basins
-        case 4:
-            instance->drawCanvas();
-            instance->drawSketch();
-            break;
-        case -1:
-            instance->drawMesh();
-            instance->drawSun();
-            break;
-        default:
-            break;
+    case LANDING_SCREEN:
+        instance->drawSplashscreen();
+        break;
+    case RENDERING_SCREEN:
+        instance->drawMesh();
+        instance->drawSun();
+        break;
+    default:
+        instance->drawCanvas();
+        instance->drawSketch();
+        break;
     }
 
     glutSwapBuffers();

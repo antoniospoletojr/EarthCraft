@@ -43,7 +43,7 @@ void Terrain::loadFromFile(const char* filename)
         {
             // Set the vertices
             map[i * dim + j].set_x((i - dim / 2) * world_scale);
-            map[i * dim + j].set_y(image[(i * dim + j)] * (1 + log(world_scale)));
+            map[i * dim + j].set_y(image[(i * dim + j)] * (10 + log(world_scale)));
             map[i * dim + j].set_z((j - dim / 2) * world_scale);
         }
     }

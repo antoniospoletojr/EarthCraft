@@ -110,8 +110,11 @@ def predict():
     builder = TerrainGANBuilder()
     generator = builder.load_model("./model/model.h5")
     
+    # File names
+    file_names = ["ridges.png", "rivers.png", "peaks.png", "basins.png"]
+    
     # Load input images
-    channels = [np.array(Image.open("./data/" + str(i) + ".png").convert("L")) for i in range(1,5)]
+    channels = [np.array(Image.open("./assets/sketches/" + file_names[i]).convert("L")) for i in range(4)]
     channels = np.stack(channels, axis=-1)
     input_image = np.expand_dims(channels, axis=0)
     input_image = input_image / 255.0
@@ -125,8 +128,8 @@ def predict():
     # Save
     output = np.squeeze(np.uint8(output * 127.5 + 127.5), axis=0)
     image = Image.fromarray(output, mode='L')
-    image.save('./data/heightmap.png')
-    with open('./data/heightmap.png', 'rb') as file:
+    image.save('./assets/sketches/heightmap.png')
+    with open('./assets/sketches/heightmap.png', 'rb') as file:
         file.flush()
 
     

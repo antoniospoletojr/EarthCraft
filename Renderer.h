@@ -35,10 +35,10 @@ class Renderer
         
         std::vector<Object> objects;
         // Do I need thees as attributes???
-        std::vector<GLfloat> mesh_vertices, sun_vertices, planet_vertices, sketch_vertices;   // an array to keep track of the vertices of the terrain
-        std::vector<GLfloat> mesh_colors, sun_colors, planet_colors, sketch_colors;           // an array to keep track of the colors of the terrain
-        std::vector<GLuint> mesh_indices, sun_indices, planet_indices, sketch_indices;      // an array to keep track of the indices of the terrain
-
+        std::vector<GLfloat> mesh_vertices, sun_vertices, planet_vertices, sketch_vertices[4];   // an array to keep track of the vertices of the terrain
+        std::vector<GLfloat> mesh_colors, sun_colors, planet_colors, sketch_colors[4];           // an array to keep track of the colors of the terrain
+        std::vector<GLuint> mesh_indices, sun_indices, planet_indices, sketch_indices[4];      // an array to keep track of the indices of the terrain
+        
         float mesh_dim;
 
         // Menu variables and assets

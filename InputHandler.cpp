@@ -1,9 +1,7 @@
 #include <GL/freeglut.h>
 #include "InputHandler.h"
-#include "unistd.h"
 #include "Constants.h"
-
-
+#include <Python.h>
 
 InputHandler* InputHandler::instance = nullptr;
 
@@ -102,37 +100,38 @@ void InputHandler::handleKeyboard()
     // If enter is pressed travel to the next page in the menu
     if (keys[13])
     {
-        renderer->incrementMenuPage();
-        printf("Entering page %d\n", renderer->getCurrentMenuPage());
-
-        if (renderer->getCurrentMenuPage() == LANDING_SCREEN)
-        {
-            // Restore the polygon rasterization mode to filled
-            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-            // Set the camera position to the origin
-            instance->camera->reset();
-        }
-        else if (renderer->getCurrentMenuPage() == RIDGES_SCREEN)
-        {
-
-        }
-        else if (renderer->getCurrentMenuPage() == PEAKS_SCREEN)
-        {   
-            // Right after pressing enter, but before the new screen is rendered, take a snapshot of the screen
+        short current_page = renderer->getCurrentMenuPage();
+        // Take a snapshot of the current screen before incrementing the menu page
+        if (current_page == RIDGES_SCREEN | current_page == PEAKS_SCREEN | current_page == RIVERS_SCREEN | current_page == BASINS_SCREEN)
             renderer->takeSnapshot();
-        }
-        else if (renderer->getCurrentMenuPage() == RIVERS_SCREEN)
+
+        renderer->incrementMenuPage();
+        current_page = renderer->getCurrentMenuPage();
+        
+        printf("Entering page %d\n", current_page);
+        
+        switch (current_page)
         {
-            
-        }
-        else if (renderer->getCurrentMenuPage() == BASINS_SCREEN)
-        {
-            
-        }
-        else // Otherwise you are in the rendering screen
-        {
-            // Set the camera position for the rendering screen
-            camera->setPosition(0,500,2000);
+        case LANDING_SCREEN:
+            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+            instance->camera->reset();
+            break;
+        case PEAKS_SCREEN:
+        case RIDGES_SCREEN:
+        case RIVERS_SCREEN:
+        case BASINS_SCREEN:
+            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+            break;
+        default:
+            // // Execute the Python script
+            // Py_Initialize();
+            // FILE *file = fopen("predict.py", "r");
+            // PyRun_SimpleFile(file, "predict.py");
+            // fclose(file);
+            // // Clean up the Python interpreter
+            // Py_Finalize();
+            camera->setPosition(0, 500, 2000);
+            break;
         }
 
         keys[13] = false;
@@ -162,16 +161,32 @@ void InputHandler::handleSpecialKeyRelease(int key, int x, int y)
 
 void InputHandler::mouseClick(int button, int state, int x, int y)
 {    
+    // If the left mouse button is pressed then set the is_mouse_down flag to true and store the mouse coordinates
     if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN)
     {
         instance->is_mouse_down = true;
         instance->mouse_x = x;
         instance->mouse_y = y;
+
+        short current_page = instance->renderer->getCurrentMenuPage();
+        if (current_page == RIDGES_SCREEN | current_page == PEAKS_SCREEN | current_page == RIVERS_SCREEN | current_page == BASINS_SCREEN)
+        {
+            float width = glutGet(GLUT_WINDOW_WIDTH);
+            float height = glutGet(GLUT_WINDOW_HEIGHT);
+            // If the mouse is outside the sketch area then return
+            if (x < width * LEFT_SKETCH_BORDER || x > width * RIGHT_SKETCH_BORDER || y < height * TOP_SKETCH_BORDER || y > height * BOTTOM_SKETCH_BORDER)
+                return;
+            // Otherwise sketch the pixel
+            instance->renderer->sketch(x / width, 1 - y / height);
+            // printf("x: %f, y: %f\n", x / width, 1 - y / height);
+        }
     }
+    // If the left mouse button is released then set the is_mouse_down flag to false
     else if (button == GLUT_LEFT_BUTTON && state == GLUT_UP)
     {
         instance->is_mouse_down = false;
-        if (instance->renderer->getCurrentMenuPage() == RIDGES_SCREEN)
+        short current_page = instance->renderer->getCurrentMenuPage();
+        if (current_page == RIDGES_SCREEN | current_page == PEAKS_SCREEN | current_page == RIVERS_SCREEN | current_page == BASINS_SCREEN)
         {
             instance->renderer->sketch(0xFFFFFFFFu, 0xFFFFFFFFu);
         }
@@ -181,8 +196,9 @@ void InputHandler::mouseClick(int button, int state, int x, int y)
 // Mouse motion callback routine.
 void InputHandler::mouseMotion(int x, int y)
 {
+    short current_page = instance->renderer->getCurrentMenuPage();
     // If the rendering screen is shown then update the camera angles based on the mouse movement
-    if (instance->renderer->getCurrentMenuPage() == RENDERING_SCREEN)
+    if (current_page == RENDERING_SCREEN)
     {
         if (instance->is_mouse_down)
         {
@@ -195,8 +211,8 @@ void InputHandler::mouseMotion(int x, int y)
             instance->mouse_y = y;
         }
     }
-    
-    if (instance->renderer->getCurrentMenuPage() == RIDGES_SCREEN)
+
+    if (current_page == RIDGES_SCREEN | current_page == PEAKS_SCREEN | current_page == RIVERS_SCREEN | current_page == BASINS_SCREEN)
     {
         if (instance->is_mouse_down)
         {

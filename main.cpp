@@ -40,7 +40,7 @@ int main(int argc, char **argv)
     input_handler.initialize(&camera, &renderer);
     
     // Allocate a terrain object
-    terrain.initialize("./data/heightmap.png", 16.0);
+    terrain.initialize("heightmap.png", 24.0);
     
     // Initialize the mesh
     renderer.initialize(&terrain, &camera);
