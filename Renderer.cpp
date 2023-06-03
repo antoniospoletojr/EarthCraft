@@ -70,7 +70,6 @@ Renderer::~Renderer()
 
 void Renderer::initializeMesh()
 {
-    printf("Initializing mesh\n");
     // Generate the vertex array object for the mesh
     glGenVertexArrays(1, &objects[MESH].vao);
     // Bind the vertex array object for the mesh
@@ -96,6 +95,11 @@ void Renderer::initializeMesh()
     int dim = terrain->getDim();
     float world_scale = terrain->getWorldScale();
     mesh_dim = dim*world_scale;
+    
+    //Reset mesh arrays if they are not empty
+    mesh_vertices.clear();
+    mesh_colors.clear();
+    mesh_indices.clear();
     
     // Allocate memory for the vertices and colors
     mesh_vertices.reserve(dim * dim * 3);

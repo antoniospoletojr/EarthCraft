@@ -1,5 +1,5 @@
 import os
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3' 
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import tensorflow as tf
 import tensorflow.keras.backend as K
 from tensorflow.keras.layers import (Concatenate, Conv2D, Input, Layer, MaxPooling2D, ReLU, UpSampling2D, ZeroPadding2D)
@@ -103,10 +103,10 @@ class TerrainGANBuilder:
 
 
 def predict():
-
+    
     print("Predicting...")
-
-     # Load model
+     
+    # Load model
     builder = TerrainGANBuilder()
     generator = builder.load_model("./model/model.h5")
     
@@ -131,7 +131,7 @@ def predict():
     # Save
     output = np.squeeze(np.uint8(output * 127.5 + 127.5), axis=0)
     
-
+    
     # make the borders (3 px wide) black
     output[0:3, :] = 0
     output[:, 0:3] = 0

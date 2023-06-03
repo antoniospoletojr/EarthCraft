@@ -1,7 +1,7 @@
 #include <GL/freeglut.h>
 #include "InputHandler.h"
+#include "Inference.h"
 #include "Constants.h"
-#include "Utils.h"
 
 InputHandler* InputHandler::instance = nullptr;
 
@@ -22,6 +22,7 @@ void InputHandler::initialize(Camera *camera, Renderer *renderer)
 {
     this->camera = camera;
     this->renderer = renderer;
+    this->inference = new Inference();
     
     glutKeyboardFunc(InputHandler::handleRegularKeyPress);
     glutKeyboardUpFunc(InputHandler::handleRegularKeyRelease);
@@ -30,8 +31,6 @@ void InputHandler::initialize(Camera *camera, Renderer *renderer)
     glutMouseFunc(InputHandler::mouseClick);
     glutMotionFunc(InputHandler::mouseMotion);
     glutIdleFunc(InputHandler::idleCallback);
-    
-    Utils::initializePythonInterpreter();
 }
 
 // Handle keyboard input
@@ -73,7 +72,6 @@ void InputHandler::handleKeyboard()
      // Exit the program if the Esc key is pressed.
     if (keys[27] || keys['q'])
     {
-        Utils::finalizePythonInterpreter();
         exit(0);
     }
     
@@ -118,6 +116,7 @@ void InputHandler::handleKeyboard()
         switch (current_page)
         {
         case LANDING_SCREEN:
+            instance->inference->reset();
             instance->camera->reset();
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
             break;
@@ -129,7 +128,9 @@ void InputHandler::handleKeyboard()
             break;
         case RENDERING_SCREEN:
             instance->renderer->resetSketches();
-            Utils::predict();
+            
+            this->inference->predict();
+
             renderer->initializeMesh();
             camera->setPosition(0, 3000, 2000);
             glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
