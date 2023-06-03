@@ -1,7 +1,7 @@
 #include <GL/freeglut.h>
 #include "InputHandler.h"
 #include "Constants.h"
-#include <Python.h>
+#include "Utils.h"
 
 InputHandler* InputHandler::instance = nullptr;
 
@@ -30,6 +30,8 @@ void InputHandler::initialize(Camera *camera, Renderer *renderer)
     glutMouseFunc(InputHandler::mouseClick);
     glutMotionFunc(InputHandler::mouseMotion);
     glutIdleFunc(InputHandler::idleCallback);
+    
+    Utils::initializePythonInterpreter();
 }
 
 // Handle keyboard input
@@ -70,7 +72,10 @@ void InputHandler::handleKeyboard()
      
      // Exit the program if the Esc key is pressed.
     if (keys[27] || keys['q'])
+    {
+        Utils::finalizePythonInterpreter();
         exit(0);
+    }
     
     // If f is pressed toggle full screen mode on/off
     if (keys['f'])
@@ -113,8 +118,8 @@ void InputHandler::handleKeyboard()
         switch (current_page)
         {
         case LANDING_SCREEN:
-            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
             instance->camera->reset();
+            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
             break;
         case PEAKS_SCREEN:
         case RIDGES_SCREEN:
@@ -122,15 +127,13 @@ void InputHandler::handleKeyboard()
         case BASINS_SCREEN:
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
             break;
-        default:
-            // // Execute the Python script
-            // Py_Initialize();
-            // FILE *file = fopen("predict.py", "r");
-            // PyRun_SimpleFile(file, "predict.py");
-            // fclose(file);
-            // // Clean up the Python interpreter
-            // Py_Finalize();
-            camera->setPosition(0, 500, 2000);
+        case RENDERING_SCREEN:
+            instance->renderer->resetSketches();
+            Utils::predict();
+            renderer->initializeMesh();
+            camera->setPosition(0, 3000, 2000);
+            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+            glLineWidth(1.0);
             break;
         }
 

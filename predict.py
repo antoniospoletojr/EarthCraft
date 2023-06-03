@@ -121,12 +121,23 @@ def predict():
     
     # Load noise
     noise = np.random.normal(0, 1, (1, 28, 28, 1024))
-
+    
     # Predict
     output = generator([input_image, noise])
     
+    # Print output max and min
+    print("Output max: " + str(np.max(output)))
+    print("Output min: " + str(np.min(output)))
     # Save
     output = np.squeeze(np.uint8(output * 127.5 + 127.5), axis=0)
+    
+
+    # make the borders (3 px wide) black
+    output[0:3, :] = 0
+    output[:, 0:3] = 0
+    output[447:450, :] = 0
+    output[:, 447:450] = 0
+    
     image = Image.fromarray(output, mode='L')
     image.save('./assets/sketches/heightmap.png')
     with open('./assets/sketches/heightmap.png', 'rb') as file:

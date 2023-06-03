@@ -22,11 +22,14 @@ class Renderer
         Renderer();
         ~Renderer();
         
-        void initialize(Terrain *terrain, Camera *camera);
+        void initialize(Camera *camera);
         void incrementMenuPage();
         short getCurrentMenuPage();
         void sketch(float x, float y);
+        void resetSketches();
         void takeSnapshot();
+        void initializeMesh();
+        
 
     private:
         static Renderer* instance;
@@ -38,6 +41,7 @@ class Renderer
         std::vector<GLfloat> mesh_vertices, sun_vertices, planet_vertices, sketch_vertices[4];   // an array to keep track of the vertices of the terrain
         std::vector<GLfloat> mesh_colors, sun_colors, planet_colors, sketch_colors[4];           // an array to keep track of the colors of the terrain
         std::vector<GLuint> mesh_indices, sun_indices, planet_indices, sketch_indices[4];      // an array to keep track of the indices of the terrain
+        GLuint sketch_counter[4]; // keeps track of the number of sketches in each sketch array
         
         float mesh_dim;
 
@@ -46,7 +50,7 @@ class Renderer
         cv::VideoCapture menu_clips[5];
         cv::Mat menu_frame;
         
-        void initializeMesh();
+        
         void initializeSun();
         void initializeSplashscreen();
         void initializeCanvas();

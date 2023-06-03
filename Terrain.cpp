@@ -58,6 +58,20 @@ int Terrain::getDim(){return dim;}
 // Return the world scale
 float Terrain::getWorldScale(){return world_scale;}
 
+float Terrain::getMaxHeight()
+{
+    float max_height = 0.0f;
+    
+    // Find the max height
+    for (int i = 0; i < dim * dim; i++)
+    {
+        if (map[i].y() > max_height)
+            max_height = map[i].y();
+    }
+    
+    return max_height;
+}
+
 // Print terrain info
 void Terrain::getInfo()
 {

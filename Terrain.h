@@ -14,6 +14,7 @@ public:
 	Vec3<float>* getMap();
 	int getDim();
 	float getWorldScale();
+	float getMaxHeight();
 	void getInfo();
 
 private:

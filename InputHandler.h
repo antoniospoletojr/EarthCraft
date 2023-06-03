@@ -30,7 +30,7 @@ class InputHandler
         bool is_mouse_down = false;         // keeps track of whether or not the mouse is down
         GLint mouse_x;                      // keeps track of the x position of the mouse
         GLint mouse_y;                      // keeps track of the y position of the mouse
-        bool is_polygon_filled = false;     // keeps track of whether or not the polygon is filled
+        bool is_polygon_filled = true;      // keeps track of whether or not the polygon is filled
         bool is_fullscreen = true;          // keeps track of whether or not the window is in is_fullscreen mode
 };
 

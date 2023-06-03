@@ -8,7 +8,7 @@ CFLAGS = -O3 -march=native -g -I/home/antonio/.miniconda3/envs/tensorflow/includ
 LDFLAGS = -L/home/antonio/.miniconda3/envs/tensorflow/lib -lGL -lGLU -lglut -lGLEW -lSOIL -lassimp -lopencv_core -lopencv_highgui -lopencv_imgproc -lopencv_imgcodecs -lopencv_videoio -lpython3.7m
 
 # Source files
-SRCS = main.cpp Terrain.cpp Camera.cpp InputHandler.cpp GlutFramework.cpp Renderer.cpp
+SRCS = main.cpp Terrain.cpp Camera.cpp InputHandler.cpp GlutFramework.cpp Renderer.cpp Utils.cpp
 
 # Object files
 OBJS = $(SRCS:.cpp=.o)
