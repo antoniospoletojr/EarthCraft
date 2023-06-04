@@ -41,11 +41,11 @@ void Inference::worker(bool *success)
     PyGILState_STATE gil_state;
     gil_state = PyGILState_Ensure(); // Acquire the Global Interpreter Lock (GIL)
     
-    FILE *file = fopen("predict.py", "r");
+    FILE *file = fopen("./src/predict.py", "r");
 
     if (file)
     {
-        PyRun_SimpleFile(file, "predict.py"); // Execute the Python script
+        PyRun_SimpleFile(file, "./src/predict.py"); // Execute the Python script
         fclose(file);
     }
     else

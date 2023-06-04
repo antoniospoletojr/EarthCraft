@@ -7,14 +7,20 @@ CFLAGS = -O3 -march=native -g -I/home/antonio/.miniconda3/envs/tensorflow/includ
 # Linker flags
 LDFLAGS = -L/home/antonio/.miniconda3/envs/tensorflow/lib -lGL -lGLU -lglut -lGLEW -lSOIL -lassimp -lopencv_core -lopencv_highgui -lopencv_imgproc -lopencv_imgcodecs -lopencv_videoio -lpython3.7m -lIrrKlang
 
+# Source directory
+SRC_DIR = src
+
+# Object directory
+OBJ_DIR = obj
+
 # Source files
-SRCS = main.cpp Terrain.cpp Camera.cpp InputHandler.cpp GlutFramework.cpp Renderer.cpp Inference.cpp SoundManager.cpp
+SRCS = $(wildcard $(SRC_DIR)/*.cpp)
 
 # Object files
-OBJS = $(SRCS:.cpp=.o)
+OBJS = $(patsubst $(SRC_DIR)/%.cpp,$(OBJ_DIR)/%.o,$(SRCS))
 
 # Dependency files
-DEPS = $(SRCS:.cpp=.d)
+DEPS = $(OBJS:.o=.d)
 
 # Executable name
 EXEC = main
@@ -26,13 +32,13 @@ $(EXEC): $(OBJS)
 
 -include $(DEPS)
 
-.cpp.o:
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp
 	$(CC) $(CFLAGS) -c $< -o $@
 
 run: $(EXEC)
 	LD_LIBRARY_PATH=/home/antonio/.miniconda3/envs/tensorflow/lib ./$(EXEC)
 
 clean:
-	rm -f $(OBJS) $(EXEC)
+	rm -f $(OBJS) $(DEPS) $(EXEC)
 
 .PHONY: clean

@@ -195,7 +195,7 @@ void Renderer::initializeSun()
     Assimp::Importer importer;
     
     // Load the .obj file
-    const aiScene* scene = importer.ReadFile("sun.obj", aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_GenNormals);
+    const aiScene* scene = importer.ReadFile("./models/sun.obj", aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_GenNormals);
      // Check if the scene was loaded successfully
     if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode)
         std::cout << "Error loading scene: " << importer.GetErrorString() << std::endl;
@@ -219,7 +219,6 @@ void Renderer::initializeSun()
             // Extract colors
             if (mesh->HasVertexColors(0))
             {
-                printf("Has colors\n");
                 aiColor4D color = mesh->mColors[0][j];
                 sun_colors.push_back(color.r);
                 sun_colors.push_back(color.g);
@@ -259,7 +258,7 @@ void Renderer::initializeSun()
     glBindBuffer(GL_ARRAY_BUFFER, objects[SUN].vbo);
     glBufferData(GL_ARRAY_BUFFER, sun_vertices.size() * sizeof(float), sun_vertices.data(), GL_STATIC_DRAW);
     glVertexPointer(3, GL_FLOAT, 0, 0);
-
+    
     // Bind and fill the color buffer object
     glBindBuffer(GL_ARRAY_BUFFER, objects[SUN].cbo);
     glBufferData(GL_ARRAY_BUFFER, sun_colors.size() * sizeof(float), sun_colors.data(), GL_STATIC_DRAW);
@@ -478,7 +477,7 @@ void Renderer::takeSnapshot()
     glBindRenderbuffer(GL_RENDERBUFFER, 0);
 
     glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
-
+    
     if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
         std::cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << std::endl;
 

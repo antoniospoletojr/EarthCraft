@@ -108,7 +108,7 @@ def predict():
      
     # Load model
     builder = TerrainGANBuilder()
-    generator = builder.load_model("./model/model.h5")
+    generator = builder.load_model("./neural_network/model.h5")
     
     # File names
     file_names = ["ridges.png", "rivers.png", "peaks.png", "basins.png"]

@@ -10,7 +10,7 @@ class SoundManager
 public:
     SoundManager();
     ~SoundManager();
-
+    
     void playClickSound();
     void playSuccessSound();
     void playResetSound();
