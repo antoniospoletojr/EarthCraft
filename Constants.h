@@ -4,6 +4,7 @@
 #define PEAKS_SCREEN 2
 #define RIVERS_SCREEN 3
 #define BASINS_SCREEN 4
+#define LOADING_SCREEN 5
 
 #define MESH 0
 #define SUN 1

@@ -9,11 +9,11 @@ class Inference
 public:
     Inference();
     ~Inference();
-    void predict();
+    void predict(bool *can_continue);
     void reset();
 
 private:
-    void worker();
+    void worker(bool *can_continue);
 
     bool is_running;
     std::thread thread;

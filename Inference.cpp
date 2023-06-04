@@ -1,5 +1,7 @@
 #include "Inference.h"
+#include "Constants.h"
 #include <Python.h>
+
 
 Inference::Inference()
 {
@@ -24,21 +26,21 @@ void Inference::reset()
     state = PyEval_SaveThread(); // Save the current thread state
 }
 
-void Inference::predict()
+void Inference::predict(bool *success)
 {
     if (!is_running)
     {
         // Start the inference thread
         is_running = true;
-        thread = std::thread(&Inference::worker, this);
+        thread = std::thread(&Inference::worker, this, success);
     }
 }
 
-void Inference::worker()
+void Inference::worker(bool *success)
 {
     PyGILState_STATE gil_state;
     gil_state = PyGILState_Ensure(); // Acquire the Global Interpreter Lock (GIL)
-
+    
     FILE *file = fopen("predict.py", "r");
 
     if (file)
@@ -54,4 +56,6 @@ void Inference::worker()
     // Inference is complete, set isRunning to false
     is_running = false;
     PyGILState_Release(gil_state); // Release the Global Interpreter Lock (GIL)
+    printf("Inference complete\n");
+    *success = true;
 }

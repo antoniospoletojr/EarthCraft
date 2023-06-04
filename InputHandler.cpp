@@ -18,12 +18,14 @@ InputHandler::~InputHandler()
     InputHandler::instance = nullptr;
 }
 
-void InputHandler::initialize(Camera *camera, Renderer *renderer)
+void InputHandler::initialize(Camera *camera, Renderer *renderer, SoundManager *sound_manager)
 {
     this->camera = camera;
     this->renderer = renderer;
     this->inference = new Inference();
-    
+    this->sound_manager = sound_manager;
+    this->sound_manager->playBackgroundMusic();
+
     glutKeyboardFunc(InputHandler::handleRegularKeyPress);
     glutKeyboardUpFunc(InputHandler::handleRegularKeyRelease);
     glutSpecialFunc(InputHandler::handleSpecialKeyPress);
@@ -37,7 +39,7 @@ void InputHandler::initialize(Camera *camera, Renderer *renderer)
 void InputHandler::handleKeyboard()
 {
     // If the splashscreen is not shown then handle the movement keyboard inputs
-    if (!(renderer->getCurrentMenuPage() >= 0))
+    if (!(renderer->current_menu_page >= 0))
     {
         // Increment the x and z positions. Notice how the cos is 1 when I'm moving on the z axis and the sin is 1 when I'm moving on the x axis.
         if (keys['w'])
@@ -102,20 +104,24 @@ void InputHandler::handleKeyboard()
     
     // If enter is pressed travel to the next page in the menu
     if (keys[13])
-    {
-        short current_page = renderer->getCurrentMenuPage();
+    {        
         // Take a snapshot of the current screen before incrementing the menu page
-        if (current_page == RIDGES_SCREEN | current_page == PEAKS_SCREEN | current_page == RIVERS_SCREEN | current_page == BASINS_SCREEN)
+        if (renderer->current_menu_page == RIDGES_SCREEN | renderer->current_menu_page == PEAKS_SCREEN | renderer->current_menu_page == RIVERS_SCREEN | renderer->current_menu_page == BASINS_SCREEN)
             renderer->takeSnapshot();
+        
+        // If the current page is the last page then go back to the first page
+        if (renderer->current_menu_page >= 5)
+            renderer->current_menu_page  = -1;
+        else
+            renderer->current_menu_page++;
 
-        renderer->incrementMenuPage();
-        current_page = renderer->getCurrentMenuPage();
-        
-        printf("Entering page %d\n", current_page);
-        
-        switch (current_page)
+        printf("Entering page %d\n", renderer->current_menu_page);
+
+        switch (renderer->current_menu_page)
         {
         case LANDING_SCREEN:
+            instance->sound_manager->playResetSound();
+            instance->sound_manager->playBackgroundMusic();
             instance->inference->reset();
             instance->camera->reset();
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
@@ -124,13 +130,20 @@ void InputHandler::handleKeyboard()
         case RIDGES_SCREEN:
         case RIVERS_SCREEN:
         case BASINS_SCREEN:
+            instance->sound_manager->playClickSound();
+            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+            break;
+        case LOADING_SCREEN:
+            instance->sound_manager->playClickSound();
+            instance->renderer->resetSketches();
+            // Pass the prediction thread the pointer to the boolean variable which tracks the enter key press.
+            // When the prediction is complete, the thread simulates an enter key press.
+            instance->inference->predict(&keys[13]);
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
             break;
         case RENDERING_SCREEN:
-            instance->renderer->resetSketches();
-            
-            this->inference->predict();
-
+            instance->sound_manager->playSuccessSound();
+            instance->sound_manager->playBackgroundMusic();
             renderer->initializeMesh();
             camera->setPosition(0, 3000, 2000);
             glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -172,7 +185,7 @@ void InputHandler::mouseClick(int button, int state, int x, int y)
         instance->mouse_x = x;
         instance->mouse_y = y;
 
-        short current_page = instance->renderer->getCurrentMenuPage();
+        short current_page = instance->renderer->current_menu_page;
         if (current_page == RIDGES_SCREEN | current_page == PEAKS_SCREEN | current_page == RIVERS_SCREEN | current_page == BASINS_SCREEN)
         {
             float width = glutGet(GLUT_WINDOW_WIDTH);
@@ -189,7 +202,7 @@ void InputHandler::mouseClick(int button, int state, int x, int y)
     else if (button == GLUT_LEFT_BUTTON && state == GLUT_UP)
     {
         instance->is_mouse_down = false;
-        short current_page = instance->renderer->getCurrentMenuPage();
+        short current_page = instance->renderer->current_menu_page;
         if (current_page == RIDGES_SCREEN | current_page == PEAKS_SCREEN | current_page == RIVERS_SCREEN | current_page == BASINS_SCREEN)
         {
             instance->renderer->sketch(0xFFFFFFFFu, 0xFFFFFFFFu);
@@ -200,7 +213,7 @@ void InputHandler::mouseClick(int button, int state, int x, int y)
 // Mouse motion callback routine.
 void InputHandler::mouseMotion(int x, int y)
 {
-    short current_page = instance->renderer->getCurrentMenuPage();
+    short current_page = instance->renderer->current_menu_page;
     // If the rendering screen is shown then update the camera angles based on the mouse movement
     if (current_page == RENDERING_SCREEN)
     {

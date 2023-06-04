@@ -63,6 +63,7 @@ Renderer::~Renderer()
     menu_clips[PEAKS_SCREEN].release();
     menu_clips[RIVERS_SCREEN].release();
     menu_clips[BASINS_SCREEN].release();
+    menu_clips[LOADING_SCREEN].release();
     menu_frame.release();
     
     Renderer::instance = nullptr;
@@ -333,7 +334,6 @@ void Renderer::initializeSplashscreen()
     glGenTextures(1, &objects[SPLASHSCREEN].texture);
 }
     
-
 void Renderer::initializeCanvas()
 {
     // Load assets for the canvas pages
@@ -341,6 +341,7 @@ void Renderer::initializeCanvas()
     instance->menu_clips[PEAKS_SCREEN].open("./assets/menu/Peaks.mp4");
     instance->menu_clips[RIVERS_SCREEN].open("./assets/menu/Rivers.mp4");
     instance->menu_clips[BASINS_SCREEN].open("./assets/menu/Basins.mp4");
+    instance->menu_clips[LOADING_SCREEN].open("./assets/menu/Loadingscreen.mp4");
 
     // Generate the vertex array object for the canvas
     glGenVertexArrays(1, &objects[CANVAS].vao);
@@ -400,13 +401,13 @@ void Renderer::initializeSketch()
     // glGenVertexArrays(1, &objects[SKETCH].vao);
     // // Bind the vertex array object for the sketch
     // glBindVertexArray(objects[SKETCH].vao);
-
+    
     // Generate the buffer objects
     // glGenBuffers(1, &objects[SKETCH].vbo);
     // glGenBuffers(1, &objects[SKETCH].tbo);
     // glGenBuffers(1, &objects[SKETCH].cbo);
     //glGenBuffers(1, &objects[SKETCH].ibo);
-
+    
     // glEnableClientState(GL_VERTEX_ARRAY);
     // glEnableClientState(GL_COLOR_ARRAY);
     
@@ -535,19 +536,6 @@ void Renderer::moveSun()
     glBindVertexArray(0);
 }
 
-void Renderer::incrementMenuPage()
-{
-    current_menu_page++;
-    // If the current page is the last one, go back to the first one
-    if (current_menu_page > 4)
-        current_menu_page = -1;
-}
-
-short Renderer::getCurrentMenuPage()
-{
-    return current_menu_page;
-}
-
 void Renderer::sketch(float x, float y)
 {
     // current page is used as index for the sketch_vertices, sketch_colors and sketch_indices arrays and "-1" removes the case of the landing screen
@@ -617,6 +605,13 @@ void Renderer::timerCallback(int value)
             {
                 instance->menu_clips[BASINS_SCREEN].set(cv::CAP_PROP_POS_FRAMES, 0);
                 instance->menu_clips[BASINS_SCREEN].read(instance->menu_frame);
+            }
+            break;
+        case LOADING_SCREEN:
+            if (!instance->menu_clips[LOADING_SCREEN].read(instance->menu_frame))
+            {
+                instance->menu_clips[LOADING_SCREEN].set(cv::CAP_PROP_POS_FRAMES, 0);
+                instance->menu_clips[LOADING_SCREEN].read(instance->menu_frame);
             }
             break;
         default:
@@ -884,6 +879,9 @@ void Renderer::draw()
     case RENDERING_SCREEN:
         instance->drawMesh();
         instance->drawSun();
+        break;
+    case LOADING_SCREEN:
+        instance->drawCanvas();
         break;
     default:
         instance->drawCanvas();

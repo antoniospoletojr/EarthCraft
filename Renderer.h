@@ -19,12 +19,12 @@ typedef struct Object
 class Renderer
 {
     public:
+        short current_menu_page = 0; // keeps track of the current page in the menu
+        
         Renderer();
         ~Renderer();
         
         void initialize(Camera *camera);
-        void incrementMenuPage();
-        short getCurrentMenuPage();
         void sketch(float x, float y);
         void resetSketches();
         void takeSnapshot();
@@ -45,11 +45,8 @@ class Renderer
         
         float mesh_dim;
 
-        // Menu variables and assets
-        short current_menu_page = 0; // keeps track of the current page in the menu
-        cv::VideoCapture menu_clips[5];
+        cv::VideoCapture menu_clips[6];
         cv::Mat menu_frame;
-        
         
         void initializeSun();
         void initializeSplashscreen();
