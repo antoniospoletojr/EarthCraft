@@ -450,53 +450,82 @@ void Renderer::initialize(Camera *camera)
 
 void Renderer::takeSnapshot()
 {
-    // Get the window size
-    int width = glutGet(GLUT_WINDOW_WIDTH);
-    int height = glutGet(GLUT_WINDOW_HEIGHT);
-    
-    // Create a buffer to store the pixel data
-    std::vector<uchar> pixels(width * height * 3); // Assuming RGB format
-    
-    // Read the pixel data from the framebuffer
-    glReadPixels(123, 140, 800, 800, GL_RGB, GL_UNSIGNED_BYTE, pixels.data());
-    
-    // Create an OpenCV Mat from the pixel data
-    cv::Mat image(800, 800, CV_8UC3, pixels.data());
-    
-    // Flip the image vertically (if needed)
-    cv::flip(image, image, 0);
-    
-    // Convert BGR to GRAY
-    cv::cvtColor(image, image, cv::COLOR_BGR2GRAY);
+    short current_canvas = current_menu_page - 1;
 
-    // Binary threshold
-    cv::threshold(image, image, 0, 255, cv::THRESH_BINARY | cv::THRESH_OTSU);
-    
-    // Invert images
-    cv::bitwise_not(image, image);
+    GLint previousViewport[4];
+    glGetIntegerv(GL_VIEWPORT, previousViewport); // Save the previous viewport
 
+    unsigned int framebuffer;
+    glGenFramebuffers(1, &framebuffer);
+    glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+
+    // generate texture
+    unsigned int textureColorbuffer;
+    glGenTextures(1, &textureColorbuffer);
+    glBindTexture(GL_TEXTURE_2D, textureColorbuffer);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 1920, 1080, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    // attach it to currently bound framebuffer object
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, textureColorbuffer, 0);
+
+    unsigned int rbo;
+    glGenRenderbuffers(1, &rbo);
+    glBindRenderbuffer(GL_RENDERBUFFER, rbo);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, 1920, 1080);
+    glBindRenderbuffer(GL_RENDERBUFFER, 0);
+
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
+
+    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+        std::cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << std::endl;
+
+    glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+    glClearColor(1, 1, 1, 1);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // we're not using the stencil buffer now
+    glViewport(0, 0, 1920, 1080);
+    instance->drawSketch(current_canvas);
+    
+    // Define the snapshot matrix
+    cv::Mat snapshot(800, 800, CV_8UC3);
+    // Read the pixels from the framebuffer
+    glReadPixels(123, 140, 800, 800, GL_BGR, GL_UNSIGNED_BYTE, snapshot.data);
+    // Flip the image vertically
+    cv::flip(snapshot, snapshot, 0);
+    // Convert to grayscale
+    cv::cvtColor(snapshot, snapshot, cv::COLOR_BGR2GRAY);
+    // Convert any non-white pixel to black
+    cv::threshold(snapshot, snapshot, 254, 255, cv::THRESH_BINARY);
+    // Invert the image
+    cv::bitwise_not(snapshot, snapshot);
     // Rescale to 450x450
-    cv::resize(image, image, cv::Size(450, 450), 0, 0, cv::INTER_AREA);
-    
+    cv::resize(snapshot, snapshot, cv::Size(450, 450), 0, 0, cv::INTER_AREA);
     // Define filename string based on current menu page
     std::string filename;
     switch (current_menu_page)
     {
-        case RIDGES_SCREEN:
-            filename = "./assets/sketches/ridges.png";
-            break;
-        case PEAKS_SCREEN:
-            filename = "./assets/sketches/peaks.png";
-            break;
-        case RIVERS_SCREEN:
-            filename = "./assets/sketches/rivers.png";
-            break;
-        case BASINS_SCREEN:
-            filename = "./assets/sketches/basins.png";
-            break;
+    case RIDGES_SCREEN:
+        filename = "./assets/sketches/ridges.png";
+        break;
+    case PEAKS_SCREEN:
+        filename = "./assets/sketches/peaks.png";
+        break;
+    case RIVERS_SCREEN:
+        filename = "./assets/sketches/rivers.png";
+        break;
+    case BASINS_SCREEN:
+        filename = "./assets/sketches/basins.png";
+        break;
     }
     // Save the image as a file
-    cv::imwrite(filename, image);
+    cv::imwrite(filename, snapshot);
+
+    // Restore the previous viewport
+    glViewport(previousViewport[0], previousViewport[1], previousViewport[2], previousViewport[3]);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 void Renderer::moveSun()
@@ -546,10 +575,31 @@ void Renderer::sketch(float x, float y)
     // that the depth buffer is updated correctly, the sketch is drawn with a non 0 z-coordinate
     sketch_vertices[current_canvas].emplace_back(0.5);
     
-    // Set the color to brown
-    sketch_colors[current_canvas].emplace_back(0);
-    sketch_colors[current_canvas].emplace_back(0);
-    sketch_colors[current_canvas].emplace_back(0);
+    // If the current canvas is 0, set color to dark green, if 1 set color to brown, if 2 set color to light blue, if 3 set color dark blue
+    if (current_canvas == RIDGES)
+    {
+        sketch_colors[current_canvas].emplace_back(0);
+        sketch_colors[current_canvas].emplace_back(0.5);
+        sketch_colors[current_canvas].emplace_back(0);
+    }
+    else if (current_canvas == PEAKS)
+    {
+        sketch_colors[current_canvas].emplace_back(0.5);
+        sketch_colors[current_canvas].emplace_back(0.25);
+        sketch_colors[current_canvas].emplace_back(0);
+    }
+    else if (current_canvas == RIVERS)
+    {
+        sketch_colors[current_canvas].emplace_back(0.3);
+        sketch_colors[current_canvas].emplace_back(0.5);
+        sketch_colors[current_canvas].emplace_back(0.8);
+    }
+    else if (current_canvas == BASINS)
+    {
+        sketch_colors[current_canvas].emplace_back(0);
+        sketch_colors[current_canvas].emplace_back(0);
+        sketch_colors[current_canvas].emplace_back(0.7);
+    }
     
     if (x != 0xFFFFFFFFu)
         sketch_indices[current_canvas].emplace_back(sketch_vertices[current_canvas].size()/3 - 1);
@@ -772,7 +822,7 @@ void Renderer::drawCanvas()
     }
 }
 
-void Renderer::drawSketch()
+void Renderer::drawSketch(short current_canvas)
 {
     if (!instance->menu_frame.empty())
     {
@@ -789,8 +839,6 @@ void Renderer::drawSketch()
         float height = glutGet(GLUT_WINDOW_HEIGHT);
         glLoadIdentity();
         glOrtho(0, width, 0, height, -1, 1);
-        
-        short current_canvas = instance->current_menu_page-1;
 
         // Update sketch_vertices to fit the screen: vertices is the non-normalized version of sketch_vertices
         vector<float> vertices(instance->sketch_vertices[current_canvas].size());
@@ -808,7 +856,7 @@ void Renderer::drawSketch()
         
         // Render the sketch
         glBindVertexArray(instance->objects[SKETCH].vao);
-
+        
         // Bind the vertex buffer object
         glBindBuffer(GL_ARRAY_BUFFER, instance->objects[SKETCH].vbo);
         // Update the vertex buffer data for points
@@ -830,15 +878,16 @@ void Renderer::drawSketch()
         // Enable primitive restart
         glEnable(GL_PRIMITIVE_RESTART);
         glPrimitiveRestartIndex(0xFFFFFFFFu);
+        
         // If the current page is rivers or ridges, draw lines
-        if (instance->current_menu_page == RIDGES_SCREEN || instance->current_menu_page == RIVERS_SCREEN)
+        if (current_canvas == RIDGES || current_canvas == RIVERS)
         {
             // Increment line width
             glLineWidth(5.0f);
             // Draw the sketch using indices
             glDrawElements(GL_LINE_STRIP, instance->sketch_indices[current_canvas].size(), GL_UNSIGNED_INT, instance->sketch_indices[current_canvas].data());
         }
-        if (instance->current_menu_page == PEAKS_SCREEN || instance->current_menu_page == BASINS_SCREEN)
+        if (current_canvas == PEAKS || current_canvas == BASINS)
         {
             // Increment points size
             glPointSize(5.0f);
@@ -859,6 +908,7 @@ void Renderer::drawSketch()
         glPopMatrix();        
     }
 }
+
 
 
 void Renderer::draw()
@@ -886,9 +936,27 @@ void Renderer::draw()
     case LOADING_SCREEN:
         instance->drawCanvas();
         break;
-    default:
+    case RIDGES_SCREEN:
         instance->drawCanvas();
-        instance->drawSketch();
+        instance->drawSketch(RIDGES);
+        break;
+    case PEAKS_SCREEN:
+        instance->drawCanvas();
+        instance->drawSketch(PEAKS);
+        instance->drawSketch(RIDGES);
+        break;
+    case RIVERS_SCREEN:
+        instance->drawCanvas();
+        instance->drawSketch(RIVERS);
+        instance->drawSketch(PEAKS);
+        instance->drawSketch(RIDGES);
+        break;
+    case BASINS_SCREEN:
+        instance->drawCanvas();
+        instance->drawSketch(BASINS);
+        instance->drawSketch(RIVERS);
+        instance->drawSketch(PEAKS);
+        instance->drawSketch(RIDGES);
         break;
     }
 

@@ -41,7 +41,6 @@ class Renderer
         std::vector<GLfloat> mesh_vertices, sun_vertices, planet_vertices, sketch_vertices[4];   // an array to keep track of the vertices of the terrain
         std::vector<GLfloat> mesh_colors, sun_colors, planet_colors, sketch_colors[4];           // an array to keep track of the colors of the terrain
         std::vector<GLuint> mesh_indices, sun_indices, planet_indices, sketch_indices[4];      // an array to keep track of the indices of the terrain
-        GLuint sketch_counter[4]; // keeps track of the number of sketches in each sketch array
         
         float mesh_dim;
 
@@ -59,7 +58,7 @@ class Renderer
         static void drawSun();
         static void drawSplashscreen();
         static void drawCanvas();
-        static void drawSketch();
+        static void drawSketch(short current_canvas);
         
         static void timerCallback(int value);
         static void draw();

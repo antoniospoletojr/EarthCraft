@@ -32,23 +32,24 @@ void SoundManager::playBackgroundMusic()
 {
     static bool main_theme = true;
     static ISound *sound;
-
+    
     if (sound)
     {
         sound->stop();
         sound->drop();
     }
-
+    
     if (main_theme)
     {
         sound = sound_engine->play2D("./assets/sounds/Menu.wav", true, false, true, ESM_AUTO_DETECT, false);
         sound->setVolume(0.05f);
+        sound_engine->play2D("./assets/sounds/Pop.wav", false, false, true, ESM_AUTO_DETECT, false); 
         main_theme = false;
     }
     else
     {
         sound = sound_engine->play2D("./assets/sounds/Rendering.wav", true, false, true, ESM_AUTO_DETECT, false);
-        sound->setVolume(0.2f);
+        sound->setVolume(0.3f);
         main_theme = true;
     }
 }

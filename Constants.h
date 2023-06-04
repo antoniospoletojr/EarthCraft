@@ -6,6 +6,11 @@
 #define BASINS_SCREEN 4
 #define LOADING_SCREEN 5
 
+#define RIDGES 0
+#define PEAKS 1
+#define RIVERS 2
+#define BASINS 3
+
 #define MESH 0
 #define SUN 1
 #define SPLASHSCREEN 2

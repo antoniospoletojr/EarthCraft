@@ -15,7 +15,6 @@ InputHandler input_handler;
 GlutFramework glut_framework;
 Renderer renderer;
 SoundManager sound_manager;
-ISoundEngine *sound_engine = createIrrKlangDevice();
 
 // Main routine.
 int main(int argc, char **argv)
@@ -26,7 +25,7 @@ int main(int argc, char **argv)
 
     // Initialize the inputs
     input_handler.initialize(&camera, &renderer, &sound_manager);
-
+    
     // Initialize the mesh
     renderer.initialize(&camera);
 

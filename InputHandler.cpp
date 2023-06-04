@@ -24,7 +24,6 @@ void InputHandler::initialize(Camera *camera, Renderer *renderer, SoundManager *
     this->renderer = renderer;
     this->inference = new Inference();
     this->sound_manager = sound_manager;
-    this->sound_manager->playBackgroundMusic();
 
     glutKeyboardFunc(InputHandler::handleRegularKeyPress);
     glutKeyboardUpFunc(InputHandler::handleRegularKeyRelease);
@@ -33,6 +32,8 @@ void InputHandler::initialize(Camera *camera, Renderer *renderer, SoundManager *
     glutMouseFunc(InputHandler::mouseClick);
     glutMotionFunc(InputHandler::mouseMotion);
     glutIdleFunc(InputHandler::idleCallback);
+    
+    this->sound_manager->playBackgroundMusic();
 }
 
 // Handle keyboard input
@@ -240,7 +241,7 @@ void InputHandler::mouseMotion(int x, int y)
                 return;
             // Otherwise sketch the pixel
             instance->renderer->sketch(x/width, 1-y/height);
-            //printf("x: %f, y: %f\n", x / width, 1 - y / height);
+            // printf("x: %f, y: %f\n", x / width, 1 - y / height);
         }
     }
 }
