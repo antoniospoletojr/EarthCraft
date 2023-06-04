@@ -615,6 +615,9 @@ void Renderer::timerCallback(int value)
             }
             break;
         default:
+            instance->menu_clips[LOADING_SCREEN].set(cv::CAP_PROP_POS_FRAMES, 0);
+            instance->menu_clips[LANDING_SCREEN].set(cv::CAP_PROP_POS_FRAMES, 0);
+            instance->menu_frame.release();
             break;
     }
     
@@ -675,8 +678,8 @@ void Renderer::drawSplashscreen()
         float width = glutGet(GLUT_WINDOW_WIDTH);
         float height = glutGet(GLUT_WINDOW_HEIGHT);
         glLoadIdentity();
-        glOrtho(-width/2, width/2, -height/2, height/2, -1, 1);
-        
+        glOrtho(0, width, 0, height, -1, 1);
+
         // Update texture data
         glBindTexture(GL_TEXTURE_2D, instance->objects[SPLASHSCREEN].texture);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -684,7 +687,7 @@ void Renderer::drawSplashscreen()
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, instance->menu_frame.cols, instance->menu_frame.rows, 0, GL_BGR, GL_UNSIGNED_BYTE, instance->menu_frame.data);
         
         // Update width and height values in a single line
-        std::vector<GLfloat> vertices = {-width / 2, -height / 2, width / 2, -height / 2, width / 2, height / 2, -width / 2, height / 2};
+        std::vector<GLfloat> vertices = {0, 0, width, 0, width, height, 0, height};
         // Bind the vertex buffer object
         glBindBuffer(GL_ARRAY_BUFFER, instance->objects[SPLASHSCREEN].vbo);
         // Update the vertex buffer data

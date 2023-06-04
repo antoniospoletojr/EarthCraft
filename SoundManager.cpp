@@ -13,7 +13,7 @@ SoundManager::~SoundManager()
 void SoundManager::playClickSound()
 {
     irrklang::ISound *sound = sound_engine->play2D("./assets/sounds/Click.wav", false, false, true, irrklang::ESM_AUTO_DETECT, false);
-    sound->setVolume(0.1f);
+    sound->setVolume(0.15f);
 }
 
 void SoundManager::playSuccessSound()
