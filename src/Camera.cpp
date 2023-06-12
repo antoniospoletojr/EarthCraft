@@ -12,8 +12,8 @@ Camera::Camera()
     position[2] = 0;
     alfa = 0.0f;
     beta = 0.0f;
-    movement_speed = 4.0f;
-    rotation_speed = 1.5f;
+    movement_speed = 4.0f * 5;
+    rotation_speed = 1.5f * 2;
 }
 
 // Parametrized constructor

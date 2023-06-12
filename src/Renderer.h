@@ -38,24 +38,26 @@ class Renderer
         
         std::vector<Object> objects;
         // Do I need thees as attributes???
-        std::vector<GLfloat> mesh_vertices, sun_vertices, planet_vertices, sketch_vertices[4];   // an array to keep track of the vertices of the terrain
-        std::vector<GLfloat> mesh_colors, sun_colors, planet_colors, sketch_colors[4];           // an array to keep track of the colors of the terrain
-        std::vector<GLuint> mesh_indices, sun_indices, planet_indices, sketch_indices[4];      // an array to keep track of the indices of the terrain
+        std::vector<GLfloat> mesh_vertices, sun_vertices, moon_vertices, skydome_vertices, sketch_vertices[4];   // an array to keep track of the vertices of the terrain
+        std::vector<GLfloat> mesh_colors, sun_colors, moon_colors, skydome_colors, sketch_colors[4]; // an array to keep track of the colors of the terrain
+        std::vector<GLuint> mesh_indices, sun_indices, moon_indices, skydome_indices, sketch_indices[4];      // an array to keep track of the indices of the terrain
+        std::vector<GLfloat> mesh_textures, sun_textures, moon_textures, skydome_textures;
         
-        float mesh_dim;
-
         cv::VideoCapture menu_clips[6];
         cv::Mat menu_frame;
+
+        float angle = 0.0f; // to rename to something more meaningful (date)
         
-        void initializeSun();
+        void initializeOrbit();
+        void initializeSkydome();
         void initializeSplashscreen();
         void initializeCanvas();
-        void initializeSketch();
-        
-        void moveSun();
+
+        void cycleDayNight();
 
         static void drawMesh();
-        static void drawSun();
+        static void drawOrbit();
+        static void drawSkydome();
         static void drawSplashscreen();
         static void drawCanvas();
         static void drawSketch(short current_canvas);

@@ -139,19 +139,19 @@ void InputHandler::handleKeyboard()
             instance->renderer->resetSketches();
             // Pass the prediction thread the pointer to the boolean variable which tracks the enter key press.
             // When the prediction is complete, the thread simulates an enter key press.
-            instance->inference->predict(&keys[13]);
+            //instance->inference->predict(&keys[13]);
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
             break;
         case RENDERING_SCREEN:
             instance->sound_manager->playSuccessSound();
             instance->sound_manager->playBackgroundMusic();
             renderer->initializeMesh();
-            camera->setPosition(0, 3000, 2000);
+            camera->setPosition(0, 1000, 0);
             glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
             glLineWidth(1.0);
             break;
         }
-
+        
         keys[13] = false;
     }
     

@@ -56,7 +56,7 @@ Vec3<float>* Terrain::getMap(){return map;}
 int Terrain::getDim(){return dim;}
 
 // Return the world scale
-float Terrain::getWorldScale(){return world_scale;}
+float Terrain::getWorldDim(){return dim*world_scale;}
 
 float Terrain::getMaxHeight()
 {
@@ -103,8 +103,9 @@ void Terrain::getInfo()
     }
     
     printf("__________________________________________\n");
-    printf("Map size: {%d}x{%d}\n", dim, dim);
+    printf("Heightmap size: {%d}x{%d}\n", dim, dim);
     printf("World scale: %f\n", world_scale);
+    printf("World dim: %f\n", dim*world_scale);
     printf("Height scale: %f\n", 1 + log10(world_scale));
     printf("Min x: %f, Max x: %f\n", min_x, max_x);
     printf("Min y: %f, Max y: %f\n", min_y, max_y);

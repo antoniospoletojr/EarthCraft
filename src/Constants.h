@@ -12,10 +12,12 @@
 #define BASINS 3
 
 #define MESH 0
-#define SUN 1
-#define SPLASHSCREEN 2
-#define CANVAS 3
-#define SKETCH 4
+#define SPLASHSCREEN 1
+#define CANVAS 2
+#define SKETCH 3
+#define SKYDOME 4
+#define SUN 5
+#define MOON 6
 
 #define LOS_DISTANCE 2
 
