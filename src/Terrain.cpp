@@ -1,7 +1,3 @@
-#include <stdio.h>
-#include <assert.h>
-#include <cmath>
-#include "stb_image/stb_image.h"
 #include "Terrain.h"
 
 // Default constructor
@@ -14,103 +10,167 @@ Terrain::~Terrain()
 }
 
 // Parametrized constructor
-void Terrain::initialize(const char* filename, float worldScale)
+void Terrain::initialize(float worldScale)
 {
     this->world_scale = worldScale;
-    loadFromFile(filename);
+    loadMap();
+    loadTexture(16);
 }
 
-void Terrain::loadFromFile(const char* filename)
+void Terrain::loadMap()
 {
-    // Load the image file using soil library
-    int width, height, channels;
-    unsigned char* image = stbi_load(filename, &width, &height, &channels, 0);
-    
-    // Assert image is square
-    assert(width == height);
-    dim = width;
+    // Load the terrain heightmap using opencv library
+    cv::Mat image = cv::imread("./assets/sketches/heightmap.png", cv::IMREAD_GRAYSCALE);
+    unsigned char* data = image.data;
     
     // Check for an error during the load process
-    assert (image != nullptr);
+    assert(data != nullptr);
     
+    // Assert image is square
+    assert(image.rows == image.cols);
+
+    // Assign one image side to the dim attribute for storing the heightmap lenght
+    this->dim = image.rows;
+
     // Allocate memory for the height map
-    map = new Vec3<float>[dim * dim];
+    this->map = new Vertex3d<float>[this->dim * this->dim];
     
+    // Initialize the bounds struct
+    this->bounds.min_x = FLT_MAX;
+    this->bounds.max_x = FLT_MIN;
+
+    this->bounds.min_y = FLT_MAX;
+    this->bounds.max_y = FLT_MIN;
+
+    this->bounds.min_z = FLT_MAX;
+    this->bounds.max_z = FLT_MIN;
+
     // Fill in the height map 
-    for (int i = 0; i < dim; i++)
+    for (int i = 0; i < this->dim; i++)
     {
-        for (int j = 0; j < dim; j++)
+        for (int j = 0; j < this->dim; j++)
         {
             // Set the vertices
-            map[i * dim + j].set_x((i - dim / 2) * world_scale);
-            map[i * dim + j].set_y(image[(i * dim + j)] * (10 + log(world_scale)));
-            map[i * dim + j].set_z((j - dim / 2) * world_scale);
+            this->map[i * dim + j].x = ((i - dim / 2) * this->world_scale);
+            this->map[i * dim + j].y = (data[(i * dim + j)] * (15 + log(this->world_scale)));
+            this->map[i * dim + j].z = ((j - dim / 2) * this->world_scale);
+
+            // Update the bounds based on the current vertex
+            bounds.min_x = (map[i * dim + j].x < bounds.min_x) ? map[i * dim + j].x : bounds.min_x;
+            bounds.max_x = (map[i * dim + j].x > bounds.max_x) ? map[i * dim + j].x : bounds.max_x;
+            bounds.min_y = (map[i * dim + j].y < bounds.min_y) ? map[i * dim + j].y : bounds.min_y;
+            bounds.max_y = (map[i * dim + j].y > bounds.max_y) ? map[i * dim + j].y : bounds.max_y;
+            bounds.min_z = (map[i * dim + j].z < bounds.min_z) ? map[i * dim + j].z : bounds.min_z;
+            bounds.max_z = (map[i * dim + j].z > bounds.max_z) ? map[i * dim + j].z : bounds.max_z;
+        }
+    }
+}
+
+void Terrain::loadTexture(float scaling)
+{
+    // Load terrain texture tiles using opencv library
+    cv::Mat texture_1 = cv::imread("assets/textures/1.jpg", cv::IMREAD_COLOR);
+    cv::Mat texture_2 = cv::imread("assets/textures/2.jpg", cv::IMREAD_COLOR);
+    cv::Mat texture_3 = cv::imread("assets/textures/3.jpg", cv::IMREAD_COLOR);
+    cv::Mat texture_4 = cv::imread("assets/textures/4.jpg", cv::IMREAD_COLOR);
+    cv::Mat texture_5 = cv::imread("assets/textures/5.jpg", cv::IMREAD_COLOR);
+
+    // Check for an error during the load process
+    assert(texture_1.data != nullptr);
+    assert(texture_2.data != nullptr);
+    assert(texture_3.data != nullptr);
+    assert(texture_4.data != nullptr);
+    assert(texture_5.data != nullptr);
+    
+    short original_texture_size = texture_1.rows;
+    // Allocate memory for the opencv texture map based on texture_1 size
+    this->texture.create(original_texture_size * scaling, original_texture_size * scaling, CV_8UC3);
+    float terrain_texture_ratio = (float)this->dim / (float) texture.rows;
+    
+    printf("Texture size: {%d}x{%d}\n", original_texture_size * scaling, original_texture_size * scaling);
+    printf("Terrain texture ratio: %f\n", terrain_texture_ratio);
+    
+    int i_map;
+    int j_map;
+    float normalized_height;
+
+    // Cycle through the texture which must be generated
+    for (int i = 0; i < this->texture.cols; i++)
+    {
+        for (int j = 0; j < this->texture.rows; j++)
+        {
+            i_map = (int)floor(i * terrain_texture_ratio);
+            j_map = (int)floor(j * terrain_texture_ratio);
+            normalized_height = this->map[j_map * dim + i_map].y / this->bounds.max_y;
+            
+            // if height/this->bounds.max_y < 0.2 then assign texture_1, and similarly check for the other textures
+            if (normalized_height < 0.15) // 0 - 15 - 25
+            {
+                this->texture.at<cv::Vec3b>(i, j) = texture_1.at<cv::Vec3b>(i % original_texture_size, j % original_texture_size);
+            }
+            else if (normalized_height < 0.3) // 15 - 30 - 50
+            {   
+                this->texture.at<cv::Vec3b>(i, j) = texture_2.at<cv::Vec3b>(i % original_texture_size, j % original_texture_size);
+            }
+            else if (normalized_height < 0.5) // 30 - 50 - 70
+            {
+                this->texture.at<cv::Vec3b>(i, j) = texture_3.at<cv::Vec3b>(i % original_texture_size, j % original_texture_size);
+            }
+            else if (normalized_height < 0.75) // 50 - 75 - 95
+            {
+                this->texture.at<cv::Vec3b>(i, j) = texture_4.at<cv::Vec3b>(i % original_texture_size, j % original_texture_size);
+            }
+            else // 90 - 100
+            {
+                this->texture.at<cv::Vec3b>(i, j) = texture_5.at<cv::Vec3b>(i % original_texture_size, j % original_texture_size);
+            }
         }
     }
 }
 
 // Return the height map
-Vec3<float>* Terrain::getMap(){return map;}
+Vertex3d<float> *Terrain::getMap()
+{
+    return map;
+}
+
+// Return the texture map
+cv::Mat Terrain::getTexture()
+{
+    return texture;
+}
 
 // Return the dimension of the height map
-int Terrain::getDim(){return dim;}
+int Terrain::getDim()
+{
+    return dim;
+}
 
 // Return the world scale
-float Terrain::getWorldDim(){return dim*world_scale;}
+float Terrain::getWorldDim()
+{
+    return dim * world_scale;
+}
 
 float Terrain::getMaxHeight()
 {
-    float max_height = 0.0f;
-    
-    // Find the max height
-    for (int i = 0; i < dim * dim; i++)
-    {
-        if (map[i].y() > max_height)
-            max_height = map[i].y();
-    }
-    
-    return max_height;
+    return this->bounds.max_y;
 }
 
 // Print terrain info
 void Terrain::getInfo()
 {
-    float min_x = 0.0f, max_x = 0.0f;
-    float min_y = 0.0f, max_y = 0.0f;
-    float min_z = 0.0f, max_z = 0.0f;
-    
-    // Find the min and max values for x,y,z
-    for (int i = 0; i < dim; i++)
-    {
-        for (int j = 0; j < dim; j++)
-        {
-            
-            if (map[i * dim + j].x() < min_x)
-                min_x = map[i * dim + j].x();
-            if (map[i * dim + j].x() > max_x)
-                max_x = map[i * dim + j].x();
-            
-            if (map[i * dim + j].y() < min_y)
-                min_y = map[i * dim + j].y();
-            if (map[i * dim + j].y() > max_y)
-                max_y = map[i * dim + j].y();
-            
-            if (map[i * dim + j].z() < min_z)
-                min_z = map[i * dim + j].z();
-            if (map[i * dim + j].z() > max_z)
-                max_z = map[i * dim + j].z();
-        }
-    }
-    
+    printf(COLOR_YELLOW);
     printf("__________________________________________\n");
-    printf("Heightmap size: {%d}x{%d}\n", dim, dim);
-    printf("World scale: %f\n", world_scale);
-    printf("World dim: %f\n", dim*world_scale);
-    printf("Height scale: %f\n", 1 + log10(world_scale));
-    printf("Min x: %f, Max x: %f\n", min_x, max_x);
-    printf("Min y: %f, Max y: %f\n", min_y, max_y);
-    printf("Min z: %f, Max z: %f\n", min_z, max_z);
+    printf("Heightmap size: {%d}x{%d}\n", this->dim, this->dim);
+    printf("World scale: %f\n", this->world_scale);
+    printf("World dim: %f\n", this->dim * this->world_scale);
+    printf("Height scale: %f\n", 10 + log10(this->world_scale));
+    printf("Min x: %f, Max x: %f\n", this->bounds.min_x, this->bounds.max_x);
+    printf("Min y: %f, Max y: %f\n", this->bounds.min_y, this->bounds.max_y);
+    printf("Min z: %f, Max z: %f\n", this->bounds.min_z, this->bounds.max_z);
     printf("__________________________________________\n");
+    printf(COLOR_RESET);
 
     fflush(stdout);
 }

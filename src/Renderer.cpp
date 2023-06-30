@@ -72,18 +72,22 @@ Renderer::~Renderer()
 
 void Renderer::initializeMesh()
 {
+    // Allocate a terrain object
+    terrain = new Terrain();
+    terrain->initialize(24.0);
 
+    // Print the map info
+    terrain->getInfo();
+    // Retrieve the map
+    Vertex3d<float> *map = terrain->getMap();
     // Load skydome texture image
-    cv::Mat mesh_texture = cv::imread("./assets/textures/sand.jpg");
+    //cv::Mat mesh_texture = cv::imread("assets/textures/1.png", cv::IMREAD_COLOR);
+    cv::Mat mesh_texture = terrain->getTexture();
+    // Get the maximum height of the map
+    float max_y = terrain->getMaxHeight();
+    // Get the dimension of the map, useful for allocations
+    int dim = terrain->getDim();
     
-    // Check if the image was loaded successfully
-    if (mesh_texture.empty())
-    {
-        // Handle error
-        std::cerr << "Failed to load mesh texture image." << std::endl;
-        return;
-    }
-
     // Generate and bind a texture object
     glGenTextures(1, &objects[MESH].texture);
     glBindTexture(GL_TEXTURE_2D, objects[MESH].texture);
@@ -93,7 +97,7 @@ void Renderer::initializeMesh()
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
+    
     // Upload the texture image data
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, mesh_texture.cols, mesh_texture.rows, 0, GL_BGR, GL_UNSIGNED_BYTE, mesh_texture.data);
 
@@ -108,20 +112,6 @@ void Renderer::initializeMesh()
     glGenBuffers(1, &objects[MESH].tbo);
     glGenBuffers(1, &objects[MESH].ibo);
     
-    // Allocate a terrain object
-    terrain = new Terrain();
-    terrain->initialize("./assets/sketches/heightmap.png", 16.0);
-    
-    // Retrieve the map
-    Vec3<float> *map = terrain->getMap();
-    
-    // Print the map info
-    terrain->getInfo();
-    float max_y = terrain->getMaxHeight();
-    
-    // Get the dimension of the map, useful for allocations
-    int dim = terrain->getDim();
-    float world_dim = terrain->getWorldDim()/2.0f;
     //Reset mesh arrays if they are not empty
     mesh_vertices.clear();
     mesh_colors.clear();
@@ -133,15 +123,15 @@ void Renderer::initializeMesh()
     {
         for (int j = 0; j < dim; j++)
         {
-            mesh_vertices.push_back(map[i * dim + j].x());
-            mesh_vertices.push_back(map[i * dim + j].y());
-            mesh_vertices.push_back(map[i * dim + j].z());
+            mesh_vertices.push_back(map[i * dim + j].x);
+            mesh_vertices.push_back(map[i * dim + j].y);
+            mesh_vertices.push_back(map[i * dim + j].z);
             
-            mesh_textures.push_back((float)i/dim*8);
-            mesh_textures.push_back((float)j/dim*8);
-
+            mesh_textures.push_back((float)i / dim);
+            mesh_textures.push_back((float)j / dim);
+            
             // Calculate the normalized height value
-            float normalizedHeight = map[i * dim + j].y() / max_y;
+            float normalizedHeight = map[i * dim + j].y / max_y;
             
             // Define the green and brown color values with adjusted components
             float greenR = 0.0f, greenG = 0.8f, greenB = 0.0f;
@@ -173,7 +163,6 @@ void Renderer::initializeMesh()
         // Use primitive restart to start a new strip
         mesh_indices.push_back(0xFFFFFFFFu);
     }
-    
     
     // Use maximum unsigned int as restart index
     glEnable(GL_PRIMITIVE_RESTART);
@@ -730,7 +719,7 @@ void Renderer::takeSnapshot()
 
 void Renderer::cycleDayNight()
 {
-    angle += 0.2f;
+    angle += 2.2f;
     if (angle > 360.0f)
         angle -= 360.0f;
 }
@@ -858,9 +847,9 @@ void Renderer::drawMesh()
     glEnableClientState(GL_VERTEX_ARRAY);
     //glEnableClientState(GL_COLOR_ARRAY);
     glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-    
+
     glEnable(GL_PRIMITIVE_RESTART);                                                         // Enable primitive restart
-    glDrawElements(GL_QUAD_STRIP, instance->mesh_indices.size(), GL_UNSIGNED_INT, 0);       // Draw the triangles
+    glDrawElements(GL_TRIANGLE_STRIP, instance->mesh_indices.size(), GL_UNSIGNED_INT, 0);       // Draw the triangles
     glDisable(GL_PRIMITIVE_RESTART);                                                        // Disable primitive restart
     
     glDisableClientState(GL_VERTEX_ARRAY);
@@ -878,8 +867,17 @@ void Renderer::drawOrbit()
     glPushMatrix();
         glMatrixMode(GL_MODELVIEW);
         
-        glRotatef(instance->angle, 0,0,1);
+        GLfloat light_position[4];
+        // Initialize the light position to the sun's position
+        light_position[0] = instance->sun_vertices[0];
+        light_position[1] = instance->sun_vertices[1];
+        light_position[2] = instance->sun_vertices[2];
+        light_position[3] = 1.0f;
         
+        glRotatef(instance->angle, 0,0,1);
+
+        glLightfv(GL_LIGHT0, GL_POSITION, light_position);
+
         // Bind the sun texture
         glBindTexture(GL_TEXTURE_2D, instance->objects[SUN].texture);
         

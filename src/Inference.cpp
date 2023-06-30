@@ -56,6 +56,7 @@ void Inference::worker(bool *success)
     // Inference is complete, set isRunning to false
     is_running = false;
     PyGILState_Release(gil_state); // Release the Global Interpreter Lock (GIL)
-    printf("Inference complete\n");
+    printf(COLOR_GREEN "Inference complete\n" COLOR_RESET);
+    fflush(stdout);
     *success = true;
 }

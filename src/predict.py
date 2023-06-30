@@ -125,9 +125,6 @@ def predict():
     # Predict
     output = generator([input_image, noise])
     
-    # Print output max and min
-    print("Output max: " + str(np.max(output)))
-    print("Output min: " + str(np.min(output)))
     # Save
     output = np.squeeze(np.uint8(output * 127.5 + 127.5), axis=0)
     

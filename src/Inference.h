@@ -3,6 +3,7 @@
 
 #include <thread>
 #include <Python.h>
+#include "Colors.h"
 
 class Inference
 {

@@ -3,6 +3,7 @@
 
 #include "Camera.h"
 #include "Renderer.h"
+#include "Colors.h"
 #include "Inference.h"
 #include "SoundManager.h"
 

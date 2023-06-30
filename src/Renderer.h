@@ -45,7 +45,7 @@ class Renderer
         
         cv::VideoCapture menu_clips[6];
         cv::Mat menu_frame;
-
+        
         float angle = 0.0f; // to rename to something more meaningful (date)
         
         void initializeOrbit();

@@ -116,40 +116,49 @@ void InputHandler::handleKeyboard()
         else
             renderer->current_menu_page++;
 
-        printf("Entering page %d\n", renderer->current_menu_page);
-
+        printf(COLOR_MAGENTA "Entering page %d\n" COLOR_RESET, renderer->current_menu_page);
+        fflush(stdout);
+        
         switch (renderer->current_menu_page)
         {
-        case LANDING_SCREEN:
-            instance->sound_manager->playResetSound();
-            instance->sound_manager->playBackgroundMusic();
-            instance->inference->reset();
-            instance->camera->reset();
-            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-            break;
-        case PEAKS_SCREEN:
-        case RIDGES_SCREEN:
-        case RIVERS_SCREEN:
-        case BASINS_SCREEN:
-            instance->sound_manager->playClickSound();
-            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-            break;
-        case LOADING_SCREEN:
-            instance->sound_manager->playClickSound();
-            instance->renderer->resetSketches();
-            // Pass the prediction thread the pointer to the boolean variable which tracks the enter key press.
-            // When the prediction is complete, the thread simulates an enter key press.
-            //instance->inference->predict(&keys[13]);
-            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-            break;
-        case RENDERING_SCREEN:
-            instance->sound_manager->playSuccessSound();
-            instance->sound_manager->playBackgroundMusic();
-            renderer->initializeMesh();
-            camera->setPosition(0, 1000, 0);
-            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-            glLineWidth(1.0);
-            break;
+            case LANDING_SCREEN:
+                instance->sound_manager->playResetSound();
+                instance->sound_manager->playBackgroundMusic();
+                instance->inference->reset();
+                instance->camera->reset();
+                glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+                glDisable(GL_LIGHTING);
+                break;
+
+            case PEAKS_SCREEN:
+
+            case RIDGES_SCREEN:
+
+            case RIVERS_SCREEN:
+            
+            case BASINS_SCREEN:
+                instance->sound_manager->playClickSound();
+                glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+                break;
+
+            case LOADING_SCREEN:
+                instance->sound_manager->playClickSound();
+                instance->renderer->resetSketches();
+                // Pass the prediction thread the pointer to the boolean variable which tracks the enter key press.
+                // When the prediction is complete, the thread simulates an enter key press.
+                instance->inference->predict(&keys[13]);
+                glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+                break;
+
+            case RENDERING_SCREEN:
+                renderer->initializeMesh();
+                instance->sound_manager->playSuccessSound();
+                instance->sound_manager->playBackgroundMusic();
+                camera->setPosition(0, 1000, 0);
+                glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+                glLineWidth(1.0);
+                // glEnable(GL_LIGHTING);
+                break;
         }
         
         keys[13] = false;
@@ -185,18 +194,30 @@ void InputHandler::mouseClick(int button, int state, int x, int y)
         instance->is_mouse_down = true;
         instance->mouse_x = x;
         instance->mouse_y = y;
-
-        short current_page = instance->renderer->current_menu_page;
-        if (current_page == RIDGES_SCREEN | current_page == PEAKS_SCREEN | current_page == RIVERS_SCREEN | current_page == BASINS_SCREEN)
+        
+        float width = glutGet(GLUT_WINDOW_WIDTH);
+        float height = glutGet(GLUT_WINDOW_HEIGHT);
+        
+        if (x > width * LEFT_SKETCH_BORDER && x < width * RIGHT_SKETCH_BORDER && y > height * TOP_SKETCH_BORDER && y < height * BOTTOM_SKETCH_BORDER)
         {
-            float width = glutGet(GLUT_WINDOW_WIDTH);
-            float height = glutGet(GLUT_WINDOW_HEIGHT);
-            // If the mouse is outside the sketch area then return
-            if (x < width * LEFT_SKETCH_BORDER || x > width * RIGHT_SKETCH_BORDER || y < height * TOP_SKETCH_BORDER || y > height * BOTTOM_SKETCH_BORDER)
-                return;
-            // Otherwise sketch the pixel
-            instance->renderer->sketch(x / width, 1 - y / height);
-            // printf("x: %f, y: %f\n", x / width, 1 - y / height);
+            short current_page = instance->renderer->current_menu_page;
+            if (current_page == RIDGES_SCREEN | current_page == RIVERS_SCREEN)
+            {
+                // If the mouse is outside the sketch area then return
+                // Otherwise sketch the pixel
+                instance->renderer->sketch(x / width, 1 - y / height);
+            
+            }
+            if (current_page == PEAKS_SCREEN | current_page == BASINS_SCREEN)
+            {
+                // Generate random noise between 0 and 0.1
+                for (int i = 0; i < 3; i++)
+                {
+                    float dx = static_cast<float>(rand()) / static_cast<float>(RAND_MAX) * 0.04 - 0.02;
+                    float dy = static_cast<float>(rand()) / static_cast<float>(RAND_MAX) * 0.04 - 0.02;
+                    instance->renderer->sketch(x / width + dx, 1 - y / height + dy);
+                }
+            }
         }
     }
     // If the left mouse button is released then set the is_mouse_down flag to false
@@ -230,18 +251,27 @@ void InputHandler::mouseMotion(int x, int y)
         }
     }
 
-    if (current_page == RIDGES_SCREEN | current_page == PEAKS_SCREEN | current_page == RIVERS_SCREEN | current_page == BASINS_SCREEN)
+    float width = glutGet(GLUT_WINDOW_WIDTH);
+    float height = glutGet(GLUT_WINDOW_HEIGHT);
+
+    if (x > width * LEFT_SKETCH_BORDER && x < width * RIGHT_SKETCH_BORDER && y > height * TOP_SKETCH_BORDER && y < height * BOTTOM_SKETCH_BORDER)
     {
-        if (instance->is_mouse_down)
+        short current_page = instance->renderer->current_menu_page;
+        if (current_page == RIDGES_SCREEN | current_page == RIVERS_SCREEN)
         {
-            float width = glutGet(GLUT_WINDOW_WIDTH);
-            float height = glutGet(GLUT_WINDOW_HEIGHT);
             // If the mouse is outside the sketch area then return
-            if (x < width * LEFT_SKETCH_BORDER || x > width * RIGHT_SKETCH_BORDER || y < height * TOP_SKETCH_BORDER || y > height * BOTTOM_SKETCH_BORDER)
-                return;
             // Otherwise sketch the pixel
-            instance->renderer->sketch(x/width, 1-y/height);
-            // printf("x: %f, y: %f\n", x / width, 1 - y / height);
+            instance->renderer->sketch(x / width, 1 - y / height);
+        }
+        if (current_page == PEAKS_SCREEN | current_page == BASINS_SCREEN)
+        {
+            // Generate random noise between 0 and 0.1
+            for (int i = 0; i < 3; i++)
+            {
+                float dx = static_cast<float>(rand()) / static_cast<float>(RAND_MAX) * 0.04 - 0.02;
+                float dy = static_cast<float>(rand()) / static_cast<float>(RAND_MAX) * 0.04 - 0.02;
+                instance->renderer->sketch(x / width + dx, 1 - y / height + dy);
+            }
         }
     }
 }

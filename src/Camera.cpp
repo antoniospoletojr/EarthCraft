@@ -12,8 +12,8 @@ Camera::Camera()
     position[2] = 0;
     alfa = 0.0f;
     beta = 0.0f;
-    movement_speed = 4.0f * 5;
-    rotation_speed = 1.5f * 2;
+    movement_speed = 4.0f * 6;
+    rotation_speed = 1.5f;
 }
 
 // Parametrized constructor
@@ -87,7 +87,7 @@ void Camera::moveUp()
 // Move the camera down
 void Camera::moveDown()
 {
-    if (position[1] > 10)
+    if (position[1] > 100)
         position[1] -= movement_speed;
 }
 

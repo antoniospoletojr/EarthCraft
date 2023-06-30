@@ -1,7 +1,21 @@
 #ifndef TERRAIN_H
 #define TERRAIN_H
 
-#include "Vec3.hpp"
+#include "Vertex.hpp"
+#include "Colors.h"
+#include <cmath>
+#include <opencv2/opencv.hpp>
+#include <vector>
+
+typedef struct
+{
+	float min_x;
+	float max_x;
+	float min_y;
+	float max_y;
+	float min_z;
+	float max_z;
+} TerrainBounds;
 
 class Terrain
 {
@@ -9,9 +23,10 @@ public:
 	Terrain();
 	~Terrain();
 	
-	void initialize(const char *filename, float worldScale);
-	void loadFromFile(const char *filename); 
-	Vec3<float>* getMap();
+	void initialize(float worldScale);
+	Vertex3d<float>* getMap();
+	cv::Mat getTexture();
+	
 	int getDim();
 	float getWorldDim();
 	float getMaxHeight();
@@ -20,7 +35,13 @@ public:
 private:
 	int dim;
 	float world_scale;
-	Vec3<float> *map;
+	TerrainBounds bounds;
+
+	Vertex3d<float> *map;
+	cv::Mat texture;
+		
+	void loadMap();
+	void loadTexture(float scaling);
 };
 
 #endif

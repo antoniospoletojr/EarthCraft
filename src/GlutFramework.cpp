@@ -41,11 +41,33 @@ void GlutFramework::initialize(int argc, char** argv)
     // Enable 2D texturing
     glEnable(GL_TEXTURE_2D);
     
-    // // Enable lighting calculations for polygons
-    // glEnable(GL_LIGHTING);
+    // Turn on OpenGL lighting.
+    glEnable(GL_LIGHT0);                                 // Enable particular light source.
+
+    // Light property vectors.
+    float lightAmb[] = {0.9, 0.9, 0.9, 1.0};
+    float lightDifAndSpec[] = {1.0, 1.0, 1.0, 1.0};
+    float globAmb[] = {0.8, 0.8, 0.8, 1.0};
+
+    // Light properties.
+    glLightfv(GL_LIGHT0, GL_AMBIENT, lightAmb);
+    glLightfv(GL_LIGHT0, GL_DIFFUSE, lightDifAndSpec);
+    glLightfv(GL_LIGHT0, GL_SPECULAR, lightDifAndSpec);
     
-    // // Enable light source 0
-    // glEnable(GL_LIGHT0);
+    glLightModelfv(GL_LIGHT_MODEL_AMBIENT, globAmb);     // Global ambient light.
+    
+    // Set the cutoff angle to a larger value for wider light rays
+    GLfloat cutoffAngle = 60.0f;  // Example value
+    glLightf(GL_LIGHT0, GL_SPOT_CUTOFF, cutoffAngle);
+
+    // Set the exponent to a higher value for longer light rays
+    GLfloat exponentValue = 300.0f;  // Example value
+    glLightf(GL_LIGHT0, GL_SPOT_EXPONENT, exponentValue);
+
+    // Example attenuation factors
+    GLfloat constantAttenuation = .3f;
+
+    glLightf(GL_LIGHT0, GL_CONSTANT_ATTENUATION, constantAttenuation);
     
     // Enable automatic normalization of surface normals to unit length
     glEnable(GL_NORMALIZE);
