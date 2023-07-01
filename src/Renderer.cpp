@@ -1,19 +1,9 @@
-#include <assimp/Importer.hpp>
-#include <assimp/scene.h>
-#include <assimp/postprocess.h>
-
-#include <iostream>
-#include <GL/glew.h>
-#include <GL/freeglut.h>
-#include "random"
-#include "Terrain.h"
 #include "Renderer.h"
-#include "Constants.h"
 
 
 using namespace std;
 
-Renderer* Renderer::instance = nullptr;
+Renderer *Renderer::instance = nullptr;
 
 // Default constructor
 Renderer::Renderer()
@@ -29,11 +19,11 @@ Renderer::~Renderer()
     glDisableClientState(GL_VERTEX_ARRAY);
     glDisableClientState(GL_COLOR_ARRAY);
     glDisableClientState(GL_TEXTURE_COORD_ARRAY);
-    
+
     // Unbind any buffers
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-    
+
     // Deallocate memory
     mesh_vertices.clear();
     mesh_colors.clear();
@@ -50,14 +40,14 @@ Renderer::~Renderer()
         vertices.clear();
 
     objects.clear();
-    
+
     // Delete the vertex array objects
     glDeleteVertexArrays(1, &objects[MESH].vao);
     glDeleteVertexArrays(1, &objects[SUN].vao);
     glDeleteVertexArrays(1, &objects[MOON].vao);
     glDeleteVertexArrays(1, &objects[SPLASHSCREEN].vao);
     glDeleteVertexArrays(1, &objects[CANVAS].vao);
-    
+
     // Deallocate opencv objects
     menu_clips[LANDING_SCREEN].release();
     menu_clips[RIDGES_SCREEN].release();
@@ -66,37 +56,34 @@ Renderer::~Renderer()
     menu_clips[BASINS_SCREEN].release();
     menu_clips[LOADING_SCREEN].release();
     menu_frame.release();
-    
+
     Renderer::instance = nullptr;
 }
 
-void Renderer::initializeMesh()
-{
-    // Allocate a terrain object
-    terrain = new Terrain();
-    terrain->initialize(24.0);
-
+void Renderer::initializeMesh(Terrain *terrain)
+{    
+    this->terrain = terrain;
     // Print the map info
-    terrain->getInfo();
+    this->terrain->getInfo();
     // Retrieve the map
-    Vertex3d<float> *map = terrain->getMap();
+    Vertex3d<float> *map = this->terrain->getMap();
     // Load skydome texture image
-    cv::Mat mesh_texture = terrain->getTexture();
+    cv::Mat mesh_texture = this->terrain->getTexture();
     // Get the maximum height of the map
-    float max_y = terrain->getMaxHeight();
+    float max_y = this->terrain->getMaxHeight();
     // Get the dimension of the map, useful for allocations
-    int dim = terrain->getDim();
-    
+    int dim = this->terrain->getDim();
+
     // Generate and bind a texture object
     glGenTextures(1, &objects[MESH].texture);
     glBindTexture(GL_TEXTURE_2D, objects[MESH].texture);
-    
+
     // Set texture parameters
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    
+
     // Upload the texture image data
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, mesh_texture.cols, mesh_texture.rows, 0, GL_BGR, GL_UNSIGNED_BYTE, mesh_texture.data);
 
@@ -104,19 +91,19 @@ void Renderer::initializeMesh()
     glGenVertexArrays(1, &objects[MESH].vao);
     // Bind the vertex array object for the mesh
     glBindVertexArray(objects[MESH].vao);
-    
+
     // Generate the buffer objects
     glGenBuffers(1, &objects[MESH].vbo);
     glGenBuffers(1, &objects[MESH].cbo);
     glGenBuffers(1, &objects[MESH].tbo);
     glGenBuffers(1, &objects[MESH].ibo);
-    
-    //Reset mesh arrays if they are not empty
+
+    // Reset mesh arrays if they are not empty
     mesh_vertices.clear();
     mesh_colors.clear();
     mesh_indices.clear();
     mesh_textures.clear();
-    
+
     // Generate vertices and colors
     for (int i = 0; i < dim; i++)
     {
@@ -125,17 +112,17 @@ void Renderer::initializeMesh()
             mesh_vertices.push_back(map[i * dim + j].x);
             mesh_vertices.push_back(map[i * dim + j].y);
             mesh_vertices.push_back(map[i * dim + j].z);
-            
+
             mesh_textures.push_back((float)i / dim);
             mesh_textures.push_back((float)j / dim);
-            
+
             // Calculate the normalized height value
             float normalizedHeight = map[i * dim + j].y / max_y;
-            
+
             // Define the green and brown color values with adjusted components
             float greenR = 0.0f, greenG = 0.8f, greenB = 0.0f;
             float brownR = 0.7f, brownG = 0.4f, brownB = 0.1f;
-            
+
             // Interpolate the colors based on the normalized height
             float red = greenR + (brownR - greenR) * 1.7 * normalizedHeight;
             float green = greenG + (brownG - greenG) * 1.7 * normalizedHeight;
@@ -162,7 +149,7 @@ void Renderer::initializeMesh()
         // Use primitive restart to start a new strip
         mesh_indices.push_back(0xFFFFFFFFu);
     }
-    
+
     // Use maximum unsigned int as restart index
     glEnable(GL_PRIMITIVE_RESTART);
     glPrimitiveRestartIndex(0xFFFFFFFFu);
@@ -184,8 +171,8 @@ void Renderer::initializeMesh()
 
     // Bind and fill indices buffer.
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, objects[MESH].ibo);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, mesh_indices.size()*sizeof(GLuint), mesh_indices.data(), GL_STATIC_DRAW);
-    
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, mesh_indices.size() * sizeof(GLuint), mesh_indices.data(), GL_STATIC_DRAW);
+
     // Unbind everything
     glBindVertexArray(0);
 }
@@ -195,7 +182,7 @@ void Renderer::initializeOrbit()
     // SUN OBJECT
     // Load skydome texture image
     cv::Mat sun_texture = cv::imread("./assets/textures/sun.png");
-    
+
     // Check if the image was loaded successfully
     if (sun_texture.empty())
     {
@@ -203,7 +190,7 @@ void Renderer::initializeOrbit()
         std::cerr << "Failed to load texture image." << std::endl;
         return;
     }
-    
+
     // Generate and bind a texture object
     glGenTextures(1, &objects[SUN].texture);
     glBindTexture(GL_TEXTURE_2D, objects[SUN].texture);
@@ -216,15 +203,15 @@ void Renderer::initializeOrbit()
 
     // Upload the texture image data
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, sun_texture.cols, sun_texture.rows, 0, GL_BGR, GL_UNSIGNED_BYTE, sun_texture.data);
-    
+
     Assimp::Importer importer;
-    
+
     // Load the .obj file
-    const aiScene* sun_scene = importer.ReadFile("./assets/models/sun.obj", aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_GenNormals);
-     // Check if the scene was loaded successfully
+    const aiScene *sun_scene = importer.ReadFile("./assets/models/sun.obj", aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_GenNormals);
+    // Check if the scene was loaded successfully
     if (!sun_scene || sun_scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !sun_scene->mRootNode)
         std::cout << "Error loading scene: " << importer.GetErrorString() << std::endl;
-    
+
     // For each mesh in the scene
     for (unsigned int i = 0; i < sun_scene->mNumMeshes; ++i)
     {
@@ -236,7 +223,7 @@ void Renderer::initializeOrbit()
             // Extract vertices
             aiVector3D vertex = mesh->mVertices[j];
             sun_vertices.push_back(vertex.x);
-            sun_vertices.push_back(vertex.y  + 5000);
+            sun_vertices.push_back(vertex.y + 5000);
             sun_vertices.push_back(vertex.z);
 
             // Extract texture coordinates
@@ -255,7 +242,7 @@ void Renderer::initializeOrbit()
 
             // Assume triangular faces
             if (face.mNumIndices == 3)
-            {   
+            {
                 sun_indices.push_back(face.mIndices[0]);
                 sun_indices.push_back(face.mIndices[1]);
                 sun_indices.push_back(face.mIndices[2]);
@@ -282,7 +269,7 @@ void Renderer::initializeOrbit()
     glBindBuffer(GL_ARRAY_BUFFER, objects[SUN].tbo);
     glBufferData(GL_ARRAY_BUFFER, sun_textures.size() * sizeof(float), sun_textures.data(), GL_STATIC_DRAW);
     glTexCoordPointer(2, GL_FLOAT, 0, 0);
-    
+
     // Bind and fill indices buffer.
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, objects[SUN].ibo);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sun_indices.size() * sizeof(GLuint), sun_indices.data(), GL_STATIC_DRAW);
@@ -295,7 +282,7 @@ void Renderer::initializeOrbit()
     // MOON OBJECT
     // Load skydome texture image
     cv::Mat moon_texture = cv::imread("./assets/textures/moon.jpg");
-    
+
     // Check if the image was loaded successfully
     if (moon_texture.empty())
     {
@@ -316,7 +303,7 @@ void Renderer::initializeOrbit()
 
     // Upload the texture image data
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, moon_texture.cols, moon_texture.rows, 0, GL_BGR, GL_UNSIGNED_BYTE, moon_texture.data);
-    
+
     // Load the .obj file
     const aiScene *moon_scene = importer.ReadFile("./assets/models/moon.obj", aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_GenNormals);
     // Check if the scene was loaded successfully
@@ -380,7 +367,7 @@ void Renderer::initializeOrbit()
     glBindBuffer(GL_ARRAY_BUFFER, objects[MOON].tbo);
     glBufferData(GL_ARRAY_BUFFER, moon_textures.size() * sizeof(float), moon_textures.data(), GL_STATIC_DRAW);
     glTexCoordPointer(2, GL_FLOAT, 0, 0);
-    
+
     // Bind and fill indices buffer.
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, objects[MOON].ibo);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, moon_indices.size() * sizeof(GLuint), moon_indices.data(), GL_STATIC_DRAW);
@@ -407,7 +394,7 @@ void Renderer::initializeSkydome()
     // Generate and bind a texture object
     glGenTextures(1, &objects[SKYDOME].texture);
     glBindTexture(GL_TEXTURE_2D, objects[SKYDOME].texture);
-    
+
     // Set texture parameters
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -421,14 +408,14 @@ void Renderer::initializeSkydome()
     Assimp::Importer importer;
 
     // Load the .obj file
-    const aiScene *scene = importer.ReadFile("./assets/models/skydome.obj", aiProcess_Triangulate | aiProcess_FlipUVs |aiProcess_GenNormals);
+    const aiScene *scene = importer.ReadFile("./assets/models/skydome.obj", aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_GenNormals);
     // Check if the scene was loaded successfully
     if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode)
     {
         std::cerr << "Error loading skydome model: " << importer.GetErrorString() << std::endl;
         return;
     }
-    
+
     // For each mesh in the scene
     for (unsigned int i = 0; i < scene->mNumMeshes; ++i)
     {
@@ -442,7 +429,7 @@ void Renderer::initializeSkydome()
             skydome_vertices.push_back(vertex.x);
             skydome_vertices.push_back(vertex.y);
             skydome_vertices.push_back(vertex.z);
-            
+
             // Extract texture coordinates
             if (mesh->HasTextureCoords(0))
             {
@@ -451,7 +438,7 @@ void Renderer::initializeSkydome()
                 skydome_textures.push_back(texCoord.x);
             }
         }
-        
+
         // For each face in the mesh
         for (unsigned int j = 0; j < mesh->mNumFaces; ++j)
         {
@@ -466,7 +453,7 @@ void Renderer::initializeSkydome()
             }
         }
     }
-    
+
     // Generate the vertex array object for the skydome
     glGenVertexArrays(1, &objects[SKYDOME].vao);
     // Bind the vertex array object for the skydome
@@ -490,7 +477,7 @@ void Renderer::initializeSkydome()
     // Bind and fill the index buffer object
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, objects[SKYDOME].ibo);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, skydome_indices.size() * sizeof(unsigned int), skydome_indices.data(), GL_STATIC_DRAW);
-    
+
     // Unbind everything
     glBindVertexArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -524,7 +511,7 @@ void Renderer::initializeSplashscreen()
     glEnableClientState(GL_VERTEX_ARRAY);
     glEnableClientState(GL_COLOR_ARRAY);
     glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-    
+
     // Bind the vertex buffer object
     glBindBuffer(GL_ARRAY_BUFFER, objects[SPLASHSCREEN].vbo);
     // Copy data into the vertex buffer
@@ -538,7 +525,7 @@ void Renderer::initializeSplashscreen()
     glBufferData(GL_ARRAY_BUFFER, colors.size() * sizeof(GLfloat), colors.data(), GL_STATIC_DRAW);
     // Specify color pointer location
     glColorPointer(4, GL_FLOAT, 0, 0);
-    
+
     // Bind the texture buffer object
     glBindBuffer(GL_ARRAY_BUFFER, objects[SPLASHSCREEN].tbo);
     // Copy data into the texture buffer
@@ -568,7 +555,7 @@ void Renderer::initializeCanvas()
     glGenVertexArrays(1, &objects[CANVAS].vao);
     // Bind the vertex array object for the canvas
     glBindVertexArray(objects[CANVAS].vao);
-    
+
     // Generate the vertex buffer objects
     glGenBuffers(1, &objects[CANVAS].vbo);
     // Generate the texture buffer objects
@@ -585,7 +572,7 @@ void Renderer::initializeCanvas()
     glEnableClientState(GL_VERTEX_ARRAY);
     glEnableClientState(GL_COLOR_ARRAY);
     glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-    
+
     // Bind the vertex buffer object
     glBindBuffer(GL_ARRAY_BUFFER, objects[CANVAS].vbo);
     // Copy data into the vertex buffer
@@ -599,7 +586,7 @@ void Renderer::initializeCanvas()
     glBufferData(GL_ARRAY_BUFFER, colors.size() * sizeof(GLfloat), colors.data(), GL_STATIC_DRAW);
     // Specify color pointer location
     glColorPointer(4, GL_FLOAT, 0, 0);
-    
+
     // Bind the texture buffer object
     glBindBuffer(GL_ARRAY_BUFFER, objects[CANVAS].tbo);
     // Copy data into the texture buffer
@@ -620,19 +607,19 @@ void Renderer::initialize(Camera *camera)
 {
     // Set the camera
     this->camera = camera;
-    
+
     // Allocate space for 7 objects (Mesh, Splashscreen, Canvas, Sketch, Skydome, Sun, Moon)
     objects.resize(7);
-    
+
     // Generate the vertex array objects; we need 2 objects: MESH and ORBIT
     this->initializeOrbit();
     this->initializeSplashscreen();
     this->initializeCanvas();
     this->initializeSkydome();
-    
+
     // Set the glut timer callback for the sun animaton
     glutTimerFunc(100, Renderer::timerCallback, 0);
-    
+
     glutDisplayFunc(Renderer::draw);
 }
 
@@ -666,7 +653,7 @@ void Renderer::takeSnapshot()
     glBindRenderbuffer(GL_RENDERBUFFER, 0);
 
     glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
-    
+
     if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
         std::cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << std::endl;
 
@@ -675,7 +662,7 @@ void Renderer::takeSnapshot()
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // we're not using the stencil buffer now
     glViewport(0, 0, 1920, 1080);
     instance->drawSketch(current_canvas);
-    
+
     // Define the snapshot matrix
     cv::Mat snapshot(800, 800, CV_8UC3);
     // Read the pixels from the framebuffer
@@ -726,13 +713,13 @@ void Renderer::cycleDayNight()
 void Renderer::sketch(float x, float y)
 {
     // current page is used as index for the sketch_vertices, sketch_colors and sketch_indices arrays and "-1" removes the case of the landing screen
-    short current_canvas = current_menu_page-1;
+    short current_canvas = current_menu_page - 1;
     sketch_vertices[current_canvas].emplace_back(x);
     sketch_vertices[current_canvas].emplace_back(y);
-    // The sketch must be drawn together with the canvas; to ensure 
+    // The sketch must be drawn together with the canvas; to ensure
     // that the depth buffer is updated correctly, the sketch is drawn with a non 0 z-coordinate
     sketch_vertices[current_canvas].emplace_back(0.5);
-    
+
     // If the current canvas is 0, set color to dark green, if 1 set color to brown, if 2 set color to light blue, if 3 set color dark blue
     if (current_canvas == RIDGES)
     {
@@ -758,9 +745,9 @@ void Renderer::sketch(float x, float y)
         sketch_colors[current_canvas].emplace_back(0);
         sketch_colors[current_canvas].emplace_back(0.7);
     }
-    
+
     if (x != 0xFFFFFFFFu)
-        sketch_indices[current_canvas].emplace_back(sketch_vertices[current_canvas].size()/3 - 1);
+        sketch_indices[current_canvas].emplace_back(sketch_vertices[current_canvas].size() / 3 - 1);
     else
         sketch_indices[current_canvas].emplace_back(0xFFFFFFFFu);
 }
@@ -780,55 +767,55 @@ void Renderer::timerCallback(int value)
 {
     switch (instance->current_menu_page)
     {
-        case LANDING_SCREEN:
-            if (!instance->menu_clips[LANDING_SCREEN].read(instance->menu_frame))
-            {
-                instance->menu_clips[LANDING_SCREEN].set(cv::CAP_PROP_POS_FRAMES, 0);
-                instance->menu_clips[LANDING_SCREEN].read(instance->menu_frame);
-            }
-            break;
-        case RIDGES_SCREEN:
-            if (!instance->menu_clips[RIDGES_SCREEN].read(instance->menu_frame))
-            {
-                instance->menu_clips[RIDGES_SCREEN].set(cv::CAP_PROP_POS_FRAMES, 0);
-                instance->menu_clips[RIDGES_SCREEN].read(instance->menu_frame);
-            }
-            break;
-        case PEAKS_SCREEN:
-            if (!instance->menu_clips[PEAKS_SCREEN].read(instance->menu_frame))
-            {
-                instance->menu_clips[PEAKS_SCREEN].set(cv::CAP_PROP_POS_FRAMES, 0);
-                instance->menu_clips[PEAKS_SCREEN].read(instance->menu_frame);
-            }
-            break;
-        case RIVERS_SCREEN:
-            if (!instance->menu_clips[RIVERS_SCREEN].read(instance->menu_frame))
-            {
-                instance->menu_clips[RIVERS_SCREEN].set(cv::CAP_PROP_POS_FRAMES, 0);
-                instance->menu_clips[RIVERS_SCREEN].read(instance->menu_frame);
-            }
-            break;
-        case BASINS_SCREEN:
-            if (!instance->menu_clips[BASINS_SCREEN].read(instance->menu_frame))
-            {
-                instance->menu_clips[BASINS_SCREEN].set(cv::CAP_PROP_POS_FRAMES, 0);
-                instance->menu_clips[BASINS_SCREEN].read(instance->menu_frame);
-            }
-            break;
-        case LOADING_SCREEN:
-            if (!instance->menu_clips[LOADING_SCREEN].read(instance->menu_frame))
-            {
-                instance->menu_clips[LOADING_SCREEN].set(cv::CAP_PROP_POS_FRAMES, 0);
-                instance->menu_clips[LOADING_SCREEN].read(instance->menu_frame);
-            }
-            break;
-        default:
-            instance->menu_clips[LOADING_SCREEN].set(cv::CAP_PROP_POS_FRAMES, 0);
+    case LANDING_SCREEN:
+        if (!instance->menu_clips[LANDING_SCREEN].read(instance->menu_frame))
+        {
             instance->menu_clips[LANDING_SCREEN].set(cv::CAP_PROP_POS_FRAMES, 0);
-            instance->menu_frame.release();
-            break;
+            instance->menu_clips[LANDING_SCREEN].read(instance->menu_frame);
+        }
+        break;
+    case RIDGES_SCREEN:
+        if (!instance->menu_clips[RIDGES_SCREEN].read(instance->menu_frame))
+        {
+            instance->menu_clips[RIDGES_SCREEN].set(cv::CAP_PROP_POS_FRAMES, 0);
+            instance->menu_clips[RIDGES_SCREEN].read(instance->menu_frame);
+        }
+        break;
+    case PEAKS_SCREEN:
+        if (!instance->menu_clips[PEAKS_SCREEN].read(instance->menu_frame))
+        {
+            instance->menu_clips[PEAKS_SCREEN].set(cv::CAP_PROP_POS_FRAMES, 0);
+            instance->menu_clips[PEAKS_SCREEN].read(instance->menu_frame);
+        }
+        break;
+    case RIVERS_SCREEN:
+        if (!instance->menu_clips[RIVERS_SCREEN].read(instance->menu_frame))
+        {
+            instance->menu_clips[RIVERS_SCREEN].set(cv::CAP_PROP_POS_FRAMES, 0);
+            instance->menu_clips[RIVERS_SCREEN].read(instance->menu_frame);
+        }
+        break;
+    case BASINS_SCREEN:
+        if (!instance->menu_clips[BASINS_SCREEN].read(instance->menu_frame))
+        {
+            instance->menu_clips[BASINS_SCREEN].set(cv::CAP_PROP_POS_FRAMES, 0);
+            instance->menu_clips[BASINS_SCREEN].read(instance->menu_frame);
+        }
+        break;
+    case LOADING_SCREEN:
+        if (!instance->menu_clips[LOADING_SCREEN].read(instance->menu_frame))
+        {
+            instance->menu_clips[LOADING_SCREEN].set(cv::CAP_PROP_POS_FRAMES, 0);
+            instance->menu_clips[LOADING_SCREEN].read(instance->menu_frame);
+        }
+        break;
+    default:
+        instance->menu_clips[LOADING_SCREEN].set(cv::CAP_PROP_POS_FRAMES, 0);
+        instance->menu_clips[LANDING_SCREEN].set(cv::CAP_PROP_POS_FRAMES, 0);
+        instance->menu_frame.release();
+        break;
     }
-    
+
     instance->cycleDayNight();
     glutPostRedisplay();
     glutTimerFunc(25, Renderer::timerCallback, 0);
@@ -838,21 +825,21 @@ void Renderer::drawMesh()
 {
     // Bind the terrain texture
     glBindTexture(GL_TEXTURE_2D, instance->objects[MESH].texture);
-    
+
     // Draw the terrain
     glBindVertexArray(instance->objects[MESH].vao);
-    
+
     // Enable two vertex arrays: co-ordinates and color.
     glEnableClientState(GL_VERTEX_ARRAY);
     glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-
-    glEnable(GL_PRIMITIVE_RESTART);                                                         // Enable primitive restart
-    glDrawElements(GL_TRIANGLE_STRIP, instance->mesh_indices.size(), GL_UNSIGNED_INT, 0);       // Draw the triangles
-    glDisable(GL_PRIMITIVE_RESTART);                                                        // Disable primitive restart
+    
+    glEnable(GL_PRIMITIVE_RESTART);                                                       // Enable primitive restart
+    glDrawElements(GL_TRIANGLE_STRIP, instance->mesh_indices.size(), GL_UNSIGNED_INT, 0); // Draw the triangles
+    glDisable(GL_PRIMITIVE_RESTART);                                                      // Disable primitive restart
     
     glDisableClientState(GL_VERTEX_ARRAY);
     glDisableClientState(GL_TEXTURE_COORD_ARRAY);
-    
+
     // Unbind the vertex array object and texture
     glBindVertexArray(0);
     glBindTexture(GL_TEXTURE_2D, 0);
@@ -862,61 +849,61 @@ void Renderer::drawOrbit()
 {
     // Draw the sun
     glPushMatrix();
-        glMatrixMode(GL_MODELVIEW);
-        
-        GLfloat light_position[4];
-        // Initialize the light position to the sun's position
-        light_position[0] = instance->sun_vertices[0];
-        light_position[1] = instance->sun_vertices[1];
-        light_position[2] = instance->sun_vertices[2];
-        light_position[3] = 1.0f;
-        
-        glRotatef(instance->angle, 0,0,1);
+    glMatrixMode(GL_MODELVIEW);
 
-        glLightfv(GL_LIGHT0, GL_POSITION, light_position);
+    GLfloat light_position[4];
+    // Initialize the light position to the sun's position
+    light_position[0] = instance->sun_vertices[0];
+    light_position[1] = instance->sun_vertices[1];
+    light_position[2] = instance->sun_vertices[2];
+    light_position[3] = 1.0f;
 
-        // Bind the sun texture
-        glBindTexture(GL_TEXTURE_2D, instance->objects[SUN].texture);
-        
-        // Draw the sun
-        glBindVertexArray(instance->objects[SUN].vao);
+    glRotatef(instance->angle, 0, 0, 1);
 
-        // Enable two vertex arrays: co-ordinates and color.
-        glEnableClientState(GL_VERTEX_ARRAY);
-        glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-        glDrawElements(GL_TRIANGLE_STRIP, instance->sun_indices.size(), GL_UNSIGNED_INT, 0);    // Draw the triangles
-        
-        glDisableClientState(GL_VERTEX_ARRAY);
-        glDisableClientState(GL_TEXTURE_COORD_ARRAY);
-        
-        // Unbind the vertex array object and texture
-        glBindVertexArray(0);
-        glBindTexture(GL_TEXTURE_2D, 0);
+    glLightfv(GL_LIGHT0, GL_POSITION, light_position);
+
+    // Bind the sun texture
+    glBindTexture(GL_TEXTURE_2D, instance->objects[SUN].texture);
+
+    // Draw the sun
+    glBindVertexArray(instance->objects[SUN].vao);
+
+    // Enable two vertex arrays: co-ordinates and color.
+    glEnableClientState(GL_VERTEX_ARRAY);
+    glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+    glDrawElements(GL_TRIANGLE_STRIP, instance->sun_indices.size(), GL_UNSIGNED_INT, 0); // Draw the triangles
+
+    glDisableClientState(GL_VERTEX_ARRAY);
+    glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+
+    // Unbind the vertex array object and texture
+    glBindVertexArray(0);
+    glBindTexture(GL_TEXTURE_2D, 0);
     glPopMatrix();
 
     // Draw the moon
     glPushMatrix();
-        glMatrixMode(GL_MODELVIEW);
+    glMatrixMode(GL_MODELVIEW);
 
-        glRotatef(instance->angle, 0, 0, 1);
-        
-        // Bind the sun texture
-        glBindTexture(GL_TEXTURE_2D, instance->objects[MOON].texture);
-        
-        // Draw the sun
-        glBindVertexArray(instance->objects[MOON].vao);
+    glRotatef(instance->angle, 0, 0, 1);
 
-        // Enable two vertex arrays: co-ordinates and color.
-        glEnableClientState(GL_VERTEX_ARRAY);
-        glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-        glDrawElements(GL_TRIANGLE_STRIP, instance->moon_indices.size(), GL_UNSIGNED_INT, 0); // Draw the triangles
+    // Bind the sun texture
+    glBindTexture(GL_TEXTURE_2D, instance->objects[MOON].texture);
 
-        glDisableClientState(GL_VERTEX_ARRAY);
-        glDisableClientState(GL_TEXTURE_COORD_ARRAY);
-        
-        // Unbind the vertex array object and texture
-        glBindVertexArray(0);
-        glBindTexture(GL_TEXTURE_2D, 0);
+    // Draw the sun
+    glBindVertexArray(instance->objects[MOON].vao);
+
+    // Enable two vertex arrays: co-ordinates and color.
+    glEnableClientState(GL_VERTEX_ARRAY);
+    glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+    glDrawElements(GL_TRIANGLE_STRIP, instance->moon_indices.size(), GL_UNSIGNED_INT, 0); // Draw the triangles
+
+    glDisableClientState(GL_VERTEX_ARRAY);
+    glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+
+    // Unbind the vertex array object and texture
+    glBindVertexArray(0);
+    glBindTexture(GL_TEXTURE_2D, 0);
     glPopMatrix();
 }
 
@@ -946,48 +933,48 @@ void Renderer::drawSplashscreen()
 {
     if (!instance->menu_frame.empty())
     {
-            // Save the previous projection matrix
-            glMatrixMode(GL_PROJECTION);
-            glPushMatrix();
+        // Save the previous projection matrix
+        glMatrixMode(GL_PROJECTION);
+        glPushMatrix();
 
-            // Set the projection matrix to orthographic
-            float width = glutGet(GLUT_WINDOW_WIDTH);
-            float height = glutGet(GLUT_WINDOW_HEIGHT);
-            glLoadIdentity();
-            glOrtho(0, width, 0, height, -1, 1);
+        // Set the projection matrix to orthographic
+        float width = glutGet(GLUT_WINDOW_WIDTH);
+        float height = glutGet(GLUT_WINDOW_HEIGHT);
+        glLoadIdentity();
+        glOrtho(0, width, 0, height, -1, 1);
 
-            // Update texture data
-            glBindTexture(GL_TEXTURE_2D, instance->objects[SPLASHSCREEN].texture);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, instance->menu_frame.cols, instance->menu_frame.rows, 0, GL_BGR, GL_UNSIGNED_BYTE, instance->menu_frame.data);
+        // Update texture data
+        glBindTexture(GL_TEXTURE_2D, instance->objects[SPLASHSCREEN].texture);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, instance->menu_frame.cols, instance->menu_frame.rows, 0, GL_BGR, GL_UNSIGNED_BYTE, instance->menu_frame.data);
 
-            // Update width and height values in a single line
-            std::vector<GLfloat> vertices = {0, 0, width, 0, width, height, 0, height};
-            // Bind the vertex buffer object
-            glBindBuffer(GL_ARRAY_BUFFER, instance->objects[SPLASHSCREEN].vbo);
-            // Update the vertex buffer data
-            glBufferSubData(GL_ARRAY_BUFFER, 0, vertices.size() * sizeof(GLfloat), vertices.data());
+        // Update width and height values in a single line
+        std::vector<GLfloat> vertices = {0, 0, width, 0, width, height, 0, height};
+        // Bind the vertex buffer object
+        glBindBuffer(GL_ARRAY_BUFFER, instance->objects[SPLASHSCREEN].vbo);
+        // Update the vertex buffer data
+        glBufferSubData(GL_ARRAY_BUFFER, 0, vertices.size() * sizeof(GLfloat), vertices.data());
 
-            // Enable the vertex arrays
-            glEnableClientState(GL_VERTEX_ARRAY);
-            glEnableClientState(GL_COLOR_ARRAY);
-            glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+        // Enable the vertex arrays
+        glEnableClientState(GL_VERTEX_ARRAY);
+        glEnableClientState(GL_COLOR_ARRAY);
+        glEnableClientState(GL_TEXTURE_COORD_ARRAY);
 
-            // Render the splash screen
-            glBindVertexArray(instance->objects[SPLASHSCREEN].vao);
-            glDrawArrays(GL_QUADS, 0, 4);
-            glBindVertexArray(0);
+        // Render the splash screen
+        glBindVertexArray(instance->objects[SPLASHSCREEN].vao);
+        glDrawArrays(GL_QUADS, 0, 4);
+        glBindVertexArray(0);
 
-            glBindTexture(GL_TEXTURE_2D, 0);
+        glBindTexture(GL_TEXTURE_2D, 0);
 
-            glDisableClientState(GL_VERTEX_ARRAY);
-            glDisableClientState(GL_COLOR_ARRAY);
-            glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+        glDisableClientState(GL_VERTEX_ARRAY);
+        glDisableClientState(GL_COLOR_ARRAY);
+        glDisableClientState(GL_TEXTURE_COORD_ARRAY);
 
-            // Restore the previous projection matrix
-            glMatrixMode(GL_PROJECTION);
-            glPopMatrix();
+        // Restore the previous projection matrix
+        glMatrixMode(GL_PROJECTION);
+        glPopMatrix();
     }
 }
 
@@ -1008,7 +995,7 @@ void Renderer::drawCanvas()
         float height = glutGet(GLUT_WINDOW_HEIGHT);
         glLoadIdentity();
         glOrtho(0, width, 0, height, -1, 1);
-        
+
         // Update texture dataz
         glBindTexture(GL_TEXTURE_2D, instance->objects[CANVAS].texture);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -1017,7 +1004,7 @@ void Renderer::drawCanvas()
 
         // Update width and height values in a single line
         std::vector<GLfloat> vertices = {0, 0, width, 0, width, height, 0, height};
-        
+
         // Enable the vertex arrays
         glEnableClientState(GL_VERTEX_ARRAY);
         glEnableClientState(GL_COLOR_ARRAY);
@@ -1025,7 +1012,7 @@ void Renderer::drawCanvas()
 
         // Render the splash screen
         glBindVertexArray(instance->objects[CANVAS].vao);
-        
+
         // Bind the vertex buffer object
         glBindBuffer(GL_ARRAY_BUFFER, instance->objects[CANVAS].vbo);
         // Update the vertex buffer data
@@ -1041,7 +1028,7 @@ void Renderer::drawCanvas()
         glDisableClientState(GL_VERTEX_ARRAY);
         glDisableClientState(GL_COLOR_ARRAY);
         glDisableClientState(GL_TEXTURE_COORD_ARRAY);
-        
+
         // Restore the previous projection matrix
         glMatrixMode(GL_PROJECTION);
         glPopMatrix();
@@ -1059,7 +1046,7 @@ void Renderer::drawSketch(short current_canvas)
         // Save the previous projection matrix
         glMatrixMode(GL_PROJECTION);
         glPushMatrix();
-        
+
         // Set the projection matrix to orthographic
         float width = glutGet(GLUT_WINDOW_WIDTH);
         float height = glutGet(GLUT_WINDOW_HEIGHT);
@@ -1070,26 +1057,26 @@ void Renderer::drawSketch(short current_canvas)
         vector<float> vertices(instance->sketch_vertices[current_canvas].size());
         for (int i = 0; i < instance->sketch_vertices[current_canvas].size(); i = i + 3)
         {
-                vertices[i] = instance->sketch_vertices[current_canvas][i] * width;
-                vertices[i + 1] = instance->sketch_vertices[current_canvas][i + 1] * height;
-                vertices[i + 2] = instance->sketch_vertices[current_canvas][i + 2];
+            vertices[i] = instance->sketch_vertices[current_canvas][i] * width;
+            vertices[i + 1] = instance->sketch_vertices[current_canvas][i + 1] * height;
+            vertices[i + 2] = instance->sketch_vertices[current_canvas][i + 2];
         }
-        
+
         // Enable the vertex arrays
         glEnableClientState(GL_VERTEX_ARRAY);
         glEnableClientState(GL_COLOR_ARRAY);
         glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-        
+
         // Render the sketch
         glBindVertexArray(instance->objects[SKETCH].vao);
-        
+
         // Bind the vertex buffer object
         glBindBuffer(GL_ARRAY_BUFFER, instance->objects[SKETCH].vbo);
         // Update the vertex buffer data for points
         glBufferData(GL_ARRAY_BUFFER, instance->sketch_vertices[current_canvas].size() * sizeof(GLfloat), vertices.data(), GL_STATIC_DRAW);
         // Set the vertex attribute pointer for positions
         glVertexPointer(3, GL_FLOAT, 0, vertices.data());
-        
+
         // Bind the vertex buffer object
         glBindBuffer(GL_ARRAY_BUFFER, instance->objects[SKETCH].cbo);
         // Update the vertex buffer data for points
@@ -1104,7 +1091,7 @@ void Renderer::drawSketch(short current_canvas)
         // Enable primitive restart
         glEnable(GL_PRIMITIVE_RESTART);
         glPrimitiveRestartIndex(0xFFFFFFFFu);
-        
+
         // If the current page is rivers or ridges, draw lines
         if (current_canvas == RIDGES || current_canvas == RIVERS)
         {
@@ -1121,34 +1108,32 @@ void Renderer::drawSketch(short current_canvas)
             glDrawElements(GL_POINTS, instance->sketch_indices[current_canvas].size(), GL_UNSIGNED_INT, instance->sketch_indices[current_canvas].data());
         }
         glDisable(GL_PRIMITIVE_RESTART);
-        
+
         glDisableClientState(GL_VERTEX_ARRAY);
         glDisableClientState(GL_COLOR_ARRAY);
         glDisableClientState(GL_TEXTURE_COORD_ARRAY);
 
         // Deallocate memory
         vertices.clear();
-        
+
         // Restore the previous projection matrix
         glMatrixMode(GL_PROJECTION);
-        glPopMatrix();        
+        glPopMatrix();
     }
 }
 
-
-
 void Renderer::draw()
-{   
+{
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glColor3f(1.0, 1.0, 1.0);
 
     // Set the modelview matrix
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
-    
+
     // Update the camera based on the inputs
     instance->camera->update();
-    
+
     // Switch on the current menu page ---------MAYBE USELESS!!!!!
     switch (instance->current_menu_page)
     {

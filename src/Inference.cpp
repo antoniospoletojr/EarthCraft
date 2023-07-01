@@ -1,6 +1,4 @@
 #include "Inference.h"
-#include "Constants.h"
-#include <Python.h>
 
 
 Inference::Inference()
@@ -52,11 +50,20 @@ void Inference::worker(bool *success)
     {
         printf("Error: Could not open Python script file\n");
     }
-
+    
     // Inference is complete, set isRunning to false
     is_running = false;
     PyGILState_Release(gil_state); // Release the Global Interpreter Lock (GIL)
     printf(COLOR_GREEN "Inference complete\n" COLOR_RESET);
     fflush(stdout);
+    
+    // Allocate a terrain object
+    this->terrain = new Terrain();
+    this->terrain->initialize(16.0);
     *success = true;
+}
+
+Terrain* Inference::getTerrain()
+{
+    return this->terrain;
 }

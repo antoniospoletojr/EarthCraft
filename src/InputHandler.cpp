@@ -1,7 +1,5 @@
-#include <GL/freeglut.h>
 #include "InputHandler.h"
-#include "Inference.h"
-#include "Constants.h"
+
 
 InputHandler* InputHandler::instance = nullptr;
 
@@ -149,15 +147,15 @@ void InputHandler::handleKeyboard()
                 instance->inference->predict(&keys[13]);
                 glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
                 break;
-
+            
             case RENDERING_SCREEN:
-                renderer->initializeMesh();
+                instance->renderer->initializeMesh(instance->inference->getTerrain());
                 instance->sound_manager->playSuccessSound();
                 instance->sound_manager->playBackgroundMusic();
                 camera->setPosition(0, 1000, 0);
                 glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
                 glLineWidth(1.0);
-                // glEnable(GL_LIGHTING);
+                //glEnable(GL_LIGHTING);
                 break;
         }
         

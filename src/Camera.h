@@ -1,6 +1,10 @@
 #ifndef CAMERA_H
 #define CAMERA_H
 
+#include <GL/glut.h>
+#include <cmath>
+#include "Constants.h"
+
 class Camera
 {
     public:

@@ -1,8 +1,4 @@
-#include <GL/glut.h>
-#include <cmath>
 #include "Camera.h"
-#include <stdio.h>
-#include "Constants.h"
 
 // Constructor
 Camera::Camera()

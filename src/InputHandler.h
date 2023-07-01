@@ -1,11 +1,13 @@
 #ifndef INPUTHANDLER_H
 #define INPUTHANDLER_H
 
-#include "Camera.h"
 #include "Renderer.h"
+#include "Camera.h"
 #include "Colors.h"
+#include "Constants.h"
 #include "Inference.h"
 #include "SoundManager.h"
+#include <GL/freeglut.h>
 
 using namespace irrklang;
 
