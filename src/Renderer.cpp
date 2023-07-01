@@ -81,7 +81,6 @@ void Renderer::initializeMesh()
     // Retrieve the map
     Vertex3d<float> *map = terrain->getMap();
     // Load skydome texture image
-    //cv::Mat mesh_texture = cv::imread("assets/textures/1.png", cv::IMREAD_COLOR);
     cv::Mat mesh_texture = terrain->getTexture();
     // Get the maximum height of the map
     float max_y = terrain->getMaxHeight();
@@ -845,7 +844,6 @@ void Renderer::drawMesh()
     
     // Enable two vertex arrays: co-ordinates and color.
     glEnableClientState(GL_VERTEX_ARRAY);
-    //glEnableClientState(GL_COLOR_ARRAY);
     glEnableClientState(GL_TEXTURE_COORD_ARRAY);
 
     glEnable(GL_PRIMITIVE_RESTART);                                                         // Enable primitive restart
@@ -853,7 +851,6 @@ void Renderer::drawMesh()
     glDisable(GL_PRIMITIVE_RESTART);                                                        // Disable primitive restart
     
     glDisableClientState(GL_VERTEX_ARRAY);
-    //glDisableClientState(GL_COLOR_ARRAY);
     glDisableClientState(GL_TEXTURE_COORD_ARRAY);
     
     // Unbind the vertex array object and texture

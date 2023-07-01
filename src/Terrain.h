@@ -17,6 +17,20 @@ typedef struct
 	float max_z;
 } TerrainBounds;
 
+typedef struct
+{
+	float low;
+	float optimal;
+	float high;
+} HeightRegion;
+
+typedef struct
+{
+	cv::Mat texture;
+	HeightRegion region;
+
+} TextureTile;
+
 class Terrain
 {
 public:
@@ -39,7 +53,8 @@ private:
 
 	Vertex3d<float> *map;
 	cv::Mat texture;
-		
+	TextureTile tiles[5];
+
 	void loadMap();
 	void loadTexture(float scaling);
 };

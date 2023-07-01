@@ -1,7 +1,21 @@
 #include "Terrain.h"
 
 // Default constructor
-Terrain::Terrain(){}
+Terrain::Terrain()
+{
+    // Initialize the texture tiles
+    this->tiles[0].region = HeightRegion{0.f, 0.15f, 0.25f};
+    this->tiles[1].region = HeightRegion{0.15f, 0.30f, 0.50f};
+    this->tiles[2].region = HeightRegion{0.30f, 0.50f, 0.70f};
+    this->tiles[3].region = HeightRegion{0.50f, 0.75f, 0.95f};
+    this->tiles[4].region = HeightRegion{0.90f, 0.95f, 1.0f};
+    
+    this->tiles[0].texture = cv::imread("assets/textures/1.jpg", cv::IMREAD_COLOR);
+    this->tiles[1].texture = cv::imread("assets/textures/2.jpg", cv::IMREAD_COLOR);
+    this->tiles[2].texture = cv::imread("assets/textures/3.jpg", cv::IMREAD_COLOR);
+    this->tiles[3].texture = cv::imread("assets/textures/4.jpg", cv::IMREAD_COLOR);
+    this->tiles[4].texture = cv::imread("assets/textures/5.jpg", cv::IMREAD_COLOR);
+}
 
 // Destructor
 Terrain::~Terrain()
@@ -14,7 +28,7 @@ void Terrain::initialize(float worldScale)
 {
     this->world_scale = worldScale;
     loadMap();
-    loadTexture(16);
+    loadTexture(18);
 }
 
 void Terrain::loadMap()
@@ -67,22 +81,8 @@ void Terrain::loadMap()
 }
 
 void Terrain::loadTexture(float scaling)
-{
-    // Load terrain texture tiles using opencv library
-    cv::Mat texture_1 = cv::imread("assets/textures/1.jpg", cv::IMREAD_COLOR);
-    cv::Mat texture_2 = cv::imread("assets/textures/2.jpg", cv::IMREAD_COLOR);
-    cv::Mat texture_3 = cv::imread("assets/textures/3.jpg", cv::IMREAD_COLOR);
-    cv::Mat texture_4 = cv::imread("assets/textures/4.jpg", cv::IMREAD_COLOR);
-    cv::Mat texture_5 = cv::imread("assets/textures/5.jpg", cv::IMREAD_COLOR);
-
-    // Check for an error during the load process
-    assert(texture_1.data != nullptr);
-    assert(texture_2.data != nullptr);
-    assert(texture_3.data != nullptr);
-    assert(texture_4.data != nullptr);
-    assert(texture_5.data != nullptr);
-    
-    short original_texture_size = texture_1.rows;
+{    
+    short original_texture_size = tiles[0].texture.rows;
     // Allocate memory for the opencv texture map based on texture_1 size
     this->texture.create(original_texture_size * scaling, original_texture_size * scaling, CV_8UC3);
     float terrain_texture_ratio = (float)this->dim / (float) texture.rows;
@@ -93,6 +93,7 @@ void Terrain::loadTexture(float scaling)
     int i_map;
     int j_map;
     float normalized_height;
+    float weights[5];
 
     // Cycle through the texture which must be generated
     for (int i = 0; i < this->texture.cols; i++)
@@ -101,29 +102,49 @@ void Terrain::loadTexture(float scaling)
         {
             i_map = (int)floor(i * terrain_texture_ratio);
             j_map = (int)floor(j * terrain_texture_ratio);
-            normalized_height = this->map[j_map * dim + i_map].y / this->bounds.max_y;
+            normalized_height = (float) (this->map[j_map * dim + i_map].y / this->bounds.max_y);
             
-            // if height/this->bounds.max_y < 0.2 then assign texture_1, and similarly check for the other textures
-            if (normalized_height < 0.15) // 0 - 15 - 25
+            for (short k = 0; k < 5; k++)
             {
-                this->texture.at<cv::Vec3b>(i, j) = texture_1.at<cv::Vec3b>(i % original_texture_size, j % original_texture_size);
+                if (normalized_height >= this->tiles[k].region.low && normalized_height <= this->tiles[k].region.high)
+                {
+                    if (normalized_height == this->tiles[k].region.optimal)
+                        weights[k] = 1;
+                    else if (normalized_height < this->tiles[k].region.optimal)
+                    {
+                        if (k == 0)
+                            weights[k] = 1;
+                        else
+                        {
+                            float actual_diff = float(normalized_height - tiles[k].region.low);
+                            float max_diff = float(tiles[k].region.optimal - tiles[k].region.low);
+                            weights[k] = actual_diff / max_diff;
+                        }
+                    }
+                    else if (normalized_height > this->tiles[k].region.optimal)
+                    {
+                        if (k == 4)
+                            weights[k] = 1;
+                        else
+                        {
+                            float max_diff = float(tiles[k].region.high - tiles[k].region.optimal);
+                            float actual_diff = max_diff - float(normalized_height - tiles[k].region.optimal);
+                            weights[k] = actual_diff / max_diff;
+                        }
+                    }
+                }
+                else
+                    weights[k] = 0;
             }
-            else if (normalized_height < 0.3) // 15 - 30 - 50
-            {   
-                this->texture.at<cv::Vec3b>(i, j) = texture_2.at<cv::Vec3b>(i % original_texture_size, j % original_texture_size);
-            }
-            else if (normalized_height < 0.5) // 30 - 50 - 70
-            {
-                this->texture.at<cv::Vec3b>(i, j) = texture_3.at<cv::Vec3b>(i % original_texture_size, j % original_texture_size);
-            }
-            else if (normalized_height < 0.75) // 50 - 75 - 95
-            {
-                this->texture.at<cv::Vec3b>(i, j) = texture_4.at<cv::Vec3b>(i % original_texture_size, j % original_texture_size);
-            }
-            else // 90 - 100
-            {
-                this->texture.at<cv::Vec3b>(i, j) = texture_5.at<cv::Vec3b>(i % original_texture_size, j % original_texture_size);
-            }
+            
+
+            float sum = 0.0;
+            for (int k = 0; k < 5; k++)
+                sum += weights[k];
+
+            cv::Vec3b interpolated_pixel(0, 0, 0);
+            for (int k = 0; k < 5; k++)
+                this->texture.at<cv::Vec3b>(i, j) += weights[k] / sum * tiles[k].texture.at<cv::Vec3b>(i % original_texture_size, j % original_texture_size);
         }
     }
 }

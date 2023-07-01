@@ -54,7 +54,7 @@ class Renderer
         void initializeCanvas();
 
         void cycleDayNight();
-
+        
         static void drawMesh();
         static void drawOrbit();
         static void drawSkydome();
