@@ -261,9 +261,9 @@ void Renderer::initializeOrbit()
         {
             // Extract vertices
             aiVector3D vertex = mesh->mVertices[j];
-            sun_vertices.push_back(vertex.x * 3);
-            sun_vertices.push_back(vertex.y * 3 + 10000);
-            sun_vertices.push_back(vertex.z * 3);
+            sun_vertices.push_back(vertex.x);
+            sun_vertices.push_back(vertex.y - 10000);
+            sun_vertices.push_back(vertex.z);
 
             // Extract texture coordinates
             if (mesh->HasTextureCoords(0))
@@ -271,6 +271,15 @@ void Renderer::initializeOrbit()
                 aiVector3D texCoord = mesh->mTextureCoords[0][j];
                 sun_textures.push_back(texCoord.x);
                 sun_textures.push_back(texCoord.y);
+            }
+
+            // Extract normals
+            if (mesh->HasNormals())
+            {
+                aiVector3D normal = mesh->mNormals[j];
+                sun_normals.push_back(normal.x);
+                sun_normals.push_back(normal.y);
+                sun_normals.push_back(normal.z);
             }
         }
 
@@ -298,6 +307,7 @@ void Renderer::initializeOrbit()
     glGenBuffers(1, &objects[SUN].vbo);
     glGenBuffers(1, &objects[SUN].tbo);
     glGenBuffers(1, &objects[SUN].ibo);
+    glGenBuffers(1, &objects[SUN].nbo);
 
     // Bind and fill the vertex buffer object
     glBindBuffer(GL_ARRAY_BUFFER, objects[SUN].vbo);
@@ -308,6 +318,11 @@ void Renderer::initializeOrbit()
     glBindBuffer(GL_ARRAY_BUFFER, objects[SUN].tbo);
     glBufferData(GL_ARRAY_BUFFER, sun_textures.size() * sizeof(float), sun_textures.data(), GL_STATIC_DRAW);
     glTexCoordPointer(2, GL_FLOAT, 0, 0);
+    
+    // Bind and fill the normals buffer object
+    glBindBuffer(GL_ARRAY_BUFFER, objects[SKYDOME].nbo);
+    glBufferData(GL_ARRAY_BUFFER, skydome_normals.size() * sizeof(float), skydome_normals.data(), GL_STATIC_DRAW);
+    glNormalPointer(GL_FLOAT, 0, 0);
 
     // Bind and fill indices buffer.
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, objects[SUN].ibo);
@@ -359,9 +374,9 @@ void Renderer::initializeOrbit()
         {
             // Extract vertices
             aiVector3D vertex = mesh->mVertices[j];
-            moon_vertices.push_back(vertex.x * 3);
-            moon_vertices.push_back(vertex.y * 3 - 10000);
-            moon_vertices.push_back(vertex.z * 3);
+            moon_vertices.push_back(vertex.x);
+            moon_vertices.push_back(vertex.y + 10000);
+            moon_vertices.push_back(vertex.z);
 
             // Extract texture coordinates
             if (mesh->HasTextureCoords(0))
@@ -420,7 +435,7 @@ void Renderer::initializeOrbit()
 void Renderer::initializeSkydome()
 {
     // Load skydome texture image
-    cv::Mat skydome_texture = cv::imread("./assets/textures/skydome.jpg");
+    cv::Mat skydome_texture = cv::imread("./assets/textures/day.jpg");
 
     // Check if the image was loaded successfully
     if (skydome_texture.empty())
@@ -476,6 +491,15 @@ void Renderer::initializeSkydome()
                 skydome_textures.push_back(texCoord.y);
                 skydome_textures.push_back(texCoord.x);
             }
+
+            // Extract normals
+            if (mesh->HasNormals())
+            {
+                aiVector3D normal = mesh->mNormals[j];
+                skydome_normals.push_back(normal.x);
+                skydome_normals.push_back(normal.y);
+                skydome_normals.push_back(normal.z);
+            }
         }
 
         // For each face in the mesh
@@ -502,16 +526,22 @@ void Renderer::initializeSkydome()
     glGenBuffers(1, &objects[SKYDOME].vbo);
     glGenBuffers(1, &objects[SKYDOME].tbo);
     glGenBuffers(1, &objects[SKYDOME].ibo);
+    glGenBuffers(1, &objects[SKYDOME].nbo);
 
     // Bind and fill the vertex buffer object
     glBindBuffer(GL_ARRAY_BUFFER, objects[SKYDOME].vbo);
     glBufferData(GL_ARRAY_BUFFER, skydome_vertices.size() * sizeof(float), skydome_vertices.data(), GL_STATIC_DRAW);
     glVertexPointer(3, GL_FLOAT, 0, 0);
-
+    
     // Bind and fill the texture coordinate buffer object
     glBindBuffer(GL_ARRAY_BUFFER, objects[SKYDOME].tbo);
     glBufferData(GL_ARRAY_BUFFER, skydome_textures.size() * sizeof(float), skydome_textures.data(), GL_STATIC_DRAW);
     glTexCoordPointer(2, GL_FLOAT, 0, 0);
+    
+    // Bind and fill the normal buffer object
+    glBindBuffer(GL_ARRAY_BUFFER, objects[SKYDOME].nbo);
+    glBufferData(GL_ARRAY_BUFFER, skydome_normals.size() * sizeof(float), skydome_normals.data(), GL_STATIC_DRAW);
+    glNormalPointer(GL_FLOAT, 0, 0);
 
     // Bind and fill the index buffer object
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, objects[SKYDOME].ibo);
@@ -872,11 +902,15 @@ void Renderer::drawMesh(int mesh_multiplier)
     glEnableClientState(GL_VERTEX_ARRAY);
     glEnableClientState(GL_TEXTURE_COORD_ARRAY);
     glEnableClientState(GL_NORMAL_ARRAY);
+    
+    GLfloat diffuse_material[] = {0.8f, 0.7f, 0.6f, 1.0f}; // Warm color for diffuse reflection
+    glMaterialfv(GL_FRONT, GL_DIFFUSE, diffuse_material);
+    
+    GLfloat ambient_material[] = {0.1, 0.1, 0.1, 1.0f}; // Warm color for diffuse reflection
+    glMaterialfv(GL_FRONT, GL_AMBIENT, ambient_material);
 
-    // GLfloat materialDiffuse[] = {0.8f, 0.7f, 0.6f, 1.0f}; // Warm color for diffuse reflection
-    // glMaterialfv(GL_FRONT, GL_DIFFUSE, materialDiffuse);
     float world_dim = instance->terrain->getWorldDim() / 2.0f;
-
+    
     for (int i = -mesh_multiplier; i <= mesh_multiplier; i++)
     {
         for (int j = -mesh_multiplier; j <= mesh_multiplier; j++)
@@ -913,29 +947,34 @@ void Renderer::drawMesh(int mesh_multiplier)
 
 void Renderer::drawOrbit()
 {
+    GLfloat ambient_material[] = {1, 1, 1, 1.0f}; // Warm color for diffuse reflection
+    glMaterialfv(GL_FRONT, GL_AMBIENT, ambient_material);
+
     // Draw the sun
     glPushMatrix();
         glRotatef(instance->time, 0, 0, 1);
-
+        
         // Bind the sun texture
         glBindTexture(GL_TEXTURE_2D, instance->objects[SUN].texture);
-
+        
         // Draw the sun
         glBindVertexArray(instance->objects[SUN].vao);
 
         // Enable two vertex arrays: co-ordinates and color.
         glEnableClientState(GL_VERTEX_ARRAY);
         glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+        glEnableClientState(GL_NORMAL_ARRAY);
         glDrawElements(GL_TRIANGLE_STRIP, instance->sun_indices.size(), GL_UNSIGNED_INT, 0); // Draw the triangles
-
+        
         glDisableClientState(GL_VERTEX_ARRAY);
         glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+        glDisableClientState(GL_NORMAL_ARRAY);
 
         // Unbind the vertex array object and texture
         glBindVertexArray(0);
         glBindTexture(GL_TEXTURE_2D, 0);
     glPopMatrix();
-
+    
     // Draw the moon
     glPushMatrix();
         glMatrixMode(GL_MODELVIEW);
@@ -972,12 +1011,17 @@ void Renderer::drawSkydome()
     
     glEnableClientState(GL_VERTEX_ARRAY);
     glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+    glEnableClientState(GL_NORMAL_ARRAY);
+    
+    GLfloat ambient_material[] = {1, 1, 1, 1.0f}; // Warm color for diffuse reflection
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, ambient_material);
 
     // Draw the skydome
     glDrawElements(GL_TRIANGLES, instance->skydome_indices.size(), GL_UNSIGNED_INT, 0);
 
     glDisableClientState(GL_VERTEX_ARRAY);
     glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+    glDisableClientState(GL_NORMAL_ARRAY);
 
     // Unbind the vertex array object and texture
     glBindVertexArray(0);
@@ -1296,9 +1340,9 @@ void Renderer::draw()
         GLfloat light_position[4];
         // Initialize the light position to the sun's position
         light_position[0] = 0;
-        light_position[1] = 10000;
-        light_position[2] = 0;
-        light_position[3] = 0.f;
+        light_position[1] = -10000;
+        light_position[2] = 1;
+        light_position[3] = 1;
         
         glLightfv(GL_LIGHT0, GL_POSITION, light_position);
 

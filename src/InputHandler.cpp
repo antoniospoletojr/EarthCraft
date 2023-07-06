@@ -42,7 +42,7 @@ void InputHandler::generate()
     std::thread inference_thread([](Inference *inference) { inference->predict(); }, instance->inference);
     inference_thread.join();
 
-    std::thread terrain_thread([](Terrain *terrain) { terrain->initialize(16, 2); }, instance->terrain);
+    std::thread terrain_thread([](Terrain *terrain) { terrain->initialize(20, 8); }, instance->terrain);
     terrain_thread.join();
     
     instance->keys[13] = true;
