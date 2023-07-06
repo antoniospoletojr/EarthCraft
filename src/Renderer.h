@@ -67,7 +67,7 @@ private:
 
     void cycleDayNight();
 
-    static void drawMesh();
+    static void drawMesh(int mesh_multiplier);
     static void drawOrbit();
     static void drawSkydome();
     static void drawSplashscreen();

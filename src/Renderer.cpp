@@ -261,9 +261,9 @@ void Renderer::initializeOrbit()
         {
             // Extract vertices
             aiVector3D vertex = mesh->mVertices[j];
-            sun_vertices.push_back(vertex.x);
-            sun_vertices.push_back(vertex.y + 5000);
-            sun_vertices.push_back(vertex.z);
+            sun_vertices.push_back(vertex.x * 3);
+            sun_vertices.push_back(vertex.y * 3 + 10000);
+            sun_vertices.push_back(vertex.z * 3);
 
             // Extract texture coordinates
             if (mesh->HasTextureCoords(0))
@@ -359,9 +359,9 @@ void Renderer::initializeOrbit()
         {
             // Extract vertices
             aiVector3D vertex = mesh->mVertices[j];
-            moon_vertices.push_back(vertex.x);
-            moon_vertices.push_back(vertex.y - 5000);
-            moon_vertices.push_back(vertex.z);
+            moon_vertices.push_back(vertex.x * 3);
+            moon_vertices.push_back(vertex.y * 3 - 10000);
+            moon_vertices.push_back(vertex.z * 3);
 
             // Extract texture coordinates
             if (mesh->HasTextureCoords(0))
@@ -744,7 +744,7 @@ void Renderer::takeSnapshot()
 
 void Renderer::cycleDayNight()
 {
-    this->time += 0.2f;
+    this->time += 2.f;
     if (this->time > 360.0f)
         this->time -= 360.0f;
 }
@@ -860,7 +860,7 @@ void Renderer::timerCallback(int value)
     glutTimerFunc(25, Renderer::timerCallback, 0);
 }
 
-void Renderer::drawMesh()
+void Renderer::drawMesh(int mesh_multiplier)
 {
     // Bind the terrain texture
     glBindTexture(GL_TEXTURE_2D, instance->objects[MESH].texture);
@@ -872,13 +872,35 @@ void Renderer::drawMesh()
     glEnableClientState(GL_VERTEX_ARRAY);
     glEnableClientState(GL_TEXTURE_COORD_ARRAY);
     glEnableClientState(GL_NORMAL_ARRAY);
-    
+
     // GLfloat materialDiffuse[] = {0.8f, 0.7f, 0.6f, 1.0f}; // Warm color for diffuse reflection
     // glMaterialfv(GL_FRONT, GL_DIFFUSE, materialDiffuse);
-    
-    glEnable(GL_PRIMITIVE_RESTART);                                                       // Enable primitive restart
-    glDrawElements(GL_TRIANGLE_STRIP, instance->mesh_indices.size(), GL_UNSIGNED_INT, 0); // Draw the triangles
-    glDisable(GL_PRIMITIVE_RESTART);                                                      // Disable primitive restart
+    float world_dim = instance->terrain->getWorldDim() / 2.0f;
+
+    for (int i = -mesh_multiplier; i <= mesh_multiplier; i++)
+    {
+        for (int j = -mesh_multiplier; j <= mesh_multiplier; j++)
+        {
+            // Create a temporary vector for updated vertex positions
+            std::vector<float> updated_vertices(instance->mesh_vertices.size());
+            
+            for (size_t k = 0; k < instance->mesh_vertices.size(); k += 3)
+            {
+                updated_vertices[k] = instance->mesh_vertices[k] + world_dim*i;         // Update x coordinate
+                updated_vertices[k + 1] = instance->mesh_vertices[k + 1];               // Keep y coordinate unchanged
+                updated_vertices[k + 2] = instance->mesh_vertices[k + 2] + world_dim*j; // Update z coordinate
+            }
+            // Bind the vertex buffer object
+            glBindBuffer(GL_ARRAY_BUFFER, instance->objects[MESH].vbo);
+            
+            // Upload the updated vertex data
+            glBufferData(GL_ARRAY_BUFFER, updated_vertices.size() * sizeof(float), updated_vertices.data(), GL_STATIC_DRAW);
+            
+            glEnable(GL_PRIMITIVE_RESTART);                                                       // Enable primitive restart
+            glDrawElements(GL_TRIANGLE_STRIP, instance->mesh_indices.size(), GL_UNSIGNED_INT, 0); // Draw the triangles
+            glDisable(GL_PRIMITIVE_RESTART);
+        }
+    }
     
     glDisableClientState(GL_VERTEX_ARRAY);
     glDisableClientState(GL_TEXTURE_COORD_ARRAY);
@@ -1235,7 +1257,7 @@ void Renderer::draw()
         break;
     case RENDERING_SCREEN:
         // Draw a text in the middle saying "Time"
-        instance->drawMesh();
+        instance->drawMesh(1);
         instance->drawOrbit();
         instance->drawSkydome();
         instance->drawTime();
@@ -1269,14 +1291,18 @@ void Renderer::draw()
     // Draw the light source
     glMatrixMode(GL_MODELVIEW);
     glPushMatrix();
+        glLoadIdentity();
         glRotatef(instance->time, 0, 0, 1);
         GLfloat light_position[4];
         // Initialize the light position to the sun's position
         light_position[0] = 0;
         light_position[1] = 10000;
-        light_position[2] = 3600;
-        light_position[3] = 0.0f;
+        light_position[2] = 0;
+        light_position[3] = 0.f;
+        
         glLightfv(GL_LIGHT0, GL_POSITION, light_position);
+
+        
     glPopMatrix();
     glutSwapBuffers();
 }
