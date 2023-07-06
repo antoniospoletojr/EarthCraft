@@ -26,6 +26,7 @@ class InputHandler
         Renderer *renderer;                      // a reference to the renderer object
         Inference *inference;                    // a reference to the inference object
         SoundManager *sound_manager;             // a reference to the sound engine object
+        Terrain *terrain;
 
         bool keys[256];                     // an array to keep track of regular key presses
         bool special_keys[256];             // an array to keep track of special key presses

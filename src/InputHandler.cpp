@@ -37,12 +37,12 @@ void InputHandler::initialize(Camera *camera, Renderer *renderer, SoundManager *
 
 void InputHandler::generate()
 {
-    instance->inference->terrain = new Terrain();
+    instance->terrain = new Terrain();
     
     std::thread inference_thread([](Inference *inference) { inference->predict(); }, instance->inference);
     inference_thread.join();
 
-    std::thread terrain_thread([](Terrain *terrain) { terrain->initialize(16, 2); }, instance->inference->terrain);
+    std::thread terrain_thread([](Terrain *terrain) { terrain->initialize(16, 1); }, instance->terrain);
     terrain_thread.join();
     
     instance->keys[13] = true;
@@ -166,7 +166,7 @@ void InputHandler::handleKeyboard()
             
             case RENDERING_SCREEN:
                 generation_thread.join();
-                instance->renderer->initializeMesh(instance->inference->terrain);
+                instance->renderer->initializeMesh(instance->terrain);
                 instance->sound_manager->playSuccessSound();
                 instance->sound_manager->playBackgroundMusic();
                 camera->setPosition(0, 1500, 3600);

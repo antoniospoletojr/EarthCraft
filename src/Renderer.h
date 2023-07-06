@@ -42,10 +42,10 @@ public:
     void takeSnapshot();
     void initializeMesh(Terrain *terrain);
 
-    Terrain *terrain;
 private:
     static Renderer *instance;
     Camera *camera;
+    Terrain *terrain;
 
     std::vector<Object> objects;
     // Do I need thees as attributes???
@@ -58,7 +58,7 @@ private:
     cv::VideoCapture menu_clips[6];
     cv::Mat menu_frame;
 
-    float angle = 0.0f; // to rename to something more meaningful (date)
+    float time = 0.0f; // time variable used to track time of the day and apply corresponding rotation to the sun and moon
 
     void initializeOrbit();
     void initializeSkydome();

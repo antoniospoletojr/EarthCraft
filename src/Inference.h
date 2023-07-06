@@ -14,7 +14,6 @@ public:
     ~Inference();
     void predict();
     void reset();
-    Terrain *terrain;
 
 private:
     PyThreadState *state;

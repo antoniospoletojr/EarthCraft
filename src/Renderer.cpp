@@ -744,9 +744,9 @@ void Renderer::takeSnapshot()
 
 void Renderer::cycleDayNight()
 {
-    angle += 0.2f;
-    if (angle > 360.0f)
-        angle -= 360.0f;
+    this->time += 0.2f;
+    if (this->time > 360.0f)
+        this->time -= 360.0f;
 }
 
 void Renderer::sketch(float x, float y)
@@ -893,7 +893,7 @@ void Renderer::drawOrbit()
 {
     // Draw the sun
     glPushMatrix();
-        glRotatef(instance->angle, 0, 0, 1);
+        glRotatef(instance->time, 0, 0, 1);
 
         // Bind the sun texture
         glBindTexture(GL_TEXTURE_2D, instance->objects[SUN].texture);
@@ -918,11 +918,11 @@ void Renderer::drawOrbit()
     glPushMatrix();
         glMatrixMode(GL_MODELVIEW);
 
-        glRotatef(instance->angle, 0, 0, 1);
+        glRotatef(instance->time, 0, 0, 1);
 
         // Bind the sun texture
         glBindTexture(GL_TEXTURE_2D, instance->objects[MOON].texture);
-
+        
         // Draw the sun
         glBindVertexArray(instance->objects[MOON].vao);
 
@@ -1141,7 +1141,7 @@ void Renderer::drawSketch(short current_canvas)
             glDrawElements(GL_POINTS, instance->sketch_indices[current_canvas].size(), GL_UNSIGNED_INT, instance->sketch_indices[current_canvas].data());
         }
         glDisable(GL_PRIMITIVE_RESTART);
-
+        
         glDisableClientState(GL_VERTEX_ARRAY);
         glDisableClientState(GL_COLOR_ARRAY);
         glDisableClientState(GL_TEXTURE_COORD_ARRAY);
@@ -1157,18 +1157,62 @@ void Renderer::drawSketch(short current_canvas)
 
 void Renderer::drawTime()
 {
+    // Disable lighting
+    glDisable(GL_LIGHTING);
     
-    glMatrixMode(GL_MODELVIEW);
+    glMatrixMode(GL_PROJECTION);
     glPushMatrix();
-        glTranslatef(-300.0f, 1000.0f, 0.0f);
-        Vertex3d<float> position = instance->camera->getPosition();
-        Vertex3d<float> direction = instance->camera->getDirection();
-        //glRasterPos3f(direction.x, direction.y, direction.z);
-        char *string = "01:00:00";
-        char *c;
-        for (c = string; *c != '\0'; c++)
-            glutStrokeCharacter(GLUT_STROKE_MONO_ROMAN, *c);
+        glLoadIdentity();
+        
+        //get screen size with glut
+        int screen_width = glutGet(GLUT_WINDOW_WIDTH);
+        int screen_height = glutGet(GLUT_WINDOW_HEIGHT);
+
+        // Set the text position in screen coordinates
+        GLfloat text_width = glutStrokeLength(GLUT_STROKE_MONO_ROMAN, reinterpret_cast<const unsigned char *>("hh:mm:ss"));
+        GLfloat text_height = glutStrokeHeight(GLUT_STROKE_MONO_ROMAN);
+        GLfloat scaling_factor = screen_width / screen_height * 0.2;
+        GLfloat text_pos_x = (screen_width - text_width * scaling_factor) / 2.0f; // Center horizontally
+        GLfloat text_pos_y = screen_height - 80.0f;                  // Position at the top with 80 pixels offset
+
+        // Set up an orthographic projection
+        glOrtho(0, screen_width, 0, screen_height, -1, 1);
+
+        glMatrixMode(GL_MODELVIEW);
+        glPushMatrix();
+            glLoadIdentity();                                                                                               // Position at the top with 30 pixels offset
+            
+            // Set the color for the text
+            glColor3f(1.0f, 1.0f, 1.0f); // White color
+            
+            // Convert the time to a string. Divide by 360 to normalize the time [0,1] and then multiply by to 24 hours, 60 minutes and 60 seconds.
+            int total_seconds = static_cast<int>(instance->time * 24.0f * 60.0f * 60.0f / 360.0f);
+            // Calculate hours, minutes, and seconds
+            int hours = total_seconds / 3600;
+            int minutes = (total_seconds % 3600) / 60;
+            int seconds = total_seconds % 60;
+            
+            // Format the time as a string
+            char time_string[10]; // "hh:mm:ss" + '\0'
+            snprintf(time_string, sizeof(time_string), "%02d:%02d:%02d", hours, minutes, seconds);
+            
+            // Move to the desired position in screen coordinates
+            glTranslatef(text_pos_x, text_pos_y, 0.0f);
+
+            // Scale down the text
+            glScalef(scaling_factor, scaling_factor, scaling_factor);
+            
+            // Display the time string
+            for (const char *c = time_string; *c != '\0'; c++)
+                glutStrokeCharacter(GLUT_STROKE_MONO_ROMAN, *c);
+
+        glPopMatrix();
+        glMatrixMode(GL_PROJECTION);
     glPopMatrix();
+    glMatrixMode(GL_MODELVIEW);
+    
+    // Re-enable lighting
+    glEnable(GL_LIGHTING);
 }
 
 void Renderer::draw()
@@ -1225,7 +1269,7 @@ void Renderer::draw()
     // Draw the light source
     glMatrixMode(GL_MODELVIEW);
     glPushMatrix();
-        glRotatef(instance->angle, 0, 0, 1);
+        glRotatef(instance->time, 0, 0, 1);
         GLfloat light_position[4];
         // Initialize the light position to the sun's position
         light_position[0] = 0;
