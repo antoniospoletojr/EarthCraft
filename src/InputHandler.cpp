@@ -1,4 +1,5 @@
 #include "InputHandler.h"
+#include <thread>
 
 
 InputHandler* InputHandler::instance = nullptr;
@@ -34,6 +35,18 @@ void InputHandler::initialize(Camera *camera, Renderer *renderer, SoundManager *
     this->sound_manager->playBackgroundMusic();
 }
 
+void InputHandler::generate()
+{
+    instance->inference->terrain = new Terrain();
+    
+    std::thread inference_thread([](Inference *inference) { inference->predict(); }, instance->inference);
+    inference_thread.join();
+
+    std::thread terrain_thread([](Terrain *terrain) { terrain->initialize(16, 2); }, instance->inference->terrain);
+    terrain_thread.join();
+    
+    instance->keys[13] = true;
+}
 // Handle keyboard input
 void InputHandler::handleKeyboard()
 {
@@ -95,9 +108,9 @@ void InputHandler::handleKeyboard()
     {
         is_polygon_filled = !is_polygon_filled;
         if (is_polygon_filled)
-            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-        else
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+        else
+            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
         keys['p'] = false;
     }
     
@@ -138,24 +151,26 @@ void InputHandler::handleKeyboard()
                 instance->sound_manager->playClickSound();
                 glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
                 break;
-
+            
             case LOADING_SCREEN:
+            {
                 instance->sound_manager->playClickSound();
                 instance->renderer->resetSketches();
-                // Pass the prediction thread the pointer to the boolean variable which tracks the enter key press.
+
                 // When the prediction is complete, the thread simulates an enter key press.
-                instance->inference->predict(&keys[13]);
+                generation_thread = std::thread([this](){InputHandler::instance->generate();});
+                
                 glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
                 break;
+            }
             
             case RENDERING_SCREEN:
-                instance->renderer->initializeMesh(instance->inference->getTerrain());
+                generation_thread.join();
+                instance->renderer->initializeMesh(instance->inference->terrain);
                 instance->sound_manager->playSuccessSound();
                 instance->sound_manager->playBackgroundMusic();
-                camera->setPosition(0, 1000, 0);
-                glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-                glLineWidth(1.0);
-                //glEnable(GL_LIGHTING);
+                camera->setPosition(0, 1500, 3600);
+                glEnable(GL_LIGHTING);
                 break;
         }
         

@@ -19,6 +19,7 @@ Renderer::~Renderer()
     glDisableClientState(GL_VERTEX_ARRAY);
     glDisableClientState(GL_COLOR_ARRAY);
     glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+    glDisableClientState(GL_NORMAL_ARRAY);
 
     // Unbind any buffers
     glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -26,11 +27,11 @@ Renderer::~Renderer()
 
     // Deallocate memory
     mesh_vertices.clear();
-    mesh_colors.clear();
     mesh_indices.clear();
     sun_vertices.clear();
-    sun_colors.clear();
     sun_indices.clear();
+    mesh_normals.clear();
+    
 
     for (auto &vertices : sketch_vertices)
         vertices.clear();
@@ -40,7 +41,7 @@ Renderer::~Renderer()
         vertices.clear();
 
     objects.clear();
-
+    
     // Delete the vertex array objects
     glDeleteVertexArrays(1, &objects[MESH].vao);
     glDeleteVertexArrays(1, &objects[SUN].vao);
@@ -67,17 +68,19 @@ void Renderer::initializeMesh(Terrain *terrain)
     this->terrain->getInfo();
     // Retrieve the map
     Vertex3d<float> *map = this->terrain->getMap();
+
     // Load skydome texture image
     cv::Mat mesh_texture = this->terrain->getTexture();
-    // Get the maximum height of the map
-    float max_y = this->terrain->getMaxHeight();
+    printf("Mesh texture size: %d x %d\n", mesh_texture.cols, mesh_texture.rows);
+    fflush(stdout);
+
     // Get the dimension of the map, useful for allocations
     int dim = this->terrain->getDim();
-
+    
     // Generate and bind a texture object
     glGenTextures(1, &objects[MESH].texture);
     glBindTexture(GL_TEXTURE_2D, objects[MESH].texture);
-
+    
     // Set texture parameters
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
@@ -94,16 +97,16 @@ void Renderer::initializeMesh(Terrain *terrain)
 
     // Generate the buffer objects
     glGenBuffers(1, &objects[MESH].vbo);
-    glGenBuffers(1, &objects[MESH].cbo);
     glGenBuffers(1, &objects[MESH].tbo);
     glGenBuffers(1, &objects[MESH].ibo);
+    glGenBuffers(1, &objects[MESH].nbo);
 
     // Reset mesh arrays if they are not empty
     mesh_vertices.clear();
-    mesh_colors.clear();
     mesh_indices.clear();
     mesh_textures.clear();
-
+    mesh_normals.clear();
+    
     // Generate vertices and colors
     for (int i = 0; i < dim; i++)
     {
@@ -112,29 +115,16 @@ void Renderer::initializeMesh(Terrain *terrain)
             mesh_vertices.push_back(map[i * dim + j].x);
             mesh_vertices.push_back(map[i * dim + j].y);
             mesh_vertices.push_back(map[i * dim + j].z);
-
+            
             mesh_textures.push_back((float)i / dim);
             mesh_textures.push_back((float)j / dim);
-
-            // Calculate the normalized height value
-            float normalizedHeight = map[i * dim + j].y / max_y;
-
-            // Define the green and brown color values with adjusted components
-            float greenR = 0.0f, greenG = 0.8f, greenB = 0.0f;
-            float brownR = 0.7f, brownG = 0.4f, brownB = 0.1f;
-
-            // Interpolate the colors based on the normalized height
-            float red = greenR + (brownR - greenR) * 1.7 * normalizedHeight;
-            float green = greenG + (brownG - greenG) * 1.7 * normalizedHeight;
-            float blue = greenB + (brownB - greenB) * 1.7 * normalizedHeight;
-
-            // Set the colors
-            mesh_colors.push_back(red);
-            mesh_colors.push_back(green);
-            mesh_colors.push_back(blue);
+            
+            mesh_normals.push_back(0.0f);
+            mesh_normals.push_back(0.0f);
+            mesh_normals.push_back(0.0f);
         }
     }
-
+    
     // Generate indices for triangle strips
     for (int z = 0; z < dim - 1; z++)
     {
@@ -149,7 +139,56 @@ void Renderer::initializeMesh(Terrain *terrain)
         // Use primitive restart to start a new strip
         mesh_indices.push_back(0xFFFFFFFFu);
     }
-
+    
+    
+    // Calculate normals
+    for (int i = 0; i < mesh_indices.size()-3; i += 2)
+    {    
+        if (mesh_indices[i+1] == 0xFFFFFFFFu)
+            continue;
+        
+        // Get the indices of the triangle
+        int i1 = mesh_indices[i];
+        int i2 = mesh_indices[i + 1];
+        int i3 = mesh_indices[i + 2];
+        
+        // Get the vertices of the triangle into Vertex3d objects
+        Vertex3d<float> v1;
+        v1.x = mesh_vertices[i1 * 3];
+        v1.y = mesh_vertices[i1 * 3 + 1];
+        v1.z = mesh_vertices[i1 * 3 + 2];
+        
+        Vertex3d<float> v2;
+        v2.x = mesh_vertices[i2 * 3];
+        v2.y = mesh_vertices[i2 * 3 + 1];
+        v2.z = mesh_vertices[i2 * 3 + 2];
+        
+        Vertex3d<float> v3;
+        v3.x = mesh_vertices[i3 * 3];
+        v3.y = mesh_vertices[i3 * 3 + 1];
+        v3.z = mesh_vertices[i3 * 3 + 2];
+        
+        // Get the vertices of the triangle
+        Vertex3d<float> u1 = subtract(v2, v1);
+        Vertex3d<float> u2 = subtract(v3, v1);
+        
+        // Calculate the normal of the triangle
+        Vertex3d<float> normal = crossProduct(u1, u2);
+        
+        // // Add the normal to the normals array
+        mesh_normals[i1 * 3] += normal.x;
+        mesh_normals[i1 * 3 + 1] += normal.y;
+        mesh_normals[i1 * 3 + 2] += normal.z;
+        
+        mesh_normals[i2 * 3] += normal.x;
+        mesh_normals[i2 * 3 + 1] += normal.y;
+        mesh_normals[i2 * 3 + 2] += normal.z;
+        
+        mesh_normals[i3 * 3] += normal.x;
+        mesh_normals[i3 * 3 + 1] += normal.y;
+        mesh_normals[i3 * 3 + 2] += normal.z;
+    }
+        
     // Use maximum unsigned int as restart index
     glEnable(GL_PRIMITIVE_RESTART);
     glPrimitiveRestartIndex(0xFFFFFFFFu);
@@ -159,16 +198,16 @@ void Renderer::initializeMesh(Terrain *terrain)
     glBufferData(GL_ARRAY_BUFFER, mesh_vertices.size() * sizeof(float), mesh_vertices.data(), GL_STATIC_DRAW);
     glVertexPointer(3, GL_FLOAT, 0, 0);
 
-    // Bind and fill the color buffer object
-    glBindBuffer(GL_ARRAY_BUFFER, objects[MESH].cbo);
-    glBufferData(GL_ARRAY_BUFFER, mesh_colors.size() * sizeof(float), mesh_colors.data(), GL_STATIC_DRAW);
-    glColorPointer(3, GL_FLOAT, 0, 0);
-
     // Bind and fill the texture coordinate buffer object
     glBindBuffer(GL_ARRAY_BUFFER, objects[MESH].tbo);
     glBufferData(GL_ARRAY_BUFFER, mesh_textures.size() * sizeof(float), mesh_textures.data(), GL_STATIC_DRAW);
     glTexCoordPointer(2, GL_FLOAT, 0, 0);
-
+    
+    // Bind and fill the normals buffer object
+    glBindBuffer(GL_ARRAY_BUFFER, objects[MESH].nbo);
+    glBufferData(GL_ARRAY_BUFFER, mesh_normals.size() * sizeof(float), mesh_normals.data(), GL_STATIC_DRAW);
+    glNormalPointer(GL_FLOAT, 0, 0);
+    
     // Bind and fill indices buffer.
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, objects[MESH].ibo);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, mesh_indices.size() * sizeof(GLuint), mesh_indices.data(), GL_STATIC_DRAW);
@@ -705,7 +744,7 @@ void Renderer::takeSnapshot()
 
 void Renderer::cycleDayNight()
 {
-    angle += 2.2f;
+    angle += 0.2f;
     if (angle > 360.0f)
         angle -= 360.0f;
 }
@@ -825,13 +864,17 @@ void Renderer::drawMesh()
 {
     // Bind the terrain texture
     glBindTexture(GL_TEXTURE_2D, instance->objects[MESH].texture);
-
+    
     // Draw the terrain
     glBindVertexArray(instance->objects[MESH].vao);
-
+    
     // Enable two vertex arrays: co-ordinates and color.
     glEnableClientState(GL_VERTEX_ARRAY);
     glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+    glEnableClientState(GL_NORMAL_ARRAY);
+    
+    // GLfloat materialDiffuse[] = {0.8f, 0.7f, 0.6f, 1.0f}; // Warm color for diffuse reflection
+    // glMaterialfv(GL_FRONT, GL_DIFFUSE, materialDiffuse);
     
     glEnable(GL_PRIMITIVE_RESTART);                                                       // Enable primitive restart
     glDrawElements(GL_TRIANGLE_STRIP, instance->mesh_indices.size(), GL_UNSIGNED_INT, 0); // Draw the triangles
@@ -839,7 +882,8 @@ void Renderer::drawMesh()
     
     glDisableClientState(GL_VERTEX_ARRAY);
     glDisableClientState(GL_TEXTURE_COORD_ARRAY);
-
+    glDisableClientState(GL_NORMAL_ARRAY);
+    
     // Unbind the vertex array object and texture
     glBindVertexArray(0);
     glBindTexture(GL_TEXTURE_2D, 0);
@@ -849,61 +893,50 @@ void Renderer::drawOrbit()
 {
     // Draw the sun
     glPushMatrix();
-    glMatrixMode(GL_MODELVIEW);
+        glRotatef(instance->angle, 0, 0, 1);
 
-    GLfloat light_position[4];
-    // Initialize the light position to the sun's position
-    light_position[0] = instance->sun_vertices[0];
-    light_position[1] = instance->sun_vertices[1];
-    light_position[2] = instance->sun_vertices[2];
-    light_position[3] = 1.0f;
+        // Bind the sun texture
+        glBindTexture(GL_TEXTURE_2D, instance->objects[SUN].texture);
 
-    glRotatef(instance->angle, 0, 0, 1);
+        // Draw the sun
+        glBindVertexArray(instance->objects[SUN].vao);
 
-    glLightfv(GL_LIGHT0, GL_POSITION, light_position);
+        // Enable two vertex arrays: co-ordinates and color.
+        glEnableClientState(GL_VERTEX_ARRAY);
+        glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+        glDrawElements(GL_TRIANGLE_STRIP, instance->sun_indices.size(), GL_UNSIGNED_INT, 0); // Draw the triangles
 
-    // Bind the sun texture
-    glBindTexture(GL_TEXTURE_2D, instance->objects[SUN].texture);
+        glDisableClientState(GL_VERTEX_ARRAY);
+        glDisableClientState(GL_TEXTURE_COORD_ARRAY);
 
-    // Draw the sun
-    glBindVertexArray(instance->objects[SUN].vao);
-
-    // Enable two vertex arrays: co-ordinates and color.
-    glEnableClientState(GL_VERTEX_ARRAY);
-    glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-    glDrawElements(GL_TRIANGLE_STRIP, instance->sun_indices.size(), GL_UNSIGNED_INT, 0); // Draw the triangles
-
-    glDisableClientState(GL_VERTEX_ARRAY);
-    glDisableClientState(GL_TEXTURE_COORD_ARRAY);
-
-    // Unbind the vertex array object and texture
-    glBindVertexArray(0);
-    glBindTexture(GL_TEXTURE_2D, 0);
+        // Unbind the vertex array object and texture
+        glBindVertexArray(0);
+        glBindTexture(GL_TEXTURE_2D, 0);
     glPopMatrix();
 
     // Draw the moon
     glPushMatrix();
-    glMatrixMode(GL_MODELVIEW);
+        glMatrixMode(GL_MODELVIEW);
 
-    glRotatef(instance->angle, 0, 0, 1);
+        glRotatef(instance->angle, 0, 0, 1);
 
-    // Bind the sun texture
-    glBindTexture(GL_TEXTURE_2D, instance->objects[MOON].texture);
+        // Bind the sun texture
+        glBindTexture(GL_TEXTURE_2D, instance->objects[MOON].texture);
 
-    // Draw the sun
-    glBindVertexArray(instance->objects[MOON].vao);
+        // Draw the sun
+        glBindVertexArray(instance->objects[MOON].vao);
 
-    // Enable two vertex arrays: co-ordinates and color.
-    glEnableClientState(GL_VERTEX_ARRAY);
-    glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-    glDrawElements(GL_TRIANGLE_STRIP, instance->moon_indices.size(), GL_UNSIGNED_INT, 0); // Draw the triangles
+        // Enable two vertex arrays: co-ordinates and color.
+        glEnableClientState(GL_VERTEX_ARRAY);
+        glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+        glDrawElements(GL_TRIANGLE_STRIP, instance->moon_indices.size(), GL_UNSIGNED_INT, 0); // Draw the triangles
 
-    glDisableClientState(GL_VERTEX_ARRAY);
-    glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+        glDisableClientState(GL_VERTEX_ARRAY);
+        glDisableClientState(GL_TEXTURE_COORD_ARRAY);
 
-    // Unbind the vertex array object and texture
-    glBindVertexArray(0);
-    glBindTexture(GL_TEXTURE_2D, 0);
+        // Unbind the vertex array object and texture
+        glBindVertexArray(0);
+        glBindTexture(GL_TEXTURE_2D, 0);
     glPopMatrix();
 }
 
@@ -914,7 +947,7 @@ void Renderer::drawSkydome()
 
     // Bind the vertex array object for the skydome
     glBindVertexArray(instance->objects[SKYDOME].vao);
-
+    
     glEnableClientState(GL_VERTEX_ARRAY);
     glEnableClientState(GL_TEXTURE_COORD_ARRAY);
 
@@ -1112,28 +1145,44 @@ void Renderer::drawSketch(short current_canvas)
         glDisableClientState(GL_VERTEX_ARRAY);
         glDisableClientState(GL_COLOR_ARRAY);
         glDisableClientState(GL_TEXTURE_COORD_ARRAY);
-
+        
         // Deallocate memory
         vertices.clear();
-
+        
         // Restore the previous projection matrix
         glMatrixMode(GL_PROJECTION);
         glPopMatrix();
     }
 }
 
+void Renderer::drawTime()
+{
+    
+    glMatrixMode(GL_MODELVIEW);
+    glPushMatrix();
+        glTranslatef(-300.0f, 1000.0f, 0.0f);
+        Vertex3d<float> position = instance->camera->getPosition();
+        Vertex3d<float> direction = instance->camera->getDirection();
+        //glRasterPos3f(direction.x, direction.y, direction.z);
+        char *string = "01:00:00";
+        char *c;
+        for (c = string; *c != '\0'; c++)
+            glutStrokeCharacter(GLUT_STROKE_MONO_ROMAN, *c);
+    glPopMatrix();
+}
+
 void Renderer::draw()
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glColor3f(1.0, 1.0, 1.0);
-
+    
     // Set the modelview matrix
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
-
+    
     // Update the camera based on the inputs
     instance->camera->update();
-
+    
     // Switch on the current menu page ---------MAYBE USELESS!!!!!
     switch (instance->current_menu_page)
     {
@@ -1142,10 +1191,10 @@ void Renderer::draw()
         break;
     case RENDERING_SCREEN:
         // Draw a text in the middle saying "Time"
-        
         instance->drawMesh();
-        instance->drawSkydome();
         instance->drawOrbit();
+        instance->drawSkydome();
+        instance->drawTime();
         break;
     case LOADING_SCREEN:
         instance->drawCanvas();
@@ -1173,6 +1222,17 @@ void Renderer::draw()
         instance->drawSketch(RIDGES);
         break;
     }
-
+    // Draw the light source
+    glMatrixMode(GL_MODELVIEW);
+    glPushMatrix();
+        glRotatef(instance->angle, 0, 0, 1);
+        GLfloat light_position[4];
+        // Initialize the light position to the sun's position
+        light_position[0] = 0;
+        light_position[1] = 10000;
+        light_position[2] = 3600;
+        light_position[3] = 0.0f;
+        glLightfv(GL_LIGHT0, GL_POSITION, light_position);
+    glPopMatrix();
     glutSwapBuffers();
 }

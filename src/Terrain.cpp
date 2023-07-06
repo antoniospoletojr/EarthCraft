@@ -24,17 +24,20 @@ Terrain::~Terrain()
 }
 
 // Parametrized constructor
-void Terrain::initialize(float worldScale)
+void Terrain::initialize(float world_scale, float texture_scale)
 {
-    this->world_scale = worldScale;
+    this->world_scale = world_scale;
+    this->texture_scale = texture_scale;
+    
     loadMap();
-    loadTexture(18);
+    loadTexture();
 }
 
 void Terrain::loadMap()
 {
     // Load the terrain heightmap using opencv library
     cv::Mat image = cv::imread("./assets/sketches/heightmap.png", cv::IMREAD_GRAYSCALE);
+
     unsigned char* data = image.data;
     
     // Check for an error during the load process
@@ -68,7 +71,7 @@ void Terrain::loadMap()
             this->map[i * dim + j].x = ((i - dim / 2) * this->world_scale);
             this->map[i * dim + j].y = (data[(i * dim + j)] * (15 + log(this->world_scale)));
             this->map[i * dim + j].z = ((j - dim / 2) * this->world_scale);
-
+            
             // Update the bounds based on the current vertex
             bounds.min_x = (map[i * dim + j].x < bounds.min_x) ? map[i * dim + j].x : bounds.min_x;
             bounds.max_x = (map[i * dim + j].x > bounds.max_x) ? map[i * dim + j].x : bounds.max_x;
@@ -80,15 +83,12 @@ void Terrain::loadMap()
     }
 }
 
-void Terrain::loadTexture(float scaling)
+void Terrain::loadTexture()
 {    
     short original_texture_size = tiles[0].texture.rows;
     // Allocate memory for the opencv texture map based on texture_1 size
-    this->texture.create(original_texture_size * scaling, original_texture_size * scaling, CV_8UC3);
+    this->texture.create(original_texture_size * texture_scale, original_texture_size * texture_scale, CV_8UC3);
     float terrain_texture_ratio = (float)this->dim / (float) texture.rows;
-    
-    printf("Texture size: {%d}x{%d}\n", original_texture_size * scaling, original_texture_size * scaling);
-    printf("Terrain texture ratio: %f\n", terrain_texture_ratio);
     
     int i_map;
     int j_map;
@@ -137,7 +137,7 @@ void Terrain::loadTexture(float scaling)
                     weights[k] = 0;
             }
             
-
+            
             float sum = 0.0;
             for (int k = 0; k < 5; k++)
                 sum += weights[k];
@@ -147,6 +147,8 @@ void Terrain::loadTexture(float scaling)
                 this->texture.at<cv::Vec3b>(i, j) += weights[k] / sum * tiles[k].texture.at<cv::Vec3b>(i % original_texture_size, j % original_texture_size);
         }
     }
+    // Write texture to file
+    cv::imwrite("./assets/terrain_texture.png", texture);
 }
 
 // Return the height map
@@ -185,6 +187,7 @@ void Terrain::getInfo()
     printf("__________________________________________\n");
     printf("Heightmap size: {%d}x{%d}\n", this->dim, this->dim);
     printf("World scale: %f\n", this->world_scale);
+    printf("Texture scale: %f\n", this->texture_scale);
     printf("World dim: %f\n", this->dim * this->world_scale);
     printf("Height scale: %f\n", 10 + log10(this->world_scale));
     printf("Min x: %f, Max x: %f\n", this->bounds.min_x, this->bounds.max_x);

@@ -12,16 +12,11 @@ class Inference
 public:
     Inference();
     ~Inference();
-    void predict(bool *can_continue);
+    void predict();
     void reset();
-    Terrain *getTerrain();
+    Terrain *terrain;
 
 private:
-    void worker(bool *can_continue);
-    
-    Terrain *terrain;
-    bool is_running;
-    std::thread thread;
     PyThreadState *state;
 };
 

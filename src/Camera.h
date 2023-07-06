@@ -4,6 +4,7 @@
 #include <GL/glut.h>
 #include <cmath>
 #include "Constants.h"
+#include "Vertex.hpp"
 
 class Camera
 {
@@ -14,6 +15,8 @@ class Camera
         
         void reset();
         void setPosition(GLdouble x, GLdouble y, GLdouble z);
+        Vertex3d<float> getPosition();
+        Vertex3d<float> getDirection();
         void moveForward();
         void moveBackward();
         void moveLeft();

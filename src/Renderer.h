@@ -10,6 +10,7 @@
 #include <assimp/postprocess.h>
 #include <opencv2/opencv.hpp>
 #include <vector>
+#include <cmath>
 #include "random"
 
 #include "Camera.h"
@@ -23,6 +24,7 @@ typedef struct Object
     GLuint tbo;
     GLuint ibo;
     GLuint cbo;
+    GLuint nbo;
     GLuint texture;
 } Object;
 
@@ -40,17 +42,18 @@ public:
     void takeSnapshot();
     void initializeMesh(Terrain *terrain);
 
+    Terrain *terrain;
 private:
     static Renderer *instance;
     Camera *camera;
-    Terrain *terrain;
 
     std::vector<Object> objects;
     // Do I need thees as attributes???
     std::vector<GLfloat> mesh_vertices, sun_vertices, moon_vertices, skydome_vertices, sketch_vertices[4]; // an array to keep track of the vertices of the terrain
-    std::vector<GLfloat> mesh_colors, sun_colors, moon_colors, skydome_colors, sketch_colors[4];           // an array to keep track of the colors of the terrain
+    std::vector<GLfloat> skydome_colors, sketch_colors[4];           // an array to keep track of the colors of the terrain
     std::vector<GLuint> mesh_indices, sun_indices, moon_indices, skydome_indices, sketch_indices[4];       // an array to keep track of the indices of the terrain
     std::vector<GLfloat> mesh_textures, sun_textures, moon_textures, skydome_textures;
+    std::vector<GLfloat> mesh_normals;
 
     cv::VideoCapture menu_clips[6];
     cv::Mat menu_frame;
@@ -70,6 +73,7 @@ private:
     static void drawSplashscreen();
     static void drawCanvas();
     static void drawSketch(short current_canvas);
+    static void drawTime();
 
     static void timerCallback(int value);
     static void draw();

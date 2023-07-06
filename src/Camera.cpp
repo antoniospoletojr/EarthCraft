@@ -46,6 +46,24 @@ void Camera::setPosition(GLdouble x, GLdouble y, GLdouble z)
     position[2] = z;
 }
 
+Vertex3d<float> Camera::getPosition()
+{
+    Vertex3d<float> position;
+    position.x = this->position[0] - sin(alfa);
+    position.y = this->position[1];
+    position.z = this->position[2] - cos(alfa);
+    return position;
+}
+
+Vertex3d<float> Camera::getDirection()
+{
+    Vertex3d<float> direction;
+    direction.x = position[0] - LOS_DISTANCE * sin(alfa);
+    direction.y = position[1] + beta;
+    direction.z = position[2] - LOS_DISTANCE * cos(alfa);
+    return direction;
+}
+
 // Move the camera forward
 void Camera::moveForward()
 {

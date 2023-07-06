@@ -36,8 +36,8 @@ class Terrain
 public:
 	Terrain();
 	~Terrain();
-	
-	void initialize(float worldScale);
+
+	void initialize(float world_scale, float texture_scale);
 	Vertex3d<float>* getMap();
 	cv::Mat getTexture();
 	
@@ -48,15 +48,15 @@ public:
 
 private:
 	int dim;
-	float world_scale;
+	float world_scale, texture_scale;
 	TerrainBounds bounds;
 
 	Vertex3d<float> *map;
 	cv::Mat texture;
 	TextureTile tiles[5];
-
+	
 	void loadMap();
-	void loadTexture(float scaling);
+	void loadTexture();
 };
 
 #endif

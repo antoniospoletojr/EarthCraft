@@ -7,6 +7,7 @@ from tensorflow.keras.models import Model
 import numpy as np
 from PIL import Image
 from typing import Dict, Tuple
+import time
 
 
 class TerrainGANBuilder:
@@ -129,17 +130,18 @@ def predict():
     output = np.squeeze(np.uint8(output * 127.5 + 127.5), axis=0)
     
     
-    # make the borders (3 px wide) black
-    output[0:3, :] = 0
-    output[:, 0:3] = 0
-    output[447:450, :] = 0
-    output[:, 447:450] = 0
+    # make the borders (5 px wide) black
+    output[0:5, :] = 0
+    output[:, 0:5] = 0
+    output[445:450, :] = 0
+    output[:, 445:450] = 0
     
     image = Image.fromarray(output, mode='L')
-    image.save('./assets/sketches/heightmap.png')
-    with open('./assets/sketches/heightmap.png', 'rb') as file:
+        
+    with open("./assets/sketches/heightmap.png", "wb") as file:
+        image.save(file, "PNG")
         file.flush()
-
+        os.fsync(file.fileno())
     
 
 if __name__ == "__main__":

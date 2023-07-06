@@ -8,6 +8,7 @@
 #include "Inference.h"
 #include "SoundManager.h"
 #include <GL/freeglut.h>
+#include <thread>
 
 using namespace irrklang;
 
@@ -34,6 +35,9 @@ class InputHandler
         bool is_polygon_filled = true;      // keeps track of whether or not the polygon is filled
         bool is_fullscreen = true;          // keeps track of whether or not the window is in is_fullscreen mode
 
+        std::thread generation_thread;      // handles the input event associated to generation of the terrain in a separate thread
+        
+        
         void handleKeyboard();
         static void handleRegularKeyPress(unsigned char key, int x, int y);
         static void handleRegularKeyRelease(unsigned char key, int x, int y);
@@ -42,6 +46,7 @@ class InputHandler
         static void mouseClick(int button, int state, int x, int y);
         static void mouseMotion(int x, int y);
         static void idleCallback();
+        static void generate();
 };
 
 #endif // INPUTHANDLER_H
