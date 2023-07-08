@@ -26,6 +26,7 @@ typedef struct Object
     GLuint cbo;
     GLuint nbo;
     GLuint texture;
+    GLuint blend_texture;
 } Object;
 
 class Renderer
@@ -49,15 +50,17 @@ private:
 
     std::vector<Object> objects;
     // Do I need thees as attributes???
-    std::vector<GLfloat> mesh_vertices, sun_vertices, moon_vertices, skydome_vertices, sketch_vertices[4]; // an array to keep track of the vertices of the terrain
-    std::vector<GLfloat> skydome_colors, sketch_colors[4];           // an array to keep track of the colors of the terrain
-    std::vector<GLuint> mesh_indices, sun_indices, moon_indices, skydome_indices, sketch_indices[4];       // an array to keep track of the indices of the terrain
+    std::vector<GLfloat> mesh_vertices, sun_vertices, moon_vertices, skydome_vertices, sketch_vertices[4];  // an array to keep track of the vertices of the terrain
+    std::vector<GLfloat> skydome_colors, sketch_colors[4];                                                  // an array to keep track of the colors of the terrain
+    std::vector<GLuint> mesh_indices, sun_indices, moon_indices, skydome_indices, sketch_indices[4];        // an array to keep track of the indices of the terrain
     std::vector<GLfloat> mesh_textures, sun_textures, moon_textures, skydome_textures;
     std::vector<GLfloat> mesh_normals, skydome_normals, sun_normals;
     
     cv::VideoCapture menu_clips[6];
     cv::Mat menu_frame;
-
+    cv::Mat day_texture;
+    cv::Mat night_texture;
+    
     float time = 12.0f; // time variable used to track time of the day and apply corresponding rotation to the sun and moon
 
     void initializeOrbit();

@@ -41,8 +41,8 @@ void InputHandler::generate()
     
     std::thread inference_thread([](Inference *inference) { inference->predict(); }, instance->inference);
     inference_thread.join();
-
-    std::thread terrain_thread([](Terrain *terrain) { terrain->initialize(20, 8); }, instance->terrain);
+    
+    std::thread terrain_thread([](Terrain *terrain) { terrain->initialize(20, 16); }, instance->terrain);
     terrain_thread.join();
     
     instance->keys[13] = true;
@@ -62,7 +62,7 @@ void InputHandler::handleKeyboard()
             camera->moveLeft();
         if (keys['d'])
             camera->moveRight();
-
+        
         // If Spacebar is pressed then increase the y value of the camera
         if (keys[32])
             camera->moveUp();

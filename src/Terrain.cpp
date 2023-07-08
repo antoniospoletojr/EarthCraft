@@ -148,7 +148,7 @@ void Terrain::loadTexture()
         }
     }
     // Write texture to file
-    cv::imwrite("./assets/terrain_texture.png", texture);
+    //cv::imwrite("./assets/terrain_texture.png", texture);
 }
 
 // Return the height map

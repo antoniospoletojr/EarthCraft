@@ -34,7 +34,8 @@ void GlutFramework::initialize(int argc, char** argv)
     
     // Set polygon mode to be not filled
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-
+    
+    // Set the front face of polygons to be the one with counter-clockwise winding
     glFrontFace(GL_CW);
     
     // Enable the depth test to ensure that polygons that are behind others are not drawn
@@ -48,13 +49,12 @@ void GlutFramework::initialize(int argc, char** argv)
 
     // Light property vectors.
     float diffuse_light[] = {1.0, 0.9, 0.8, 1.0};
-    //float specular_light[] = {1.0, 0.9, 0.8, 1.0};
     float ambient_light[] = {1, 1, 1, 1.0};
     
     // Light properties.
     glLightfv(GL_LIGHT0, GL_AMBIENT, ambient_light);
     glLightfv(GL_LIGHT0, GL_DIFFUSE, diffuse_light);
-    // glLightfv(GL_LIGHT0, GL_SPECULAR, specular_light);
+    //glLightfv(GL_LIGHT0, GL_SPECULAR, specular_light);
     
     //glLightModeli(GL_LIGHT_MODEL_LOCAL_VIEWER, GL_TRUE);
     //glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, GL_TRUE);
@@ -80,7 +80,6 @@ void GlutFramework::initialize(int argc, char** argv)
     // Enable automatic normalization of surface normals to unit length
     glEnable(GL_NORMALIZE);
 
-    // Enable blending.
     glEnable(GL_BLEND);
 }
 
@@ -97,7 +96,7 @@ void GlutFramework::resize(int w, int h)
     glLoadIdentity();
     
     // Set up a perspective projection with a field of view of 118 degrees, an aspect ratio of w/h, and a near/far clipping plane of 30.0 and 100.0 respectively.
-    gluPerspective(50, (GLfloat)w / h, 1.0, 30000.0);
+    gluPerspective(50, (GLfloat)w / h, 1.0, 60000.0);
     
     // Switch back to the modelview matrix.
     glMatrixMode(GL_MODELVIEW);

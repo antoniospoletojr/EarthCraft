@@ -28,9 +28,9 @@ Renderer::~Renderer()
     // Deallocate memory
     mesh_vertices.clear();
     mesh_indices.clear();
+    mesh_normals.clear();
     sun_vertices.clear();
     sun_indices.clear();
-    mesh_normals.clear();
     
 
     for (auto &vertices : sketch_vertices)
@@ -262,7 +262,7 @@ void Renderer::initializeOrbit()
             // Extract vertices
             aiVector3D vertex = mesh->mVertices[j];
             sun_vertices.push_back(vertex.x);
-            sun_vertices.push_back(vertex.y - 10000);
+            sun_vertices.push_back(vertex.y - 15000);
             sun_vertices.push_back(vertex.z);
 
             // Extract texture coordinates
@@ -375,7 +375,7 @@ void Renderer::initializeOrbit()
             // Extract vertices
             aiVector3D vertex = mesh->mVertices[j];
             moon_vertices.push_back(vertex.x);
-            moon_vertices.push_back(vertex.y + 10000);
+            moon_vertices.push_back(vertex.y + 15000);
             moon_vertices.push_back(vertex.z);
 
             // Extract texture coordinates
@@ -435,28 +435,58 @@ void Renderer::initializeOrbit()
 void Renderer::initializeSkydome()
 {
     // Load skydome texture image
-    cv::Mat skydome_texture = cv::imread("./assets/textures/day.jpg");
-
+    instance->day_texture = cv::imread("./assets/textures/day.jpg");
+    
     // Check if the image was loaded successfully
-    if (skydome_texture.empty())
+    if (instance->day_texture.empty())
     {
         // Handle error
         std::cerr << "Failed to load skydome texture image." << std::endl;
         return;
     }
 
+    // Add alpha channel to day_texture in place
+    cv::cvtColor(instance->day_texture, instance->day_texture, cv::COLOR_BGR2BGRA);
+
+    // Load night texture image
+    instance->night_texture = cv::imread("./assets/textures/night.jpg");
+
+    // Check if the image was loaded successfully
+    if (instance->night_texture.empty())
+    {
+        // Handle error
+        std::cerr << "Failed to load night texture image." << std::endl;
+        return;
+    }
+
+    // Add alpha channel to night_texture in place
+    cv::cvtColor(instance->night_texture, instance->night_texture, cv::COLOR_BGR2BGRA);
+
     // Generate and bind a texture object
     glGenTextures(1, &objects[SKYDOME].texture);
     glBindTexture(GL_TEXTURE_2D, objects[SKYDOME].texture);
-
+    
     // Set texture parameters
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
+    
     // Upload the texture image data
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, skydome_texture.cols, skydome_texture.rows, 0, GL_BGR, GL_UNSIGNED_BYTE, skydome_texture.data);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, instance->day_texture.cols, instance->day_texture.rows, 0, GL_BGRA, GL_UNSIGNED_BYTE, instance->day_texture.data);
+
+    // Generate and bind a texture object for the night texture
+    glGenTextures(1, &objects[SKYDOME].blend_texture);
+    glBindTexture(GL_TEXTURE_2D, objects[SKYDOME].blend_texture);
+    
+    // Set texture parameters for the night texture (similar to day texture parameters)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    
+    // Upload the night texture image data
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, instance->night_texture.cols, instance->night_texture.rows, 0, GL_BGRA, GL_UNSIGNED_BYTE, instance->night_texture.data);
 
     // Assimp importer
     Assimp::Importer importer;
@@ -774,9 +804,25 @@ void Renderer::takeSnapshot()
 
 void Renderer::cycleDayNight()
 {
+    // Cycle the day/night cycle using the time variabl which sets the rotation for the orbit and the alpha value for the night texture
     this->time += 2.f;
     if (this->time > 360.0f)
         this->time -= 360.0f;
+    
+    // Calculate the alpha value for the night texture
+    float time_of_day = static_cast<float>(this->time) / 360.0f;
+    float alpha = (time_of_day < 0.5f) ? (1.0f - 2.0f * time_of_day) : ((time_of_day == 0.5f) ? 0.0f : (2.0f * time_of_day - 1.0f));
+    uchar alpha_byte = static_cast<uchar>(alpha * 255);
+    
+    // Set the alpha value for the night texture
+    for (int y = 0; y < instance->night_texture.rows; ++y)
+    {
+        cv::Vec4b *pixelRow = instance->night_texture.ptr<cv::Vec4b>(y);
+        for (int x = 0; x < instance->night_texture.cols; ++x)
+        {
+            pixelRow[x][3] = alpha_byte; // Modify alpha value based on desired transparency
+        }
+    }
 }
 
 void Renderer::sketch(float x, float y)
@@ -903,14 +949,22 @@ void Renderer::drawMesh(int mesh_multiplier)
     glEnableClientState(GL_TEXTURE_COORD_ARRAY);
     glEnableClientState(GL_NORMAL_ARRAY);
     
-    GLfloat diffuse_material[] = {0.8f, 0.7f, 0.6f, 1.0f}; // Warm color for diffuse reflection
+    GLfloat diffuse_material[] = {0.7, 0.7f, 0.7f, 1.0f}; // Warm color for diffuse reflection
     glMaterialfv(GL_FRONT, GL_DIFFUSE, diffuse_material);
     
-    GLfloat ambient_material[] = {0.1, 0.1, 0.1, 1.0f}; // Warm color for diffuse reflection
+    GLfloat ambient_material[] = {0.1, 0.1, 0.1, 1.0f};
     glMaterialfv(GL_FRONT, GL_AMBIENT, ambient_material);
-
-    float world_dim = instance->terrain->getWorldDim() / 2.0f;
     
+    float world_dim = instance->terrain->getWorldDim() / 2.0f;
+
+    if(mesh_multiplier == 0)
+    {
+        glEnable(GL_PRIMITIVE_RESTART);                                                       // Enable primitive restart
+        glDrawElements(GL_TRIANGLE_STRIP, instance->mesh_indices.size(), GL_UNSIGNED_INT, 0); // Draw the triangles
+        glDisable(GL_PRIMITIVE_RESTART);
+    }
+    
+
     for (int i = -mesh_multiplier; i <= mesh_multiplier; i++)
     {
         for (int j = -mesh_multiplier; j <= mesh_multiplier; j++)
@@ -986,15 +1040,15 @@ void Renderer::drawOrbit()
         
         // Draw the sun
         glBindVertexArray(instance->objects[MOON].vao);
-
+        
         // Enable two vertex arrays: co-ordinates and color.
         glEnableClientState(GL_VERTEX_ARRAY);
         glEnableClientState(GL_TEXTURE_COORD_ARRAY);
         glDrawElements(GL_TRIANGLE_STRIP, instance->moon_indices.size(), GL_UNSIGNED_INT, 0); // Draw the triangles
-
+        
         glDisableClientState(GL_VERTEX_ARRAY);
         glDisableClientState(GL_TEXTURE_COORD_ARRAY);
-
+        
         // Unbind the vertex array object and texture
         glBindVertexArray(0);
         glBindTexture(GL_TEXTURE_2D, 0);
@@ -1003,9 +1057,9 @@ void Renderer::drawOrbit()
 
 void Renderer::drawSkydome()
 {
-    // Bind the skydome texture
-    glBindTexture(GL_TEXTURE_2D, instance->objects[SKYDOME].texture);
-
+    // Disable depth testing
+    glDisable(GL_DEPTH_TEST);
+    
     // Bind the vertex array object for the skydome
     glBindVertexArray(instance->objects[SKYDOME].vao);
     
@@ -1015,17 +1069,27 @@ void Renderer::drawSkydome()
     
     GLfloat ambient_material[] = {1, 1, 1, 1.0f}; // Warm color for diffuse reflection
     glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, ambient_material);
-
-    // Draw the skydome
+    
+    // Draw the skydome with blending enabled
+    glBindTexture(GL_TEXTURE_2D, instance->objects[SKYDOME].texture);
     glDrawElements(GL_TRIANGLES, instance->skydome_indices.size(), GL_UNSIGNED_INT, 0);
-
+    
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    
+    glBindTexture(GL_TEXTURE_2D, instance->objects[SKYDOME].blend_texture);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, instance->night_texture.cols, instance->night_texture.rows, 0, GL_BGRA, GL_UNSIGNED_BYTE, instance->night_texture.data);
+    glDrawElements(GL_TRIANGLES, instance->skydome_indices.size(), GL_UNSIGNED_INT, 0);
+    
     glDisableClientState(GL_VERTEX_ARRAY);
     glDisableClientState(GL_TEXTURE_COORD_ARRAY);
     glDisableClientState(GL_NORMAL_ARRAY);
-
+    
     // Unbind the vertex array object and texture
     glBindVertexArray(0);
     glBindTexture(GL_TEXTURE_2D, 0);
+    
+    // Re-enable depth testing
+    glEnable(GL_DEPTH_TEST);
 }
 
 void Renderer::drawSplashscreen()
@@ -1301,9 +1365,9 @@ void Renderer::draw()
         break;
     case RENDERING_SCREEN:
         // Draw a text in the middle saying "Time"
-        instance->drawMesh(1);
-        instance->drawOrbit();
         instance->drawSkydome();
+        instance->drawMesh(0);
+        instance->drawOrbit();
         instance->drawTime();
         break;
     case LOADING_SCREEN:

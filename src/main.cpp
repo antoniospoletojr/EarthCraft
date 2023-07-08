@@ -28,7 +28,7 @@ int main(int argc, char **argv)
     
     // Initialize the mesh
     renderer.initialize(&camera);
-
+    
     // Run the framework
     glut_framework.run();
 }

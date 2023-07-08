@@ -2,7 +2,7 @@
 
 SoundManager::SoundManager()
 {
-    sound_engine = createIrrKlangDevice(ESOD_ALSA, ESEO_DEFAULT_OPTIONS);
+    sound_engine = createIrrKlangDevice(ESOD_AUTO_DETECT, ESEO_DEFAULT_OPTIONS);
 }
 
 SoundManager::~SoundManager()
