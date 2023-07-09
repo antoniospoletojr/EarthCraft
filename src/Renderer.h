@@ -27,6 +27,11 @@ typedef struct Object
     GLuint nbo;
     GLuint texture;
     GLuint blend_texture;
+    std::vector<GLfloat> vertices;
+    std::vector<GLfloat> colors;
+    std::vector<GLuint> indices;
+    std::vector<GLfloat> textures;
+    std::vector<GLfloat> normals;
 } Object;
 
 class Renderer
@@ -54,7 +59,7 @@ private:
     std::vector<GLfloat> skydome_colors, sketch_colors[4];                                                  // an array to keep track of the colors of the terrain
     std::vector<GLuint> mesh_indices, sun_indices, moon_indices, skydome_indices, sketch_indices[4];        // an array to keep track of the indices of the terrain
     std::vector<GLfloat> mesh_textures, sun_textures, moon_textures, skydome_textures;
-    std::vector<GLfloat> mesh_normals, skydome_normals, sun_normals;
+    std::vector<GLfloat> mesh_normals;
     
     cv::VideoCapture menu_clips[6];
     cv::Mat menu_frame;

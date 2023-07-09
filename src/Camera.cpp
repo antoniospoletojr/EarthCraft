@@ -3,21 +3,21 @@
 // Constructor
 Camera::Camera()
 {
-    position[0] = 0;
-    position[1] = 0;
-    position[2] = 0;
-    alfa = 0.0f;
-    beta = 0.0f;
-    movement_speed = 4.0f * 6;
-    rotation_speed = 1.5f;
+    this->position.x = 0;
+    this->position.y = 0;
+    this->position.z = 0;
+    this->alfa = 0.0f;
+    this->beta = 0.0f;
+    this->movement_speed = 4.0f * 6;
+    this->rotation_speed = 1.5f;
 }
 
 // Parametrized constructor
 Camera::Camera(GLdouble x, GLdouble y, GLdouble z, GLdouble alfa, GLdouble beta, GLdouble movement_speed, GLdouble rotation_speed)
 {
-    position[0] = x;
-    position[1] = y;
-    position[2] = z;
+    this->position.x = x;
+    this->position.y = y;
+    this->position.z = z;
     this->alfa = alfa*(M_PI / 180.0);
     this->beta = beta*(M_PI / 180.0);
     this->movement_speed = movement_speed;
@@ -29,104 +29,103 @@ Camera::~Camera(){}
 
 void Camera::reset()
 {
-    position[0] = 0;
-    position[1] = 0;
-    position[2] = 0;
-    alfa = 0.0f;
-    beta = 0.0f;
-    movement_speed = 4.0f;
-    rotation_speed = 1.5f;
+    this->position.x = 0;
+    this->position.y = 0;
+    this->position.z = 0;
+    this->alfa = 0.0f;
+    this->beta = 0.0f;
+    this->movement_speed = 4.0f;
+    this->rotation_speed = 1.5f;
 }
 
 // Set the position of the camera
 void Camera::setPosition(GLdouble x, GLdouble y, GLdouble z)
 {
-    position[0] = x;
-    position[1] = y;
-    position[2] = z;
-}
-
-Vertex3d<float> Camera::getDirection()
-{
-    Vertex3d<float> direction;
-    direction.x = this->position[0] - sin(this->alfa);
-    direction.y = this->position[1];
-    direction.z = this->position[2] - cos(this->alfa);
-    return direction;
-}
-
-Vertex3d<float> Camera::getPosition()
-{
-    Vertex3d<float> position;
-    position.x = this->position[0] - LOS_DISTANCE * sin(this->alfa);
-    position.y = this->position[1] + this->beta;
-    position.z = this->position[2] - LOS_DISTANCE * cos(this->alfa);
-    return position;
+    this->position.x = x;
+    this->position.y = y;
+    this->position.z = z;
 }
 
 // Move the camera forward
 void Camera::moveForward()
 {
-    bool hasCollided = checkCollision();
+    Vec3<float> next_position = this->position;
+    next_position.x -= sin(this->alfa) * this->movement_speed;
+    next_position.z -= cos(this->alfa) * this->movement_speed;
+
+    bool hasCollided = terrain->checkCollision(next_position);
     if (hasCollided)
         return;
-
-    position[0] -= sin(alfa) * movement_speed;
-    position[2] -= cos(alfa) * movement_speed;
+    
+    this->position = next_position;
 }
 
 // Move the camera backward
 void Camera::moveBackward()
 {
-    bool hasCollided = checkCollision();
+    Vec3<float> next_position = this->position;
+    next_position.x += sin(this->alfa) * this->movement_speed;
+    next_position.z += cos(this->alfa) * this->movement_speed;
+    
+    bool hasCollided = terrain->checkCollision(next_position);
     if (hasCollided)
         return;
     
-    position[0] += sin(alfa) * movement_speed;
-    position[2] += cos(alfa) * movement_speed;
+    this->position = next_position;
 }
 
 // Move the camera left
 void Camera::moveLeft()
 {
-    bool hasCollided = checkCollision();
+    Vec3<float> next_position = this->position;
+    next_position.x -= cos(this->alfa) * this->movement_speed;
+    next_position.z += sin(this->alfa) * this->movement_speed;
+
+    bool hasCollided = terrain->checkCollision(next_position);
     if (hasCollided)
         return;
-
-    position[0] -= cos(alfa ) * movement_speed;
-    position[2] += sin(alfa) * movement_speed;
+    
+    this->position = next_position;
 }
 
 // Move the camera right
 void Camera::moveRight()
 {
-    bool hasCollided = checkCollision();
+    Vec3<float> next_position = this->position;
+    next_position.x += cos(this->alfa) * this->movement_speed;
+    next_position.z -= sin(this->alfa) * this->movement_speed;
+    
+    bool hasCollided = terrain->checkCollision(next_position);
     if (hasCollided)
         return;
-
-    position[0] += cos(alfa) * movement_speed;
-    position[2] -= sin(alfa) * movement_speed;
+    
+    this->position = next_position;
 }
 
 // Move the camera up
 void Camera::moveUp()
 {
-    bool hasCollided = checkCollision();
+    Vec3<float> next_position = this->position;
+    next_position.y += this->movement_speed;
+
+    bool hasCollided = terrain->checkCollision(next_position);
     if (hasCollided)
         return;
-
-    position[1] += movement_speed;
+    
+    this->position = next_position;
 }
 
 // Move the camera down
 void Camera::moveDown()
 {
-    bool hasCollided = checkCollision();
+    Vec3<float> next_position = this->position;
+    next_position.y -= this->movement_speed;
+
+    bool hasCollided = terrain->checkCollision(next_position);
     if (hasCollided)
         return;
 
-    if (position[1] > 100)
-        position[1] -= movement_speed;
+    this->position = next_position;
 }
 
 // Rotate the camera left
@@ -171,17 +170,22 @@ void Camera::rotateUpDown(GLdouble delta)
 void Camera::update()
 {
     // Explicitly set gluLookAt() parameters
-    GLdouble eyeX = position[0] - sin(alfa);
-    GLdouble eyeY = position[1];
-    GLdouble eyeZ = position[2] - cos(alfa);
+    GLdouble eyeX = position.x - sin(alfa);
+    GLdouble eyeY = position.y;
+    GLdouble eyeZ = position.z - cos(alfa);
     
-    GLdouble centerX = position[0] - LOS_DISTANCE * sin(alfa);
-    GLdouble centerY = position[1] + beta;
-    GLdouble centerZ = position[2] - LOS_DISTANCE * cos(alfa);
+    GLdouble centerX = position.x - LOS_DISTANCE * sin(alfa);
+    GLdouble centerY = position.y + beta;
+    GLdouble centerZ = position.z - LOS_DISTANCE * cos(alfa);
     
     GLdouble upX = 0.0;
     GLdouble upY = 1.0;
     GLdouble upZ = 0.0;
 
     gluLookAt(eyeX, eyeY, eyeZ, centerX, centerY, centerZ, upX, upY, upZ);
+}
+
+void Camera::setTerrain(Terrain *terrain)
+{
+    this->terrain = terrain;
 }

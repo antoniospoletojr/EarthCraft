@@ -5,7 +5,8 @@
 #include <stdio.h>
 #include <cmath>
 #include "Constants.h"
-#include "Vertex.hpp"
+#include "Vec.hpp"
+#include "Terrain.h"
 
 class Camera
 {
@@ -16,8 +17,6 @@ class Camera
         
         void reset();
         void setPosition(GLdouble x, GLdouble y, GLdouble z);
-        Vertex3d<float> getPosition();
-        Vertex3d<float> getDirection();
         void moveForward();
         void moveBackward();
         void moveLeft();
@@ -31,13 +30,14 @@ class Camera
         void rotateLeftRight(GLdouble delta);
         void rotateUpDown(GLdouble delta);
         void update();
+
+        void setTerrain(Terrain *terrain);
     
     private:
-        GLdouble position[3];
+        Vec3<float> position;
         GLdouble alfa, beta;
         GLdouble movement_speed, rotation_speed;
-
-        bool checkCollision();
+        Terrain *terrain;
 };
 
 #endif

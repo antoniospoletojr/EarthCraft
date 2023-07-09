@@ -15,7 +15,7 @@ Renderer::Renderer()
 // Destructor
 Renderer::~Renderer()
 {
-    // Disable the vertex arrays
+    // Disable the Vec arrays
     glDisableClientState(GL_VERTEX_ARRAY);
     glDisableClientState(GL_COLOR_ARRAY);
     glDisableClientState(GL_TEXTURE_COORD_ARRAY);
@@ -42,7 +42,7 @@ Renderer::~Renderer()
 
     objects.clear();
     
-    // Delete the vertex array objects
+    // Delete the Vec array objects
     glDeleteVertexArrays(1, &objects[MESH].vao);
     glDeleteVertexArrays(1, &objects[SUN].vao);
     glDeleteVertexArrays(1, &objects[MOON].vao);
@@ -67,7 +67,7 @@ void Renderer::initializeMesh(Terrain *terrain)
     // Print the map info
     this->terrain->getInfo();
     // Retrieve the map
-    Vertex3d<float> *map = this->terrain->getMap();
+    Vec3<float> *map = this->terrain->getMap();
 
     // Load skydome texture image
     cv::Mat mesh_texture = this->terrain->getTexture();
@@ -90,9 +90,9 @@ void Renderer::initializeMesh(Terrain *terrain)
     // Upload the texture image data
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, mesh_texture.cols, mesh_texture.rows, 0, GL_BGR, GL_UNSIGNED_BYTE, mesh_texture.data);
 
-    // Generate the vertex array object for the mesh
+    // Generate the Vec array object for the mesh
     glGenVertexArrays(1, &objects[MESH].vao);
-    // Bind the vertex array object for the mesh
+    // Bind the Vec array object for the mesh
     glBindVertexArray(objects[MESH].vao);
 
     // Generate the buffer objects
@@ -100,7 +100,7 @@ void Renderer::initializeMesh(Terrain *terrain)
     glGenBuffers(1, &objects[MESH].tbo);
     glGenBuffers(1, &objects[MESH].ibo);
     glGenBuffers(1, &objects[MESH].nbo);
-
+    
     // Reset mesh arrays if they are not empty
     mesh_vertices.clear();
     mesh_indices.clear();
@@ -152,28 +152,28 @@ void Renderer::initializeMesh(Terrain *terrain)
         int i2 = mesh_indices[i + 1];
         int i3 = mesh_indices[i + 2];
         
-        // Get the vertices of the triangle into Vertex3d objects
-        Vertex3d<float> v1;
+        // Get the vertices of the triangle into Vec3 objects
+        Vec3<float> v1;
         v1.x = mesh_vertices[i1 * 3];
         v1.y = mesh_vertices[i1 * 3 + 1];
         v1.z = mesh_vertices[i1 * 3 + 2];
         
-        Vertex3d<float> v2;
+        Vec3<float> v2;
         v2.x = mesh_vertices[i2 * 3];
         v2.y = mesh_vertices[i2 * 3 + 1];
         v2.z = mesh_vertices[i2 * 3 + 2];
         
-        Vertex3d<float> v3;
+        Vec3<float> v3;
         v3.x = mesh_vertices[i3 * 3];
         v3.y = mesh_vertices[i3 * 3 + 1];
         v3.z = mesh_vertices[i3 * 3 + 2];
         
         // Get the vertices of the triangle
-        Vertex3d<float> u1 = subtract(v2, v1);
-        Vertex3d<float> u2 = subtract(v3, v1);
+        Vec3<float> u1 = subtract(v2, v1);
+        Vec3<float> u2 = subtract(v3, v1);
         
         // Calculate the normal of the triangle
-        Vertex3d<float> normal = crossProduct(u1, u2);
+        Vec3<float> normal = crossProduct(u1, u2);
         
         // // Add the normal to the normals array
         mesh_normals[i1 * 3] += normal.x;
@@ -193,7 +193,7 @@ void Renderer::initializeMesh(Terrain *terrain)
     glEnable(GL_PRIMITIVE_RESTART);
     glPrimitiveRestartIndex(0xFFFFFFFFu);
 
-    // Bind and fill the vertex buffer object
+    // Bind and fill the Vec buffer object
     glBindBuffer(GL_ARRAY_BUFFER, objects[MESH].vbo);
     glBufferData(GL_ARRAY_BUFFER, mesh_vertices.size() * sizeof(float), mesh_vertices.data(), GL_STATIC_DRAW);
     glVertexPointer(3, GL_FLOAT, 0, 0);
@@ -256,14 +256,14 @@ void Renderer::initializeOrbit()
     {
         const aiMesh *mesh = sun_scene->mMeshes[i];
 
-        // For each vertex in the mesh
+        // For each Vec in the mesh
         for (unsigned int j = 0; j < mesh->mNumVertices; ++j)
         {
             // Extract vertices
-            aiVector3D vertex = mesh->mVertices[j];
-            sun_vertices.push_back(vertex.x);
-            sun_vertices.push_back(vertex.y - 15000);
-            sun_vertices.push_back(vertex.z);
+            aiVector3D Vec = mesh->mVertices[j];
+            sun_vertices.push_back(Vec.x);
+            sun_vertices.push_back(Vec.y - 15000);
+            sun_vertices.push_back(Vec.z);
 
             // Extract texture coordinates
             if (mesh->HasTextureCoords(0))
@@ -271,15 +271,6 @@ void Renderer::initializeOrbit()
                 aiVector3D texCoord = mesh->mTextureCoords[0][j];
                 sun_textures.push_back(texCoord.x);
                 sun_textures.push_back(texCoord.y);
-            }
-
-            // Extract normals
-            if (mesh->HasNormals())
-            {
-                aiVector3D normal = mesh->mNormals[j];
-                sun_normals.push_back(normal.x);
-                sun_normals.push_back(normal.y);
-                sun_normals.push_back(normal.z);
             }
         }
 
@@ -298,18 +289,17 @@ void Renderer::initializeOrbit()
         }
     }
 
-    // Generate the vertex array object for the sun
+    // Generate the Vec array object for the sun
     glGenVertexArrays(1, &objects[SUN].vao);
-    // Bind the vertex array object for the sun
+    // Bind the Vec array object for the sun
     glBindVertexArray(objects[SUN].vao);
 
     // Generate the buffer objects
     glGenBuffers(1, &objects[SUN].vbo);
     glGenBuffers(1, &objects[SUN].tbo);
     glGenBuffers(1, &objects[SUN].ibo);
-    glGenBuffers(1, &objects[SUN].nbo);
 
-    // Bind and fill the vertex buffer object
+    // Bind and fill the Vec buffer object
     glBindBuffer(GL_ARRAY_BUFFER, objects[SUN].vbo);
     glBufferData(GL_ARRAY_BUFFER, sun_vertices.size() * sizeof(float), sun_vertices.data(), GL_STATIC_DRAW);
     glVertexPointer(3, GL_FLOAT, 0, 0);
@@ -319,11 +309,6 @@ void Renderer::initializeOrbit()
     glBufferData(GL_ARRAY_BUFFER, sun_textures.size() * sizeof(float), sun_textures.data(), GL_STATIC_DRAW);
     glTexCoordPointer(2, GL_FLOAT, 0, 0);
     
-    // Bind and fill the normals buffer object
-    glBindBuffer(GL_ARRAY_BUFFER, objects[SKYDOME].nbo);
-    glBufferData(GL_ARRAY_BUFFER, skydome_normals.size() * sizeof(float), skydome_normals.data(), GL_STATIC_DRAW);
-    glNormalPointer(GL_FLOAT, 0, 0);
-
     // Bind and fill indices buffer.
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, objects[SUN].ibo);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sun_indices.size() * sizeof(GLuint), sun_indices.data(), GL_STATIC_DRAW);
@@ -369,14 +354,14 @@ void Renderer::initializeOrbit()
     {
         const aiMesh *mesh = moon_scene->mMeshes[i];
 
-        // For each vertex in the mesh
+        // For each Vec in the mesh
         for (unsigned int j = 0; j < mesh->mNumVertices; ++j)
         {
             // Extract vertices
-            aiVector3D vertex = mesh->mVertices[j];
-            moon_vertices.push_back(vertex.x);
-            moon_vertices.push_back(vertex.y + 15000);
-            moon_vertices.push_back(vertex.z);
+            aiVector3D Vec = mesh->mVertices[j];
+            moon_vertices.push_back(Vec.x);
+            moon_vertices.push_back(Vec.y + 15000);
+            moon_vertices.push_back(Vec.z);
 
             // Extract texture coordinates
             if (mesh->HasTextureCoords(0))
@@ -402,9 +387,9 @@ void Renderer::initializeOrbit()
         }
     }
 
-    // Generate the vertex array object for the sun
+    // Generate the Vec array object for the sun
     glGenVertexArrays(1, &objects[MOON].vao);
-    // Bind the vertex array object for the sun
+    // Bind the Vec array object for the sun
     glBindVertexArray(objects[MOON].vao);
 
     // Generate the buffer objects
@@ -412,7 +397,7 @@ void Renderer::initializeOrbit()
     glGenBuffers(1, &objects[MOON].tbo);
     glGenBuffers(1, &objects[MOON].ibo);
 
-    // Bind and fill the vertex buffer object
+    // Bind and fill the Vec buffer object
     glBindBuffer(GL_ARRAY_BUFFER, objects[MOON].vbo);
     glBufferData(GL_ARRAY_BUFFER, moon_vertices.size() * sizeof(float), moon_vertices.data(), GL_STATIC_DRAW);
     glVertexPointer(3, GL_FLOAT, 0, 0);
@@ -505,14 +490,14 @@ void Renderer::initializeSkydome()
     {
         const aiMesh *mesh = scene->mMeshes[i];
 
-        // For each vertex in the mesh
+        // For each Vec in the mesh
         for (unsigned int j = 0; j < mesh->mNumVertices; ++j)
         {
             // Extract vertices
-            aiVector3D vertex = mesh->mVertices[j];
-            skydome_vertices.push_back(vertex.x);
-            skydome_vertices.push_back(vertex.y);
-            skydome_vertices.push_back(vertex.z);
+            aiVector3D Vec = mesh->mVertices[j];
+            skydome_vertices.push_back(Vec.x);
+            skydome_vertices.push_back(Vec.y);
+            skydome_vertices.push_back(Vec.z);
 
             // Extract texture coordinates
             if (mesh->HasTextureCoords(0))
@@ -520,15 +505,6 @@ void Renderer::initializeSkydome()
                 aiVector3D texCoord = mesh->mTextureCoords[0][j];
                 skydome_textures.push_back(texCoord.y);
                 skydome_textures.push_back(texCoord.x);
-            }
-
-            // Extract normals
-            if (mesh->HasNormals())
-            {
-                aiVector3D normal = mesh->mNormals[j];
-                skydome_normals.push_back(normal.x);
-                skydome_normals.push_back(normal.y);
-                skydome_normals.push_back(normal.z);
             }
         }
 
@@ -547,18 +523,18 @@ void Renderer::initializeSkydome()
         }
     }
 
-    // Generate the vertex array object for the skydome
+    // Generate the Vec array object for the skydome
     glGenVertexArrays(1, &objects[SKYDOME].vao);
-    // Bind the vertex array object for the skydome
+    
+    // Bind the Vec array object for the skydome
     glBindVertexArray(objects[SKYDOME].vao);
 
     // Generate the buffer objects
     glGenBuffers(1, &objects[SKYDOME].vbo);
     glGenBuffers(1, &objects[SKYDOME].tbo);
     glGenBuffers(1, &objects[SKYDOME].ibo);
-    glGenBuffers(1, &objects[SKYDOME].nbo);
 
-    // Bind and fill the vertex buffer object
+    // Bind and fill the Vec buffer object
     glBindBuffer(GL_ARRAY_BUFFER, objects[SKYDOME].vbo);
     glBufferData(GL_ARRAY_BUFFER, skydome_vertices.size() * sizeof(float), skydome_vertices.data(), GL_STATIC_DRAW);
     glVertexPointer(3, GL_FLOAT, 0, 0);
@@ -567,11 +543,6 @@ void Renderer::initializeSkydome()
     glBindBuffer(GL_ARRAY_BUFFER, objects[SKYDOME].tbo);
     glBufferData(GL_ARRAY_BUFFER, skydome_textures.size() * sizeof(float), skydome_textures.data(), GL_STATIC_DRAW);
     glTexCoordPointer(2, GL_FLOAT, 0, 0);
-    
-    // Bind and fill the normal buffer object
-    glBindBuffer(GL_ARRAY_BUFFER, objects[SKYDOME].nbo);
-    glBufferData(GL_ARRAY_BUFFER, skydome_normals.size() * sizeof(float), skydome_normals.data(), GL_STATIC_DRAW);
-    glNormalPointer(GL_FLOAT, 0, 0);
 
     // Bind and fill the index buffer object
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, objects[SKYDOME].ibo);
@@ -589,33 +560,33 @@ void Renderer::initializeSplashscreen()
     instance->menu_clips[LANDING_SCREEN].open("./assets/menu/Splashscreen.mp4");
     instance->menu_clips[LANDING_SCREEN].read(instance->menu_frame);
 
-    // Generate the vertex array object for the SPLASHSCREEN
+    // Generate the Vec array object for the SPLASHSCREEN
     glGenVertexArrays(1, &objects[SPLASHSCREEN].vao);
-    // Bind the vertex array object for the SPLASHSCREEN
+    // Bind the Vec array object for the SPLASHSCREEN
     glBindVertexArray(objects[SPLASHSCREEN].vao);
-
-    // Generate the vertex buffer objects
+    
+    // Generate the Vec buffer objects
     glGenBuffers(1, &objects[SPLASHSCREEN].vbo);
     // Generate the texture buffer objects
     glGenBuffers(1, &objects[SPLASHSCREEN].tbo);
     // Generate the texture buffer objects
     glGenBuffers(1, &objects[SPLASHSCREEN].cbo);
 
-    // Create vertex data for the quad
+    // Create Vec data for the quad
     std::vector<GLfloat> vertices(8);
     std::vector<GLfloat> colors = {1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f};
     std::vector<GLfloat> texture_coords = {0, 1, 1, 1, 1, 0, 0, 0};
 
-    // Enable the vertex arrays
+    // Enable the Vec arrays
     glEnableClientState(GL_VERTEX_ARRAY);
     glEnableClientState(GL_COLOR_ARRAY);
     glEnableClientState(GL_TEXTURE_COORD_ARRAY);
 
-    // Bind the vertex buffer object
+    // Bind the Vec buffer object
     glBindBuffer(GL_ARRAY_BUFFER, objects[SPLASHSCREEN].vbo);
-    // Copy data into the vertex buffer
+    // Copy data into the Vec buffer
     glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(GLfloat), NULL, GL_STATIC_DRAW);
-    // Specify vertex pointer location
+    // Specify Vec pointer location
     glVertexPointer(2, GL_FLOAT, 0, 0);
 
     // Bind the color buffer object
@@ -650,33 +621,33 @@ void Renderer::initializeCanvas()
     instance->menu_clips[BASINS_SCREEN].open("./assets/menu/Basins.mp4");
     instance->menu_clips[LOADING_SCREEN].open("./assets/menu/Loadingscreen.mp4");
 
-    // Generate the vertex array object for the canvas
+    // Generate the Vec array object for the canvas
     glGenVertexArrays(1, &objects[CANVAS].vao);
-    // Bind the vertex array object for the canvas
+    // Bind the Vec array object for the canvas
     glBindVertexArray(objects[CANVAS].vao);
 
-    // Generate the vertex buffer objects
+    // Generate the Vec buffer objects
     glGenBuffers(1, &objects[CANVAS].vbo);
     // Generate the texture buffer objects
     glGenBuffers(1, &objects[CANVAS].tbo);
     // Generate the texture buffer objects
     glGenBuffers(1, &objects[CANVAS].cbo);
 
-    // Create vertex data for the quad
+    // Create Vec data for the quad
     std::vector<GLfloat> vertices(8);
     std::vector<GLfloat> colors = {1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f};
     std::vector<GLfloat> texture_coords = {0, 1, 1, 1, 1, 0, 0, 0};
 
-    // Enable the vertex arrays
+    // Enable the Vec arrays
     glEnableClientState(GL_VERTEX_ARRAY);
     glEnableClientState(GL_COLOR_ARRAY);
     glEnableClientState(GL_TEXTURE_COORD_ARRAY);
 
-    // Bind the vertex buffer object
+    // Bind the Vec buffer object
     glBindBuffer(GL_ARRAY_BUFFER, objects[CANVAS].vbo);
-    // Copy data into the vertex buffer
+    // Copy data into the Vec buffer
     glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(GLfloat), NULL, GL_STATIC_DRAW);
-    // Specify vertex pointer location
+    // Specify Vec pointer location
     glVertexPointer(2, GL_FLOAT, 0, 0);
 
     // Bind the color buffer object
@@ -710,7 +681,7 @@ void Renderer::initialize(Camera *camera)
     // Allocate space for 7 objects (Mesh, Splashscreen, Canvas, Sketch, Skydome, Sun, Moon)
     objects.resize(7);
 
-    // Generate the vertex array objects; we need 2 objects: MESH and ORBIT
+    // Generate the Vec array objects; we need 2 objects: MESH and ORBIT
     this->initializeOrbit();
     this->initializeSplashscreen();
     this->initializeCanvas();
@@ -944,7 +915,7 @@ void Renderer::drawMesh(int mesh_multiplier)
     // Draw the terrain
     glBindVertexArray(instance->objects[MESH].vao);
     
-    // Enable two vertex arrays: co-ordinates and color.
+    // Enable two Vec arrays: co-ordinates and color.
     glEnableClientState(GL_VERTEX_ARRAY);
     glEnableClientState(GL_TEXTURE_COORD_ARRAY);
     glEnableClientState(GL_NORMAL_ARRAY);
@@ -955,38 +926,41 @@ void Renderer::drawMesh(int mesh_multiplier)
     GLfloat ambient_material[] = {0.1, 0.1, 0.1, 1.0f};
     glMaterialfv(GL_FRONT, GL_AMBIENT, ambient_material);
     
-    float world_dim = instance->terrain->getWorldDim();
-
+    
     if(mesh_multiplier == 0)
     {
         glEnable(GL_PRIMITIVE_RESTART);                                                       // Enable primitive restart
         glDrawElements(GL_TRIANGLE_STRIP, instance->mesh_indices.size(), GL_UNSIGNED_INT, 0); // Draw the triangles
         glDisable(GL_PRIMITIVE_RESTART);
     }
-    
-
-    for (int i = -mesh_multiplier; i <= mesh_multiplier; i++)
+    else
     {
-        for (int j = -mesh_multiplier; j <= mesh_multiplier; j++)
+        float world_dim = instance->terrain->getWorldDim();
+
+        for (int i = -mesh_multiplier; i <= mesh_multiplier; i++)
         {
-            // Create a temporary vector for updated vertex positions
-            std::vector<float> updated_vertices(instance->mesh_vertices.size());
-            
-            for (size_t k = 0; k < instance->mesh_vertices.size(); k += 3)
+            for (int j = -mesh_multiplier; j <= mesh_multiplier; j++)
             {
-                updated_vertices[k] = instance->mesh_vertices[k] + world_dim*i;         // Update x coordinate
-                updated_vertices[k + 1] = instance->mesh_vertices[k + 1];               // Keep y coordinate unchanged
-                updated_vertices[k + 2] = instance->mesh_vertices[k + 2] + world_dim*j; // Update z coordinate
+                // Create a temporary vector for updated Vec positions
+                std::vector<float> updated_vertices(instance->mesh_vertices.size());
+                
+                for (size_t k = 0; k < instance->mesh_vertices.size(); k += 3)
+                {
+                    updated_vertices[k] = instance->mesh_vertices[k] + world_dim*i;         // Update x coordinate
+                    updated_vertices[k + 1] = instance->mesh_vertices[k + 1];               // Keep y coordinate unchanged
+                    updated_vertices[k + 2] = instance->mesh_vertices[k + 2] + world_dim*j; // Update z coordinate
+                }
+                
+                // Bind the Vec buffer object
+                glBindBuffer(GL_ARRAY_BUFFER, instance->objects[MESH].vbo);
+                
+                // Upload the updated Vec data
+                glBufferData(GL_ARRAY_BUFFER, updated_vertices.size() * sizeof(float), updated_vertices.data(), GL_STATIC_DRAW);
+                
+                glEnable(GL_PRIMITIVE_RESTART);                                                       // Enable primitive restart
+                glDrawElements(GL_TRIANGLE_STRIP, instance->mesh_indices.size(), GL_UNSIGNED_INT, 0); // Draw the triangles
+                glDisable(GL_PRIMITIVE_RESTART);
             }
-            // Bind the vertex buffer object
-            glBindBuffer(GL_ARRAY_BUFFER, instance->objects[MESH].vbo);
-            
-            // Upload the updated vertex data
-            glBufferData(GL_ARRAY_BUFFER, updated_vertices.size() * sizeof(float), updated_vertices.data(), GL_STATIC_DRAW);
-            
-            glEnable(GL_PRIMITIVE_RESTART);                                                       // Enable primitive restart
-            glDrawElements(GL_TRIANGLE_STRIP, instance->mesh_indices.size(), GL_UNSIGNED_INT, 0); // Draw the triangles
-            glDisable(GL_PRIMITIVE_RESTART);
         }
     }
     
@@ -994,7 +968,7 @@ void Renderer::drawMesh(int mesh_multiplier)
     glDisableClientState(GL_TEXTURE_COORD_ARRAY);
     glDisableClientState(GL_NORMAL_ARRAY);
     
-    // Unbind the vertex array object and texture
+    // Unbind the Vec array object and texture
     glBindVertexArray(0);
     glBindTexture(GL_TEXTURE_2D, 0);
 }
@@ -1014,17 +988,16 @@ void Renderer::drawOrbit()
         // Draw the sun
         glBindVertexArray(instance->objects[SUN].vao);
 
-        // Enable two vertex arrays: co-ordinates and color.
+        // Enable two Vec arrays: co-ordinates and color.
         glEnableClientState(GL_VERTEX_ARRAY);
         glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-        glEnableClientState(GL_NORMAL_ARRAY);
+
         glDrawElements(GL_TRIANGLE_STRIP, instance->sun_indices.size(), GL_UNSIGNED_INT, 0); // Draw the triangles
         
         glDisableClientState(GL_VERTEX_ARRAY);
         glDisableClientState(GL_TEXTURE_COORD_ARRAY);
-        glDisableClientState(GL_NORMAL_ARRAY);
 
-        // Unbind the vertex array object and texture
+        // Unbind the Vec array object and texture
         glBindVertexArray(0);
         glBindTexture(GL_TEXTURE_2D, 0);
     glPopMatrix();
@@ -1041,15 +1014,16 @@ void Renderer::drawOrbit()
         // Draw the sun
         glBindVertexArray(instance->objects[MOON].vao);
         
-        // Enable two vertex arrays: co-ordinates and color.
+        // Enable two Vec arrays: co-ordinates and color.
         glEnableClientState(GL_VERTEX_ARRAY);
         glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+
         glDrawElements(GL_TRIANGLE_STRIP, instance->moon_indices.size(), GL_UNSIGNED_INT, 0); // Draw the triangles
         
         glDisableClientState(GL_VERTEX_ARRAY);
         glDisableClientState(GL_TEXTURE_COORD_ARRAY);
         
-        // Unbind the vertex array object and texture
+        // Unbind the Vec array object and texture
         glBindVertexArray(0);
         glBindTexture(GL_TEXTURE_2D, 0);
     glPopMatrix();
@@ -1059,16 +1033,13 @@ void Renderer::drawSkydome()
 {
     // Disable depth testing
     glDisable(GL_DEPTH_TEST);
-    
-    // Bind the vertex array object for the skydome
+    glCullFace(GL_FRONT);
+
+    // Bind the Vec array object for the skydome
     glBindVertexArray(instance->objects[SKYDOME].vao);
-    
+
     glEnableClientState(GL_VERTEX_ARRAY);
     glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-    glEnableClientState(GL_NORMAL_ARRAY);
-    
-    GLfloat ambient_material[] = {1, 1, 1, 1.0f}; // Warm color for diffuse reflection
-    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, ambient_material);
     
     // Draw the skydome with blending enabled
     glBindTexture(GL_TEXTURE_2D, instance->objects[SKYDOME].texture);
@@ -1082,13 +1053,13 @@ void Renderer::drawSkydome()
     
     glDisableClientState(GL_VERTEX_ARRAY);
     glDisableClientState(GL_TEXTURE_COORD_ARRAY);
-    glDisableClientState(GL_NORMAL_ARRAY);
     
-    // Unbind the vertex array object and texture
+    // Unbind the Vec array object and texture
     glBindVertexArray(0);
     glBindTexture(GL_TEXTURE_2D, 0);
     
     // Re-enable depth testing
+    glCullFace(GL_BACK);
     glEnable(GL_DEPTH_TEST);
 }
 
@@ -1114,12 +1085,12 @@ void Renderer::drawSplashscreen()
 
         // Update width and height values in a single line
         std::vector<GLfloat> vertices = {0, 0, width, 0, width, height, 0, height};
-        // Bind the vertex buffer object
+        // Bind the Vec buffer object
         glBindBuffer(GL_ARRAY_BUFFER, instance->objects[SPLASHSCREEN].vbo);
-        // Update the vertex buffer data
+        // Update the Vec buffer data
         glBufferSubData(GL_ARRAY_BUFFER, 0, vertices.size() * sizeof(GLfloat), vertices.data());
 
-        // Enable the vertex arrays
+        // Enable the Vec arrays
         glEnableClientState(GL_VERTEX_ARRAY);
         glEnableClientState(GL_COLOR_ARRAY);
         glEnableClientState(GL_TEXTURE_COORD_ARRAY);
@@ -1168,7 +1139,7 @@ void Renderer::drawCanvas()
         // Update width and height values in a single line
         std::vector<GLfloat> vertices = {0, 0, width, 0, width, height, 0, height};
 
-        // Enable the vertex arrays
+        // Enable the Vec arrays
         glEnableClientState(GL_VERTEX_ARRAY);
         glEnableClientState(GL_COLOR_ARRAY);
         glEnableClientState(GL_TEXTURE_COORD_ARRAY);
@@ -1176,9 +1147,9 @@ void Renderer::drawCanvas()
         // Render the splash screen
         glBindVertexArray(instance->objects[CANVAS].vao);
 
-        // Bind the vertex buffer object
+        // Bind the Vec buffer object
         glBindBuffer(GL_ARRAY_BUFFER, instance->objects[CANVAS].vbo);
-        // Update the vertex buffer data
+        // Update the Vec buffer data
         glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(GLfloat), vertices.data(), GL_STATIC_DRAW);
 
         glDrawArrays(GL_QUADS, 0, 4);
@@ -1225,7 +1196,7 @@ void Renderer::drawSketch(short current_canvas)
             vertices[i + 2] = instance->sketch_vertices[current_canvas][i + 2];
         }
 
-        // Enable the vertex arrays
+        // Enable the Vec arrays
         glEnableClientState(GL_VERTEX_ARRAY);
         glEnableClientState(GL_COLOR_ARRAY);
         glEnableClientState(GL_TEXTURE_COORD_ARRAY);
@@ -1233,18 +1204,18 @@ void Renderer::drawSketch(short current_canvas)
         // Render the sketch
         glBindVertexArray(instance->objects[SKETCH].vao);
 
-        // Bind the vertex buffer object
+        // Bind the Vec buffer object
         glBindBuffer(GL_ARRAY_BUFFER, instance->objects[SKETCH].vbo);
-        // Update the vertex buffer data for points
+        // Update the Vec buffer data for points
         glBufferData(GL_ARRAY_BUFFER, instance->sketch_vertices[current_canvas].size() * sizeof(GLfloat), vertices.data(), GL_STATIC_DRAW);
-        // Set the vertex attribute pointer for positions
+        // Set the Vec attribute pointer for positions
         glVertexPointer(3, GL_FLOAT, 0, vertices.data());
 
-        // Bind the vertex buffer object
+        // Bind the Vec buffer object
         glBindBuffer(GL_ARRAY_BUFFER, instance->objects[SKETCH].cbo);
-        // Update the vertex buffer data for points
+        // Update the Vec buffer data for points
         glBufferData(GL_ARRAY_BUFFER, instance->sketch_colors[current_canvas].size() * sizeof(GLfloat), instance->sketch_colors[current_canvas].data(), GL_STATIC_DRAW);
-        // Set the vertex attribute pointer for colors
+        // Set the Vec attribute pointer for colors
         glColorPointer(3, GL_FLOAT, 0, instance->sketch_colors[current_canvas].data());
 
         // Bind the index buffer object
@@ -1287,9 +1258,6 @@ void Renderer::drawSketch(short current_canvas)
 
 void Renderer::drawTime()
 {
-    // Disable lighting
-    glDisable(GL_LIGHTING);
-    
     glMatrixMode(GL_PROJECTION);
     glPushMatrix();
         glLoadIdentity();
@@ -1340,9 +1308,6 @@ void Renderer::drawTime()
         glMatrixMode(GL_PROJECTION);
     glPopMatrix();
     glMatrixMode(GL_MODELVIEW);
-    
-    // Re-enable lighting
-    glEnable(GL_LIGHTING);
 }
 
 void Renderer::draw()
@@ -1365,10 +1330,12 @@ void Renderer::draw()
         break;
     case RENDERING_SCREEN:
         // Draw a text in the middle saying "Time"
+        glDisable(GL_LIGHTING);
         instance->drawSkydome();
-        instance->drawMesh(2);
         instance->drawOrbit();
         instance->drawTime();
+        glEnable(GL_LIGHTING);
+        instance->drawMesh(2);
         break;
     case LOADING_SCREEN:
         instance->drawCanvas();

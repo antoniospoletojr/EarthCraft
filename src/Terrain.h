@@ -1,7 +1,7 @@
 #ifndef TERRAIN_H
 #define TERRAIN_H
 
-#include "Vertex.hpp"
+#include "Vec.hpp"
 #include "Colors.h"
 #include <cmath>
 #include <opencv2/opencv.hpp>
@@ -38,21 +38,21 @@ public:
 	~Terrain();
 
 	void initialize(float world_scale, float texture_scale);
-	Vertex3d<float>* getMap();
+	Vec3<float>* getMap();
 	cv::Mat getTexture();
 	
 	int getDim();
 	float getWorldDim();
 	float getMaxHeight();
 	void getInfo();
-	void printCoordinates(float x, float z);
+	bool checkCollision(Vec3<float> position);
 
 private:
 	int dim;
 	float world_scale, texture_scale;
 	TerrainBounds bounds;
 
-	Vertex3d<float> *map;
+	Vec3<float> *map;
 	cv::Mat texture;
 	TextureTile tiles[5];
 	

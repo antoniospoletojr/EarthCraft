@@ -42,7 +42,7 @@ void InputHandler::generate()
     std::thread inference_thread([](Inference *inference) { inference->predict(); }, instance->inference);
     inference_thread.join();
     
-    std::thread terrain_thread([](Terrain *terrain) { terrain->initialize(20, 1); }, instance->terrain);
+    std::thread terrain_thread([](Terrain *terrain) { terrain->initialize(2, 1); }, instance->terrain);
     terrain_thread.join();
     
     instance->keys[13] = true;
@@ -52,11 +52,7 @@ void InputHandler::handleKeyboard()
 {
     // If the splashscreen is not shown then handle the movement keyboard inputs
     if (!(renderer->current_menu_page >= 0))
-    {
-        Vertex3d<float> position = instance->camera->getPosition();
-        printf(COLOR_BLUE "Coordinates: (%f, %f) - Height:  %f\n" COLOR_RESET, position.x, position.z, position.y);
-        instance->terrain->printCoordinates(position.x, position.z);
-        
+    {        
         // Increment the x and z positions. Notice how the cos is 1 when I'm moving on the z axis and the sin is 1 when I'm moving on the x axis.
         if (keys['w'])
             camera->moveForward();
@@ -168,6 +164,7 @@ void InputHandler::handleKeyboard()
             
             case RENDERING_SCREEN:
                 generation_thread.join();
+                instance->camera->setTerrain(instance->terrain);
                 instance->renderer->initializeMesh(instance->terrain);
                 instance->sound_manager->playSuccessSound();
                 instance->sound_manager->playBackgroundMusic();

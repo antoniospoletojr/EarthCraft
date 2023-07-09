@@ -50,7 +50,7 @@ void Terrain::loadMap()
     this->dim = image.rows;
 
     // Allocate memory for the height map
-    this->map = new Vertex3d<float>[this->dim * this->dim];
+    this->map = new Vec3<float>[this->dim * this->dim];
     
     // Initialize the bounds struct
     this->bounds.min_x = FLT_MAX;
@@ -72,7 +72,7 @@ void Terrain::loadMap()
             this->map[i * dim + j].y = (data[(j * dim + i)] * (15 + log(this->world_scale)));
             this->map[i * dim + j].z = ((j - dim / 2) * this->world_scale);
             
-            // Update the bounds based on the current vertex
+            // Update the bounds based on the current Vec
             bounds.min_x = (map[i * dim + j].x < bounds.min_x) ? map[i * dim + j].x : bounds.min_x;
             bounds.max_x = (map[i * dim + j].x > bounds.max_x) ? map[i * dim + j].x : bounds.max_x;
             bounds.min_y = (map[i * dim + j].y < bounds.min_y) ? map[i * dim + j].y : bounds.min_y;
@@ -152,7 +152,7 @@ void Terrain::loadTexture()
 }
 
 // Return the height map
-Vertex3d<float> *Terrain::getMap()
+Vec3<float> *Terrain::getMap()
 {
     return map;
 }
@@ -199,12 +199,18 @@ void Terrain::getInfo()
     fflush(stdout);
 }
 
-void Terrain::printCoordinates(float x, float z)
+bool Terrain::checkCollision(Vec3<float> position)
 {
-
-    int i = ((static_cast<int>(std::floor(x / this->world_scale + this->dim / 2)) % this->dim) + this->dim) % this->dim;
-    int j = ((static_cast<int>(std::floor(z / this->world_scale + this->dim / 2)) % this->dim) + this->dim) % this->dim;
+    // Get the i,j coordinates of the height map
+    int i = ((static_cast<int>(std::floor(position.x / this->world_scale + this->dim / 2)) % this->dim) + this->dim) % this->dim;
+    int j = ((static_cast<int>(std::floor(position.z / this->world_scale + this->dim / 2)) % this->dim) + this->dim) % this->dim;
     
-    printf(COLOR_GREEN "Coordinates: (%d, %d) - ", i, j);
-    printf("Height: %f\n" COLOR_RESET, this->map[i * this->dim + j].y);
+    // Get the height of the terrain at the i,j coordinates
+    float height = this->map[i * this->dim + j].y;
+
+    // Check if the height of the terrain is greater than the height of the object (add an offset for visual purposes)
+    if (height > position.y-50)
+        return true;
+    
+    return false;
 }
