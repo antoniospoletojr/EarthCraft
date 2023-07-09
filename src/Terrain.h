@@ -45,6 +45,7 @@ public:
 	float getWorldDim();
 	float getMaxHeight();
 	void getInfo();
+	void printCoordinates(float x, float z);
 
 private:
 	int dim;

@@ -2,6 +2,7 @@
 #define CAMERA_H
 
 #include <GL/glut.h>
+#include <stdio.h>
 #include <cmath>
 #include "Constants.h"
 #include "Vertex.hpp"
@@ -35,6 +36,8 @@ class Camera
         GLdouble position[3];
         GLdouble alfa, beta;
         GLdouble movement_speed, rotation_speed;
+
+        bool checkCollision();
 };
 
 #endif

@@ -46,27 +46,31 @@ void Camera::setPosition(GLdouble x, GLdouble y, GLdouble z)
     position[2] = z;
 }
 
-Vertex3d<float> Camera::getPosition()
-{
-    Vertex3d<float> position;
-    position.x = this->position[0] - sin(alfa);
-    position.y = this->position[1];
-    position.z = this->position[2] - cos(alfa);
-    return position;
-}
-
 Vertex3d<float> Camera::getDirection()
 {
     Vertex3d<float> direction;
-    direction.x = position[0] - LOS_DISTANCE * sin(alfa);
-    direction.y = position[1] + beta;
-    direction.z = position[2] - LOS_DISTANCE * cos(alfa);
+    direction.x = this->position[0] - sin(this->alfa);
+    direction.y = this->position[1];
+    direction.z = this->position[2] - cos(this->alfa);
     return direction;
+}
+
+Vertex3d<float> Camera::getPosition()
+{
+    Vertex3d<float> position;
+    position.x = this->position[0] - LOS_DISTANCE * sin(this->alfa);
+    position.y = this->position[1] + this->beta;
+    position.z = this->position[2] - LOS_DISTANCE * cos(this->alfa);
+    return position;
 }
 
 // Move the camera forward
 void Camera::moveForward()
 {
+    bool hasCollided = checkCollision();
+    if (hasCollided)
+        return;
+
     position[0] -= sin(alfa) * movement_speed;
     position[2] -= cos(alfa) * movement_speed;
 }
@@ -74,6 +78,10 @@ void Camera::moveForward()
 // Move the camera backward
 void Camera::moveBackward()
 {
+    bool hasCollided = checkCollision();
+    if (hasCollided)
+        return;
+    
     position[0] += sin(alfa) * movement_speed;
     position[2] += cos(alfa) * movement_speed;
 }
@@ -81,6 +89,10 @@ void Camera::moveBackward()
 // Move the camera left
 void Camera::moveLeft()
 {
+    bool hasCollided = checkCollision();
+    if (hasCollided)
+        return;
+
     position[0] -= cos(alfa ) * movement_speed;
     position[2] += sin(alfa) * movement_speed;
 }
@@ -88,6 +100,10 @@ void Camera::moveLeft()
 // Move the camera right
 void Camera::moveRight()
 {
+    bool hasCollided = checkCollision();
+    if (hasCollided)
+        return;
+
     position[0] += cos(alfa) * movement_speed;
     position[2] -= sin(alfa) * movement_speed;
 }
@@ -95,12 +111,20 @@ void Camera::moveRight()
 // Move the camera up
 void Camera::moveUp()
 {
+    bool hasCollided = checkCollision();
+    if (hasCollided)
+        return;
+
     position[1] += movement_speed;
 }
 
 // Move the camera down
 void Camera::moveDown()
 {
+    bool hasCollided = checkCollision();
+    if (hasCollided)
+        return;
+
     if (position[1] > 100)
         position[1] -= movement_speed;
 }
@@ -158,6 +182,6 @@ void Camera::update()
     GLdouble upX = 0.0;
     GLdouble upY = 1.0;
     GLdouble upZ = 0.0;
-    
+
     gluLookAt(eyeX, eyeY, eyeZ, centerX, centerY, centerZ, upX, upY, upZ);
 }

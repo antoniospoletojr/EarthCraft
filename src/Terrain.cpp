@@ -69,7 +69,7 @@ void Terrain::loadMap()
         {
             // Set the vertices
             this->map[i * dim + j].x = ((i - dim / 2) * this->world_scale);
-            this->map[i * dim + j].y = (data[(i * dim + j)] * (15 + log(this->world_scale)));
+            this->map[i * dim + j].y = (data[(j * dim + i)] * (15 + log(this->world_scale)));
             this->map[i * dim + j].z = ((j - dim / 2) * this->world_scale);
             
             // Update the bounds based on the current vertex
@@ -197,4 +197,14 @@ void Terrain::getInfo()
     printf(COLOR_RESET);
 
     fflush(stdout);
+}
+
+void Terrain::printCoordinates(float x, float z)
+{
+
+    int i = ((static_cast<int>(std::floor(x / this->world_scale + this->dim / 2)) % this->dim) + this->dim) % this->dim;
+    int j = ((static_cast<int>(std::floor(z / this->world_scale + this->dim / 2)) % this->dim) + this->dim) % this->dim;
+    
+    printf(COLOR_GREEN "Coordinates: (%d, %d) - ", i, j);
+    printf("Height: %f\n" COLOR_RESET, this->map[i * this->dim + j].y);
 }

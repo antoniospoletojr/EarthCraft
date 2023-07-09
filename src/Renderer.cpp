@@ -955,7 +955,7 @@ void Renderer::drawMesh(int mesh_multiplier)
     GLfloat ambient_material[] = {0.1, 0.1, 0.1, 1.0f};
     glMaterialfv(GL_FRONT, GL_AMBIENT, ambient_material);
     
-    float world_dim = instance->terrain->getWorldDim() / 2.0f;
+    float world_dim = instance->terrain->getWorldDim();
 
     if(mesh_multiplier == 0)
     {
@@ -1366,7 +1366,7 @@ void Renderer::draw()
     case RENDERING_SCREEN:
         // Draw a text in the middle saying "Time"
         instance->drawSkydome();
-        instance->drawMesh(0);
+        instance->drawMesh(2);
         instance->drawOrbit();
         instance->drawTime();
         break;
