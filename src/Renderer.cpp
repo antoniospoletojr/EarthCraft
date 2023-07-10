@@ -15,7 +15,7 @@ Renderer::Renderer()
 // Destructor
 Renderer::~Renderer()
 {
-    // Disable the Vec arrays
+    // Disable the vertexarrays
     glDisableClientState(GL_VERTEX_ARRAY);
     glDisableClientState(GL_COLOR_ARRAY);
     glDisableClientState(GL_TEXTURE_COORD_ARRAY);
@@ -28,7 +28,7 @@ Renderer::~Renderer()
     // Deallocate memory
     objects.clear();
     
-    // Delete the Vec array objects
+    // Delete the vertexarray objects
     glDeleteVertexArrays(1, &objects[MESH].vao);
     glDeleteVertexArrays(1, &objects[SUN].vao);
     glDeleteVertexArrays(1, &objects[MOON].vao);
@@ -47,14 +47,14 @@ Renderer::~Renderer()
     Renderer::instance = nullptr;
 }
 
-void Renderer::initializeMesh(Terrain *terrain)
+void Renderer::initializeMesh(Terrain *terrain, int mesh_multiplier)
 {    
     this->terrain = terrain;
     // Print the map info
     this->terrain->getInfo();
     // Retrieve the map
     Vec3<float> *map = this->terrain->getMap();
-
+    
     // Load skydome texture image
     cv::Mat mesh_texture = this->terrain->getTexture();
     printf("Mesh texture size: %d x %d\n", mesh_texture.cols, mesh_texture.rows);
@@ -76,9 +76,9 @@ void Renderer::initializeMesh(Terrain *terrain)
     // Upload the texture image data
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, mesh_texture.cols, mesh_texture.rows, 0, GL_BGR, GL_UNSIGNED_BYTE, mesh_texture.data);
 
-    // Generate the Vec array object for the mesh
+    // Generate the vertexarray object for the mesh
     glGenVertexArrays(1, &objects[MESH].vao);
-    // Bind the Vec array object for the mesh
+    // Bind the vertexarray object for the mesh
     glBindVertexArray(objects[MESH].vao);
 
     // Generate the buffer objects
@@ -179,7 +179,7 @@ void Renderer::initializeMesh(Terrain *terrain)
     glEnable(GL_PRIMITIVE_RESTART);
     glPrimitiveRestartIndex(0xFFFFFFFFu);
 
-    // Bind and fill the Vec buffer object
+    // Bind and fill the vertexbuffer object
     glBindBuffer(GL_ARRAY_BUFFER, objects[MESH].vbo);
     glBufferData(GL_ARRAY_BUFFER, objects[MESH].vertices.size() * sizeof(float), objects[MESH].vertices.data(), GL_STATIC_DRAW);
     glVertexPointer(3, GL_FLOAT, 0, 0);
@@ -242,7 +242,7 @@ void Renderer::initializeOrbit()
     {
         const aiMesh *mesh = sun_scene->mMeshes[i];
 
-        // For each Vec in the mesh
+        // For each vertexin the mesh
         for (unsigned int j = 0; j < mesh->mNumVertices; ++j)
         {
             // Extract vertices
@@ -275,9 +275,9 @@ void Renderer::initializeOrbit()
         }
     }
 
-    // Generate the Vec array object for the sun
+    // Generate the vertexarray object for the sun
     glGenVertexArrays(1, &objects[SUN].vao);
-    // Bind the Vec array object for the sun
+    // Bind the vertexarray object for the sun
     glBindVertexArray(objects[SUN].vao);
 
     // Generate the buffer objects
@@ -285,7 +285,7 @@ void Renderer::initializeOrbit()
     glGenBuffers(1, &objects[SUN].tbo);
     glGenBuffers(1, &objects[SUN].ibo);
 
-    // Bind and fill the Vec buffer object
+    // Bind and fill the vertexbuffer object
     glBindBuffer(GL_ARRAY_BUFFER, objects[SUN].vbo);
     glBufferData(GL_ARRAY_BUFFER, objects[SUN].vertices.size() * sizeof(float), objects[SUN].vertices.data(), GL_STATIC_DRAW);
     glVertexPointer(3, GL_FLOAT, 0, 0);
@@ -340,7 +340,7 @@ void Renderer::initializeOrbit()
     {
         const aiMesh *mesh = moon_scene->mMeshes[i];
 
-        // For each Vec in the mesh
+        // For each vertexin the mesh
         for (unsigned int j = 0; j < mesh->mNumVertices; ++j)
         {
             // Extract vertices
@@ -373,9 +373,9 @@ void Renderer::initializeOrbit()
         }
     }
 
-    // Generate the Vec array object for the sun
+    // Generate the vertexarray object for the sun
     glGenVertexArrays(1, &objects[MOON].vao);
-    // Bind the Vec array object for the sun
+    // Bind the vertexarray object for the sun
     glBindVertexArray(objects[MOON].vao);
 
     // Generate the buffer objects
@@ -383,7 +383,7 @@ void Renderer::initializeOrbit()
     glGenBuffers(1, &objects[MOON].tbo);
     glGenBuffers(1, &objects[MOON].ibo);
 
-    // Bind and fill the Vec buffer object
+    // Bind and fill the vertexbuffer object
     glBindBuffer(GL_ARRAY_BUFFER, objects[MOON].vbo);
     glBufferData(GL_ARRAY_BUFFER, objects[MOON].vertices.size() * sizeof(float), objects[MOON].vertices.data(), GL_STATIC_DRAW);
     glVertexPointer(3, GL_FLOAT, 0, 0);
@@ -476,7 +476,7 @@ void Renderer::initializeSkydome()
     {
         const aiMesh *mesh = scene->mMeshes[i];
 
-        // For each Vec in the mesh
+        // For each vertexin the mesh
         for (unsigned int j = 0; j < mesh->mNumVertices; ++j)
         {
             // Extract vertices
@@ -509,10 +509,10 @@ void Renderer::initializeSkydome()
         }
     }
 
-    // Generate the Vec array object for the skydome
+    // Generate the vertexarray object for the skydome
     glGenVertexArrays(1, &objects[SKYDOME].vao);
     
-    // Bind the Vec array object for the skydome
+    // Bind the vertexarray object for the skydome
     glBindVertexArray(objects[SKYDOME].vao);
 
     // Generate the buffer objects
@@ -520,7 +520,7 @@ void Renderer::initializeSkydome()
     glGenBuffers(1, &objects[SKYDOME].tbo);
     glGenBuffers(1, &objects[SKYDOME].ibo);
 
-    // Bind and fill the Vec buffer object
+    // Bind and fill the vertexbuffer object
     glBindBuffer(GL_ARRAY_BUFFER, objects[SKYDOME].vbo);
     glBufferData(GL_ARRAY_BUFFER, objects[SKYDOME].vertices.size() * sizeof(float), objects[SKYDOME].vertices.data(), GL_STATIC_DRAW);
     glVertexPointer(3, GL_FLOAT, 0, 0);
@@ -546,33 +546,33 @@ void Renderer::initializeSplashscreen()
     instance->menu_clips[LANDING_SCREEN].open("./assets/menu/Splashscreen.mp4");
     instance->menu_clips[LANDING_SCREEN].read(instance->menu_frame);
 
-    // Generate the Vec array object for the SPLASHSCREEN
+    // Generate the vertexarray object for the SPLASHSCREEN
     glGenVertexArrays(1, &objects[SPLASHSCREEN].vao);
-    // Bind the Vec array object for the SPLASHSCREEN
+    // Bind the vertexarray object for the SPLASHSCREEN
     glBindVertexArray(objects[SPLASHSCREEN].vao);
     
-    // Generate the Vec buffer objects
+    // Generate the vertexbuffer objects
     glGenBuffers(1, &objects[SPLASHSCREEN].vbo);
     // Generate the texture buffer objects
     glGenBuffers(1, &objects[SPLASHSCREEN].tbo);
     // Generate the texture buffer objects
     glGenBuffers(1, &objects[SPLASHSCREEN].cbo);
 
-    // Create Vec data for the quad
+    // Create vertexdata for the quad
     std::vector<GLfloat> vertices(8);
     std::vector<GLfloat> colors = {1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f};
     std::vector<GLfloat> texture_coords = {0, 1, 1, 1, 1, 0, 0, 0};
 
-    // Enable the Vec arrays
+    // Enable the vertexarrays
     glEnableClientState(GL_VERTEX_ARRAY);
     glEnableClientState(GL_COLOR_ARRAY);
     glEnableClientState(GL_TEXTURE_COORD_ARRAY);
 
-    // Bind the Vec buffer object
+    // Bind the vertexbuffer object
     glBindBuffer(GL_ARRAY_BUFFER, objects[SPLASHSCREEN].vbo);
-    // Copy data into the Vec buffer
+    // Copy data into the vertexbuffer
     glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(GLfloat), NULL, GL_STATIC_DRAW);
-    // Specify Vec pointer location
+    // Specify vertexpointer location
     glVertexPointer(2, GL_FLOAT, 0, 0);
 
     // Bind the color buffer object
@@ -607,33 +607,33 @@ void Renderer::initializeCanvas()
     instance->menu_clips[BASINS_SCREEN].open("./assets/menu/Basins.mp4");
     instance->menu_clips[LOADING_SCREEN].open("./assets/menu/Loadingscreen.mp4");
 
-    // Generate the Vec array object for the canvas
+    // Generate the vertexarray object for the canvas
     glGenVertexArrays(1, &objects[CANVAS].vao);
-    // Bind the Vec array object for the canvas
+    // Bind the vertexarray object for the canvas
     glBindVertexArray(objects[CANVAS].vao);
 
-    // Generate the Vec buffer objects
+    // Generate the vertexbuffer objects
     glGenBuffers(1, &objects[CANVAS].vbo);
     // Generate the texture buffer objects
     glGenBuffers(1, &objects[CANVAS].tbo);
     // Generate the texture buffer objects
     glGenBuffers(1, &objects[CANVAS].cbo);
 
-    // Create Vec data for the quad
+    // Create vertexdata for the quad
     std::vector<GLfloat> vertices(8);
     std::vector<GLfloat> colors = {1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f};
     std::vector<GLfloat> texture_coords = {0, 1, 1, 1, 1, 0, 0, 0};
 
-    // Enable the Vec arrays
+    // Enable the vertexarrays
     glEnableClientState(GL_VERTEX_ARRAY);
     glEnableClientState(GL_COLOR_ARRAY);
     glEnableClientState(GL_TEXTURE_COORD_ARRAY);
 
-    // Bind the Vec buffer object
+    // Bind the vertexbuffer object
     glBindBuffer(GL_ARRAY_BUFFER, objects[CANVAS].vbo);
-    // Copy data into the Vec buffer
+    // Copy data into the vertexbuffer
     glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(GLfloat), NULL, GL_STATIC_DRAW);
-    // Specify Vec pointer location
+    // Specify vertexpointer location
     glVertexPointer(2, GL_FLOAT, 0, 0);
 
     // Bind the color buffer object
@@ -667,7 +667,7 @@ void Renderer::initialize(Camera *camera)
     // Allocate space for 7 objects (Mesh, Splashscreen, Canvas, Skydome, Sun, Moon and the 4 sketches)
     objects.resize(10);
 
-    // Generate the Vec array objects; we need 2 objects: MESH and ORBIT
+    // Generate the vertexarray objects; we need 2 objects: MESH and ORBIT
     this->initializeOrbit();
     this->initializeSplashscreen();
     this->initializeCanvas();
@@ -903,7 +903,7 @@ void Renderer::drawMesh(int mesh_multiplier)
     // Draw the terrain
     glBindVertexArray(instance->objects[MESH].vao);
     
-    // Enable two Vec arrays: co-ordinates and color.
+    // Enable two vertexarrays: co-ordinates and color.
     glEnableClientState(GL_VERTEX_ARRAY);
     glEnableClientState(GL_TEXTURE_COORD_ARRAY);
     glEnableClientState(GL_NORMAL_ARRAY);
@@ -929,7 +929,7 @@ void Renderer::drawMesh(int mesh_multiplier)
         {
             for (int j = -mesh_multiplier; j <= mesh_multiplier; j++)
             {
-                // Create a temporary vector for updated Vec positions
+                // Create a temporary vector for updated vertexpositions
                 std::vector<float> updated_vertices(instance->objects[MESH].vertices.size());
                 
                 for (size_t k = 0; k < instance->objects[MESH].vertices.size(); k += 3)
@@ -939,10 +939,10 @@ void Renderer::drawMesh(int mesh_multiplier)
                     updated_vertices[k + 2] = instance->objects[MESH].vertices[k + 2] + world_dim*j; // Update z coordinate
                 }
                 
-                // Bind the Vec buffer object
+                // Bind the vertexbuffer object
                 glBindBuffer(GL_ARRAY_BUFFER, instance->objects[MESH].vbo);
                 
-                // Upload the updated Vec data
+                // Upload the updated vertexdata
                 glBufferData(GL_ARRAY_BUFFER, updated_vertices.size() * sizeof(float), updated_vertices.data(), GL_STATIC_DRAW);
                 
                 glEnable(GL_PRIMITIVE_RESTART);                                                       // Enable primitive restart
@@ -956,7 +956,7 @@ void Renderer::drawMesh(int mesh_multiplier)
     glDisableClientState(GL_TEXTURE_COORD_ARRAY);
     glDisableClientState(GL_NORMAL_ARRAY);
     
-    // Unbind the Vec array object and texture
+    // Unbind the vertexarray object and texture
     glBindVertexArray(0);
     glBindTexture(GL_TEXTURE_2D, 0);
 }
@@ -976,7 +976,7 @@ void Renderer::drawOrbit()
         // Draw the sun
         glBindVertexArray(instance->objects[SUN].vao);
 
-        // Enable two Vec arrays: co-ordinates and color.
+        // Enable two vertexarrays: co-ordinates and color.
         glEnableClientState(GL_VERTEX_ARRAY);
         glEnableClientState(GL_TEXTURE_COORD_ARRAY);
 
@@ -985,7 +985,7 @@ void Renderer::drawOrbit()
         glDisableClientState(GL_VERTEX_ARRAY);
         glDisableClientState(GL_TEXTURE_COORD_ARRAY);
 
-        // Unbind the Vec array object and texture
+        // Unbind the vertexarray object and texture
         glBindVertexArray(0);
         glBindTexture(GL_TEXTURE_2D, 0);
     glPopMatrix();
@@ -1002,7 +1002,7 @@ void Renderer::drawOrbit()
         // Draw the sun
         glBindVertexArray(instance->objects[MOON].vao);
         
-        // Enable two Vec arrays: co-ordinates and color.
+        // Enable two vertexarrays: co-ordinates and color.
         glEnableClientState(GL_VERTEX_ARRAY);
         glEnableClientState(GL_TEXTURE_COORD_ARRAY);
 
@@ -1011,7 +1011,7 @@ void Renderer::drawOrbit()
         glDisableClientState(GL_VERTEX_ARRAY);
         glDisableClientState(GL_TEXTURE_COORD_ARRAY);
         
-        // Unbind the Vec array object and texture
+        // Unbind the vertexarray object and texture
         glBindVertexArray(0);
         glBindTexture(GL_TEXTURE_2D, 0);
     glPopMatrix();
@@ -1023,7 +1023,7 @@ void Renderer::drawSkydome()
     glDisable(GL_DEPTH_TEST);
     glCullFace(GL_FRONT);
 
-    // Bind the Vec array object for the skydome
+    // Bind the vertexarray object for the skydome
     glBindVertexArray(instance->objects[SKYDOME].vao);
 
     glEnableClientState(GL_VERTEX_ARRAY);
@@ -1042,7 +1042,7 @@ void Renderer::drawSkydome()
     glDisableClientState(GL_VERTEX_ARRAY);
     glDisableClientState(GL_TEXTURE_COORD_ARRAY);
     
-    // Unbind the Vec array object and texture
+    // Unbind the vertexarray object and texture
     glBindVertexArray(0);
     glBindTexture(GL_TEXTURE_2D, 0);
     
@@ -1078,7 +1078,7 @@ void Renderer::drawSplashscreen()
         // Update the vertex buffer data
         glBufferSubData(GL_ARRAY_BUFFER, 0, vertices.size() * sizeof(GLfloat), vertices.data());
 
-        // Enable the Vec arrays
+        // Enable the vertexarrays
         glEnableClientState(GL_VERTEX_ARRAY);
         glEnableClientState(GL_COLOR_ARRAY);
         glEnableClientState(GL_TEXTURE_COORD_ARRAY);
@@ -1127,7 +1127,7 @@ void Renderer::drawCanvas()
         // Update width and height values in a single line
         std::vector<GLfloat> vertices = {0, 0, width, 0, width, height, 0, height};
 
-        // Enable the Vec arrays
+        // Enable the vertexarrays
         glEnableClientState(GL_VERTEX_ARRAY);
         glEnableClientState(GL_COLOR_ARRAY);
         glEnableClientState(GL_TEXTURE_COORD_ARRAY);
@@ -1135,9 +1135,9 @@ void Renderer::drawCanvas()
         // Render the splash screen
         glBindVertexArray(instance->objects[CANVAS].vao);
 
-        // Bind the Vec buffer object
+        // Bind the vertexbuffer object
         glBindBuffer(GL_ARRAY_BUFFER, instance->objects[CANVAS].vbo);
-        // Update the Vec buffer data
+        // Update the vertexbuffer data
         glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(GLfloat), vertices.data(), GL_STATIC_DRAW);
 
         glDrawArrays(GL_QUADS, 0, 4);
@@ -1184,7 +1184,7 @@ void Renderer::drawSketch(short current_canvas)
             vertices[i + 2] = instance->objects[SKETCH + current_canvas].vertices[i + 2];
         }
 
-        // Enable the Vec arrays
+        // Enable the vertexarrays
         glEnableClientState(GL_VERTEX_ARRAY);
         glEnableClientState(GL_COLOR_ARRAY);
         glEnableClientState(GL_TEXTURE_COORD_ARRAY);
@@ -1192,18 +1192,18 @@ void Renderer::drawSketch(short current_canvas)
         // Render the sketch
         glBindVertexArray(instance->objects[SKETCH].vao);
         
-        // Bind the Vec buffer object
+        // Bind the vertexbuffer object
         glBindBuffer(GL_ARRAY_BUFFER, instance->objects[SKETCH].vbo);
-        // Update the Vec buffer data for points
+        // Update the vertexbuffer data for points
         glBufferData(GL_ARRAY_BUFFER, instance->objects[SKETCH + current_canvas].vertices.size() * sizeof(GLfloat), vertices.data(), GL_STATIC_DRAW);
-        // Set the Vec attribute pointer for positions
+        // Set the vertexattribute pointer for positions
         glVertexPointer(3, GL_FLOAT, 0, vertices.data());
         
-        // Bind the Vec buffer object
+        // Bind the vertexbuffer object
         glBindBuffer(GL_ARRAY_BUFFER, instance->objects[SKETCH].cbo);
-        // Update the Vec buffer data for points
+        // Update the vertexbuffer data for points
         glBufferData(GL_ARRAY_BUFFER, instance->objects[SKETCH + current_canvas].colors.size() * sizeof(GLfloat), instance->objects[SKETCH + current_canvas].colors.data(), GL_STATIC_DRAW);
-        // Set the Vec attribute pointer for colors
+        // Set the vertexattribute pointer for colors
         glColorPointer(3, GL_FLOAT, 0, instance->objects[SKETCH + current_canvas].colors.data());
 
         // Bind the index buffer object

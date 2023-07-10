@@ -42,7 +42,7 @@ void InputHandler::generate()
     std::thread inference_thread([](Inference *inference) { inference->predict(); }, instance->inference);
     inference_thread.join();
     
-    std::thread terrain_thread([](Terrain *terrain) { terrain->initialize(16, 2); }, instance->terrain);
+    std::thread terrain_thread([](Terrain *terrain) { terrain->initialize(5, 1); }, instance->terrain);
     terrain_thread.join();
     
     instance->keys[13] = true;
@@ -165,7 +165,7 @@ void InputHandler::handleKeyboard()
             case RENDERING_SCREEN:
                 generation_thread.join();
                 instance->camera->setTerrain(instance->terrain);
-                instance->renderer->initializeMesh(instance->terrain);
+                instance->renderer->initializeMesh(instance->terrain, 0);
                 instance->sound_manager->playSuccessSound();
                 instance->sound_manager->playBackgroundMusic();
                 int bound = instance->terrain->getWorldDim()/2;

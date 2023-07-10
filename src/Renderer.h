@@ -50,7 +50,7 @@ public:
     void sketch(float x, float y);
     void resetSketches();
     void takeSnapshot();
-    void initializeMesh(Terrain *terrain);
+    void initializeMesh(Terrain *terrain, int mesh_multiplier);
 
 private:
     static Renderer *instance;
@@ -61,7 +61,7 @@ private:
     
     cv::VideoCapture menu_clips[6];
     cv::Mat menu_frame;
-    
+
     cv::Mat day_texture;
     cv::Mat night_texture;
     
