@@ -37,7 +37,9 @@ void Terrain::loadMap()
 {
     // Load the terrain heightmap using opencv library
     cv::Mat image = cv::imread("./assets/sketches/heightmap.png", cv::IMREAD_GRAYSCALE);
-
+    //cv::Mat smoothedImage;
+    cv::GaussianBlur(image, image, cv::Size(5, 5), 0); // Adjust the kernel size (5, 5) as needed
+    
     unsigned char* data = image.data;
     
     // Check for an error during the load process

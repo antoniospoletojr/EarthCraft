@@ -126,7 +126,6 @@ void Renderer::initializeMesh(Terrain *terrain, int mesh_multiplier)
         objects[MESH].indices.push_back(0xFFFFFFFFu);
     }
     
-    
     // Calculate normals
     for (int i = 0; i < objects[MESH].indices.size()-3; i += 2)
     {    
@@ -174,16 +173,58 @@ void Renderer::initializeMesh(Terrain *terrain, int mesh_multiplier)
         objects[MESH].normals[i3 * 3 + 1] += normal.y;
         objects[MESH].normals[i3 * 3 + 2] += normal.z;
     }
-        
+    
+    // If mesh_multiplier is greater than 0, the mesh will be replicated
+    if (mesh_multiplier>0)
+    {
+        float world_dim = this->terrain->getWorldDim();
+        // Create a temporary vector for updated vertex positions
+        std::vector<GLfloat> updated_vertices, updated_normals, updated_textures;
+        std::vector<GLuint> updated_indices;
+
+        for (int i = -mesh_multiplier; i <= mesh_multiplier; i++)
+        {
+            for (int j = -mesh_multiplier; j <= mesh_multiplier; j++)
+            {
+                for (size_t k = 0; k < instance->objects[MESH].vertices.size(); k += 3)
+                {
+                    updated_vertices.push_back(instance->objects[MESH].vertices[k] + world_dim * i);        // Update x coordinate
+                    updated_vertices.push_back(instance->objects[MESH].vertices[k + 1]);                    // Keep y coordinate unchanged
+                    updated_vertices.push_back(instance->objects[MESH].vertices[k + 2] + world_dim * j);    // Update z coordinate
+
+                    updated_normals.push_back(instance->objects[MESH].normals[k]);                          // Keep x coordinate unchanged
+                    updated_normals.push_back(instance->objects[MESH].normals[k + 1]);                      // Keep y coordinate unchanged
+                    updated_normals.push_back(instance->objects[MESH].normals[k + 2]);                      // Keep z coordinate unchanged
+                }
+
+                for (size_t k = 0; k < instance->objects[MESH].textures.size(); k += 2)
+                {
+                    updated_textures.push_back(instance->objects[MESH].textures[k]);                        // Keep x coordinate unchanged
+                    updated_textures.push_back(instance->objects[MESH].textures[k + 1]);                    // Keep y coordinate unchanged
+                }
+
+                short step_number = (i + mesh_multiplier) * (mesh_multiplier * 2 + 1) + (j + mesh_multiplier);
+                for (size_t k = 0; k < instance->objects[MESH].indices.size(); k++)
+                {
+                    updated_indices.push_back(instance->objects[MESH].indices[k] + instance->objects[MESH].vertices.size()/3 * step_number);
+                }
+            }
+        }
+        objects[MESH].vertices = updated_vertices;
+        objects[MESH].normals = updated_normals;
+        objects[MESH].textures = updated_textures;
+        objects[MESH].indices = updated_indices;
+    }
+            
     // Use maximum unsigned int as restart index
     glEnable(GL_PRIMITIVE_RESTART);
     glPrimitiveRestartIndex(0xFFFFFFFFu);
-
+    
     // Bind and fill the vertexbuffer object
     glBindBuffer(GL_ARRAY_BUFFER, objects[MESH].vbo);
     glBufferData(GL_ARRAY_BUFFER, objects[MESH].vertices.size() * sizeof(float), objects[MESH].vertices.data(), GL_STATIC_DRAW);
     glVertexPointer(3, GL_FLOAT, 0, 0);
-
+    
     // Bind and fill the texture coordinate buffer object
     glBindBuffer(GL_ARRAY_BUFFER, objects[MESH].tbo);
     glBufferData(GL_ARRAY_BUFFER, objects[MESH].textures.size() * sizeof(float), objects[MESH].textures.data(), GL_STATIC_DRAW);
@@ -197,7 +238,7 @@ void Renderer::initializeMesh(Terrain *terrain, int mesh_multiplier)
     // Bind and fill indices buffer.
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, objects[MESH].ibo);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, objects[MESH].indices.size() * sizeof(GLuint), objects[MESH].indices.data(), GL_STATIC_DRAW);
-
+    
     // Unbind everything
     glBindVertexArray(0);
 }
@@ -274,7 +315,7 @@ void Renderer::initializeOrbit()
             }
         }
     }
-
+    
     // Generate the vertexarray object for the sun
     glGenVertexArrays(1, &objects[SUN].vao);
     // Bind the vertexarray object for the sun
@@ -787,7 +828,7 @@ void Renderer::sketch(float x, float y)
 {
     // current page is used as index for the sketch vertices, colors and indices arrays and "-1" removes the case of the landing screen
     short current_canvas = current_menu_page - 1;
-    printf("sketching on canvas %d\n", current_canvas);
+
     objects[SKETCH + current_canvas].vertices.emplace_back(x);
     objects[SKETCH + current_canvas].vertices.emplace_back(y);
     // The sketch must be drawn together with the canvas; to ensure
@@ -895,7 +936,7 @@ void Renderer::timerCallback(int value)
     glutTimerFunc(25, Renderer::timerCallback, 0);
 }
 
-void Renderer::drawMesh(int mesh_multiplier)
+void Renderer::drawMesh()
 {
     // Bind the terrain texture
     glBindTexture(GL_TEXTURE_2D, instance->objects[MESH].texture);
@@ -914,43 +955,9 @@ void Renderer::drawMesh(int mesh_multiplier)
     GLfloat ambient_material[] = {0.1, 0.1, 0.1, 1.0f};
     glMaterialfv(GL_FRONT, GL_AMBIENT, ambient_material);
     
-    
-    if(mesh_multiplier == 0)
-    {
-        glEnable(GL_PRIMITIVE_RESTART);                                                       // Enable primitive restart
-        glDrawElements(GL_TRIANGLE_STRIP, instance->objects[MESH].indices.size(), GL_UNSIGNED_INT, 0); // Draw the triangles
-        glDisable(GL_PRIMITIVE_RESTART);
-    }
-    else
-    {
-        float world_dim = instance->terrain->getWorldDim();
-
-        for (int i = -mesh_multiplier; i <= mesh_multiplier; i++)
-        {
-            for (int j = -mesh_multiplier; j <= mesh_multiplier; j++)
-            {
-                // Create a temporary vector for updated vertexpositions
-                std::vector<float> updated_vertices(instance->objects[MESH].vertices.size());
-                
-                for (size_t k = 0; k < instance->objects[MESH].vertices.size(); k += 3)
-                {
-                    updated_vertices[k] = instance->objects[MESH].vertices[k] + world_dim*i;         // Update x coordinate
-                    updated_vertices[k + 1] = instance->objects[MESH].vertices[k + 1];               // Keep y coordinate unchanged
-                    updated_vertices[k + 2] = instance->objects[MESH].vertices[k + 2] + world_dim*j; // Update z coordinate
-                }
-                
-                // Bind the vertexbuffer object
-                glBindBuffer(GL_ARRAY_BUFFER, instance->objects[MESH].vbo);
-                
-                // Upload the updated vertexdata
-                glBufferData(GL_ARRAY_BUFFER, updated_vertices.size() * sizeof(float), updated_vertices.data(), GL_STATIC_DRAW);
-                
-                glEnable(GL_PRIMITIVE_RESTART);                                                       // Enable primitive restart
-                glDrawElements(GL_TRIANGLE_STRIP, instance->objects[MESH].indices.size(), GL_UNSIGNED_INT, 0); // Draw the triangles
-                glDisable(GL_PRIMITIVE_RESTART);
-            }
-        }
-    }
+    glEnable(GL_PRIMITIVE_RESTART);                                                                 // Enable primitive restart
+    glDrawElements(GL_QUAD_STRIP, instance->objects[MESH].indices.size(), GL_UNSIGNED_INT, 0);  // Draw the triangles
+    glDisable(GL_PRIMITIVE_RESTART);
     
     glDisableClientState(GL_VERTEX_ARRAY);
     glDisableClientState(GL_TEXTURE_COORD_ARRAY);
@@ -1323,7 +1330,7 @@ void Renderer::draw()
         instance->drawOrbit();
         instance->drawTime();
         glEnable(GL_LIGHTING);
-        instance->drawMesh(2);
+        instance->drawMesh();
         break;
     case LOADING_SCREEN:
         instance->drawCanvas();
