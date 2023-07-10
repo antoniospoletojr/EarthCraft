@@ -39,8 +39,8 @@ void GlutFramework::initialize(int argc, char** argv)
     //glFrontFace(GL_CW);
     
     // Set the culling mode to be back face culling
-    glCullFace(GL_BACK);
     glEnable(GL_CULL_FACE);
+    glCullFace(GL_BACK);
         
     // Enable the depth test to ensure that polygons that are behind others are not drawn
     glEnable(GL_DEPTH_TEST);
@@ -83,6 +83,8 @@ void GlutFramework::initialize(int argc, char** argv)
 
     // Enable automatic normalization of surface normals to unit length
     glEnable(GL_NORMALIZE);
+
+    // Enable blending
     glEnable(GL_BLEND);
 }
 

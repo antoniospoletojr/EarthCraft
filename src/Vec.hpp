@@ -10,28 +10,22 @@ struct Vec3
     T x;
     T y;
     T z;
-    
+
     Vec3() : x(0), y(0), z(0) {}
+    Vec3(T x_val, T y_val, T z_val) : x(x_val), y(y_val), z(z_val) {}
 };
 
 // 2D Vector struct
 template <typename T>
 struct Vec2
 {
-    T x;
-    T y;
+    T u;
+    T v;
 
-    Vec2() : x(0), y(0) {}
+    Vec2() : u(0), v(0) {}
+    Vec2(T u_val, T v_val) : u(u_val), v(v_val) {}
 };
 
-// 1D Vector struct
-template <typename T>
-struct Vec
-{
-    T x;
-
-    Vec() : x(0) {}
-};
 
 // Addition function to add two vectors
 template <typename T>
@@ -48,16 +42,8 @@ template <typename T>
 Vec2<T> add(const Vec2<T> &v1, const Vec2<T> &v2)
 {
     Vec2<T> result;
-    result.x = v1.x + v2.x;
-    result.y = v1.y + v2.y;
-    return result;
-}
-
-template <typename T>
-Vec<T> add(const Vec<T> &v1, const Vec<T> &v2)
-{
-    Vec<T> result;
-    result.x = v1.x + v2.x;
+    result.u = v1.u + v2.u;
+    result.v = v1.v + v2.v;
     return result;
 }
 
@@ -76,16 +62,8 @@ template <typename T>
 Vec2<T> subtract(const Vec2<T> &v1, const Vec2<T> &v2)
 {
     Vec2<T> result;
-    result.x = v1.x - v2.x;
-    result.y = v1.y - v2.y;
-    return result;
-}
-
-template <typename T>
-Vec<T> subtract(const Vec<T> &v1, const Vec<T> &v2)
-{
-    Vec<T> result;
-    result.x = v1.x - v2.x;
+    result.x = v1.u - v2.u;
+    result.y = v1.v - v2.v;
     return result;
 }
 
@@ -118,7 +96,6 @@ Vec3<T> normalize(const Vec3<T> &vector)
         normalized_vector.y = 0;
         normalized_vector.z = 0;
     }
-
     return normalized_vector;
 }
 

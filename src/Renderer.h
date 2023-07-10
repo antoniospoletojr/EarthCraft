@@ -16,6 +16,7 @@
 #include "Camera.h"
 #include "Terrain.h"
 #include "Constants.h"
+#include "Vec.hpp"
 
 typedef struct Object
 {
@@ -29,9 +30,9 @@ typedef struct Object
     GLuint blend_texture;
     std::vector<GLfloat> vertices;
     std::vector<GLfloat> colors;
-    std::vector<GLuint> indices;
-    std::vector<GLfloat> textures;
     std::vector<GLfloat> normals;
+    std::vector<GLfloat> textures;
+    std::vector<GLuint> indices;
 } Object;
 
 class Renderer
@@ -54,12 +55,9 @@ private:
     Terrain *terrain;
 
     std::vector<Object> objects;
-    // Do I need thees as attributes???
-    std::vector<GLfloat> mesh_vertices, sun_vertices, moon_vertices, skydome_vertices, sketch_vertices[4];  // an array to keep track of the vertices of the terrain
-    std::vector<GLfloat> skydome_colors, sketch_colors[4];                                                  // an array to keep track of the colors of the terrain
-    std::vector<GLuint> mesh_indices, sun_indices, moon_indices, skydome_indices, sketch_indices[4];        // an array to keep track of the indices of the terrain
-    std::vector<GLfloat> mesh_textures, sun_textures, moon_textures, skydome_textures;
-    std::vector<GLfloat> mesh_normals;
+    std::vector<GLfloat> sketch_vertices[4];  // an array to keep track of the vertices of the terrain
+    std::vector<GLfloat> sketch_colors[4];                                                  // an array to keep track of the colors of the terrain
+    std::vector<GLuint> sketch_indices[4];        // an array to keep track of the indices of the terrain
     
     cv::VideoCapture menu_clips[6];
     cv::Mat menu_frame;
