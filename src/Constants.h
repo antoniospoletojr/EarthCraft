@@ -14,10 +14,10 @@
 #define MESH 0
 #define SPLASHSCREEN 1
 #define CANVAS 2
-#define SKETCH 3
-#define SKYDOME 4
-#define SUN 5
-#define MOON 6
+#define SKYDOME 3
+#define SUN 4
+#define MOON 5
+#define SKETCH 6
 
 #define LOS_DISTANCE 2
 

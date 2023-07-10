@@ -20,6 +20,7 @@
 
 typedef struct Object
 {
+    // Buffer object descriptors
     GLuint vao;
     GLuint vbo;
     GLuint tbo;
@@ -28,6 +29,8 @@ typedef struct Object
     GLuint nbo;
     GLuint texture;
     GLuint blend_texture;
+    
+    // Buffers
     std::vector<GLfloat> vertices;
     std::vector<GLfloat> colors;
     std::vector<GLfloat> normals;
@@ -53,14 +56,12 @@ private:
     static Renderer *instance;
     Camera *camera;
     Terrain *terrain;
-
+    
     std::vector<Object> objects;
-    std::vector<GLfloat> sketch_vertices[4];  // an array to keep track of the vertices of the terrain
-    std::vector<GLfloat> sketch_colors[4];                                                  // an array to keep track of the colors of the terrain
-    std::vector<GLuint> sketch_indices[4];        // an array to keep track of the indices of the terrain
     
     cv::VideoCapture menu_clips[6];
     cv::Mat menu_frame;
+    
     cv::Mat day_texture;
     cv::Mat night_texture;
     

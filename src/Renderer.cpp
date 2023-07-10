@@ -26,19 +26,6 @@ Renderer::~Renderer()
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
     
     // Deallocate memory
-    objects[MESH].vertices.clear();
-    objects[MESH].indices.clear();
-    objects[MESH].normals.clear();
-    objects[SUN].vertices.clear();
-    objects[SUN].indices.clear();
-    
-    for (auto &vertices : sketch_vertices)
-        vertices.clear();
-    for (auto &vertices : sketch_colors)
-        vertices.clear();
-    for (auto &vertices : sketch_indices)
-        vertices.clear();
-
     objects.clear();
     
     // Delete the Vec array objects
@@ -677,8 +664,8 @@ void Renderer::initialize(Camera *camera)
     // Set the camera
     this->camera = camera;
 
-    // Allocate space for 7 objects (Mesh, Splashscreen, Canvas, Sketch, Skydome, Sun, Moon)
-    objects.resize(7);
+    // Allocate space for 7 objects (Mesh, Splashscreen, Canvas, Skydome, Sun, Moon and the 4 sketches)
+    objects.resize(10);
 
     // Generate the Vec array objects; we need 2 objects: MESH and ORBIT
     this->initializeOrbit();
@@ -689,6 +676,7 @@ void Renderer::initialize(Camera *camera)
     // Set the glut timer callback for the sun animaton
     glutTimerFunc(100, Renderer::timerCallback, 0);
 
+    // Set the glut display callback
     glutDisplayFunc(Renderer::draw);
 }
 
@@ -797,54 +785,55 @@ void Renderer::cycleDayNight()
 
 void Renderer::sketch(float x, float y)
 {
-    // current page is used as index for the sketch_vertices, sketch_colors and sketch_indices arrays and "-1" removes the case of the landing screen
+    // current page is used as index for the sketch vertices, colors and indices arrays and "-1" removes the case of the landing screen
     short current_canvas = current_menu_page - 1;
-    sketch_vertices[current_canvas].emplace_back(x);
-    sketch_vertices[current_canvas].emplace_back(y);
+    printf("sketching on canvas %d\n", current_canvas);
+    objects[SKETCH + current_canvas].vertices.emplace_back(x);
+    objects[SKETCH + current_canvas].vertices.emplace_back(y);
     // The sketch must be drawn together with the canvas; to ensure
     // that the depth buffer is updated correctly, the sketch is drawn with a non 0 z-coordinate
-    sketch_vertices[current_canvas].emplace_back(0.5);
+    objects[SKETCH + current_canvas].vertices.emplace_back(0.5);
 
     // If the current canvas is 0, set color to dark green, if 1 set color to brown, if 2 set color to light blue, if 3 set color dark blue
     if (current_canvas == RIDGES)
     {
-        sketch_colors[current_canvas].emplace_back(0);
-        sketch_colors[current_canvas].emplace_back(0.5);
-        sketch_colors[current_canvas].emplace_back(0);
+        objects[SKETCH + current_canvas].colors.emplace_back(0);
+        objects[SKETCH + current_canvas].colors.emplace_back(0.5);
+        objects[SKETCH + current_canvas].colors.emplace_back(0);
     }
     else if (current_canvas == PEAKS)
     {
-        sketch_colors[current_canvas].emplace_back(0.5);
-        sketch_colors[current_canvas].emplace_back(0.25);
-        sketch_colors[current_canvas].emplace_back(0);
+        objects[SKETCH + current_canvas].colors.emplace_back(0.5);
+        objects[SKETCH + current_canvas].colors.emplace_back(0.25);
+        objects[SKETCH + current_canvas].colors.emplace_back(0);
     }
     else if (current_canvas == RIVERS)
     {
-        sketch_colors[current_canvas].emplace_back(0.3);
-        sketch_colors[current_canvas].emplace_back(0.5);
-        sketch_colors[current_canvas].emplace_back(0.8);
+        objects[SKETCH + current_canvas].colors.emplace_back(0.3);
+        objects[SKETCH + current_canvas].colors.emplace_back(0.5);
+        objects[SKETCH + current_canvas].colors.emplace_back(0.8);
     }
     else if (current_canvas == BASINS)
     {
-        sketch_colors[current_canvas].emplace_back(0);
-        sketch_colors[current_canvas].emplace_back(0);
-        sketch_colors[current_canvas].emplace_back(0.7);
+        objects[SKETCH + current_canvas].colors.emplace_back(0);
+        objects[SKETCH + current_canvas].colors.emplace_back(0);
+        objects[SKETCH + current_canvas].colors.emplace_back(0.7);
     }
-
+    
     if (x != 0xFFFFFFFFu)
-        sketch_indices[current_canvas].emplace_back(sketch_vertices[current_canvas].size() / 3 - 1);
+        objects[SKETCH + current_canvas].indices.emplace_back(objects[SKETCH + current_canvas].vertices.size() / 3 - 1);
     else
-        sketch_indices[current_canvas].emplace_back(0xFFFFFFFFu);
+        objects[SKETCH + current_canvas].indices.emplace_back(0xFFFFFFFFu);
 }
 
 void Renderer::resetSketches()
 {
-    // current page is used as index for the sketch_vertices, sketch_colors and sketch_indices arrays and "-1" removes the case of the landing screen
+    // current page is used as index for the sketch vertices, colors and indices arrays
     for (short current_canvas = 0; current_canvas < 4; current_canvas++)
     {
-        sketch_vertices[current_canvas].clear();
-        sketch_colors[current_canvas].clear();
-        sketch_indices[current_canvas].clear();
+        objects[SKETCH + current_canvas].vertices.clear();
+        objects[SKETCH + current_canvas].colors.clear();
+        objects[SKETCH + current_canvas].indices.clear();
     }
 }
 
@@ -1084,9 +1073,9 @@ void Renderer::drawSplashscreen()
 
         // Update width and height values in a single line
         std::vector<GLfloat> vertices = {0, 0, width, 0, width, height, 0, height};
-        // Bind the Vec buffer object
+        // Bind the vertex buffer object
         glBindBuffer(GL_ARRAY_BUFFER, instance->objects[SPLASHSCREEN].vbo);
-        // Update the Vec buffer data
+        // Update the vertex buffer data
         glBufferSubData(GL_ARRAY_BUFFER, 0, vertices.size() * sizeof(GLfloat), vertices.data());
 
         // Enable the Vec arrays
@@ -1187,12 +1176,12 @@ void Renderer::drawSketch(short current_canvas)
         glOrtho(0, width, 0, height, -1, 1);
 
         // Update sketch_vertices to fit the screen: vertices is the non-normalized version of sketch_vertices
-        vector<float> vertices(instance->sketch_vertices[current_canvas].size());
-        for (int i = 0; i < instance->sketch_vertices[current_canvas].size(); i = i + 3)
+        vector<float> vertices(instance->objects[SKETCH + current_canvas].vertices.size());
+        for (int i = 0; i < instance->objects[SKETCH + current_canvas].vertices.size(); i = i + 3)
         {
-            vertices[i] = instance->sketch_vertices[current_canvas][i] * width;
-            vertices[i + 1] = instance->sketch_vertices[current_canvas][i + 1] * height;
-            vertices[i + 2] = instance->sketch_vertices[current_canvas][i + 2];
+            vertices[i] = instance->objects[SKETCH + current_canvas].vertices[i] * width;
+            vertices[i + 1] = instance->objects[SKETCH + current_canvas].vertices[i + 1] * height;
+            vertices[i + 2] = instance->objects[SKETCH + current_canvas].vertices[i + 2];
         }
 
         // Enable the Vec arrays
@@ -1202,25 +1191,25 @@ void Renderer::drawSketch(short current_canvas)
 
         // Render the sketch
         glBindVertexArray(instance->objects[SKETCH].vao);
-
+        
         // Bind the Vec buffer object
         glBindBuffer(GL_ARRAY_BUFFER, instance->objects[SKETCH].vbo);
         // Update the Vec buffer data for points
-        glBufferData(GL_ARRAY_BUFFER, instance->sketch_vertices[current_canvas].size() * sizeof(GLfloat), vertices.data(), GL_STATIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, instance->objects[SKETCH + current_canvas].vertices.size() * sizeof(GLfloat), vertices.data(), GL_STATIC_DRAW);
         // Set the Vec attribute pointer for positions
         glVertexPointer(3, GL_FLOAT, 0, vertices.data());
-
+        
         // Bind the Vec buffer object
         glBindBuffer(GL_ARRAY_BUFFER, instance->objects[SKETCH].cbo);
         // Update the Vec buffer data for points
-        glBufferData(GL_ARRAY_BUFFER, instance->sketch_colors[current_canvas].size() * sizeof(GLfloat), instance->sketch_colors[current_canvas].data(), GL_STATIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, instance->objects[SKETCH + current_canvas].colors.size() * sizeof(GLfloat), instance->objects[SKETCH + current_canvas].colors.data(), GL_STATIC_DRAW);
         // Set the Vec attribute pointer for colors
-        glColorPointer(3, GL_FLOAT, 0, instance->sketch_colors[current_canvas].data());
+        glColorPointer(3, GL_FLOAT, 0, instance->objects[SKETCH + current_canvas].colors.data());
 
         // Bind the index buffer object
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, instance->objects[SKETCH].ibo);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, instance->sketch_indices[current_canvas].size() * sizeof(GLuint), instance->sketch_indices[current_canvas].data(), GL_STATIC_DRAW);
-
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, instance->objects[SKETCH + current_canvas].indices.size() * sizeof(GLuint), instance->objects[SKETCH + current_canvas].indices.data(), GL_STATIC_DRAW);
+        
         // Enable primitive restart
         glEnable(GL_PRIMITIVE_RESTART);
         glPrimitiveRestartIndex(0xFFFFFFFFu);
@@ -1231,14 +1220,14 @@ void Renderer::drawSketch(short current_canvas)
             // Increment line width
             glLineWidth(5.0f);
             // Draw the sketch using indices
-            glDrawElements(GL_LINE_STRIP, instance->sketch_indices[current_canvas].size(), GL_UNSIGNED_INT, instance->sketch_indices[current_canvas].data());
+            glDrawElements(GL_LINE_STRIP, instance->objects[SKETCH + current_canvas].indices.size(), GL_UNSIGNED_INT, instance->objects[SKETCH + current_canvas].indices.data());
         }
         if (current_canvas == PEAKS || current_canvas == BASINS)
         {
             // Increment points size
             glPointSize(5.0f);
             // Draw the sketch using indices
-            glDrawElements(GL_POINTS, instance->sketch_indices[current_canvas].size(), GL_UNSIGNED_INT, instance->sketch_indices[current_canvas].data());
+            glDrawElements(GL_POINTS, instance->objects[SKETCH + current_canvas].indices.size(), GL_UNSIGNED_INT, instance->objects[SKETCH + current_canvas].indices.data());
         }
         glDisable(GL_PRIMITIVE_RESTART);
         
