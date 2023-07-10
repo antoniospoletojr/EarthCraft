@@ -20,19 +20,18 @@ Renderer::~Renderer()
     glDisableClientState(GL_COLOR_ARRAY);
     glDisableClientState(GL_TEXTURE_COORD_ARRAY);
     glDisableClientState(GL_NORMAL_ARRAY);
-
+    
     // Unbind any buffers
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-
-    // Deallocate memory
-    mesh_vertices.clear();
-    mesh_indices.clear();
-    mesh_normals.clear();
-    sun_vertices.clear();
-    sun_indices.clear();
     
-
+    // Deallocate memory
+    objects[MESH].vertices.clear();
+    objects[MESH].indices.clear();
+    objects[MESH].normals.clear();
+    objects[SUN].vertices.clear();
+    objects[SUN].indices.clear();
+    
     for (auto &vertices : sketch_vertices)
         vertices.clear();
     for (auto &vertices : sketch_colors)
@@ -102,26 +101,26 @@ void Renderer::initializeMesh(Terrain *terrain)
     glGenBuffers(1, &objects[MESH].nbo);
     
     // Reset mesh arrays if they are not empty
-    mesh_vertices.clear();
-    mesh_indices.clear();
-    mesh_textures.clear();
-    mesh_normals.clear();
+    objects[MESH].vertices.clear();
+    objects[MESH].indices.clear();
+    objects[MESH].textures.clear();
+    objects[MESH].normals.clear();
     
     // Generate vertices and colors
     for (int i = 0; i < dim; i++)
     {
         for (int j = 0; j < dim; j++)
         {
-            mesh_vertices.push_back(map[i * dim + j].x);
-            mesh_vertices.push_back(map[i * dim + j].y);
-            mesh_vertices.push_back(map[i * dim + j].z);
+            objects[MESH].vertices.push_back(map[i * dim + j].x);
+            objects[MESH].vertices.push_back(map[i * dim + j].y);
+            objects[MESH].vertices.push_back(map[i * dim + j].z);
             
-            mesh_textures.push_back((float)i / dim);
-            mesh_textures.push_back((float)j / dim);
+            objects[MESH].textures.push_back((float)i / dim);
+            objects[MESH].textures.push_back((float)j / dim);
             
-            mesh_normals.push_back(0.0f);
-            mesh_normals.push_back(0.0f);
-            mesh_normals.push_back(0.0f);
+            objects[MESH].normals.push_back(0.0f);
+            objects[MESH].normals.push_back(0.0f);
+            objects[MESH].normals.push_back(0.0f);
         }
     }
     
@@ -129,44 +128,44 @@ void Renderer::initializeMesh(Terrain *terrain)
     for (int z = 0; z < dim - 1; z++)
     {
         // Start a new strip
-        mesh_indices.push_back(z * dim);
+        objects[MESH].indices.push_back(z * dim);
         for (int x = 0; x < dim; x++)
         {
             // Add vertices to strip
-            mesh_indices.push_back(z * dim + x);
-            mesh_indices.push_back((z + 1) * dim + x);
+            objects[MESH].indices.push_back(z * dim + x);
+            objects[MESH].indices.push_back((z + 1) * dim + x);
         }
         // Use primitive restart to start a new strip
-        mesh_indices.push_back(0xFFFFFFFFu);
+        objects[MESH].indices.push_back(0xFFFFFFFFu);
     }
     
     
     // Calculate normals
-    for (int i = 0; i < mesh_indices.size()-3; i += 2)
+    for (int i = 0; i < objects[MESH].indices.size()-3; i += 2)
     {    
-        if (mesh_indices[i+1] == 0xFFFFFFFFu)
+        if (objects[MESH].indices[i+1] == 0xFFFFFFFFu)
             continue;
         
         // Get the indices of the triangle
-        int i1 = mesh_indices[i];
-        int i2 = mesh_indices[i + 1];
-        int i3 = mesh_indices[i + 2];
+        int i1 = objects[MESH].indices[i];
+        int i2 = objects[MESH].indices[i + 1];
+        int i3 = objects[MESH].indices[i + 2];
         
         // Get the vertices of the triangle into Vec3 objects
         Vec3<float> v1;
-        v1.x = mesh_vertices[i1 * 3];
-        v1.y = mesh_vertices[i1 * 3 + 1];
-        v1.z = mesh_vertices[i1 * 3 + 2];
+        v1.x = objects[MESH].vertices[i1 * 3];
+        v1.y = objects[MESH].vertices[i1 * 3 + 1];
+        v1.z = objects[MESH].vertices[i1 * 3 + 2];
         
         Vec3<float> v2;
-        v2.x = mesh_vertices[i2 * 3];
-        v2.y = mesh_vertices[i2 * 3 + 1];
-        v2.z = mesh_vertices[i2 * 3 + 2];
+        v2.x = objects[MESH].vertices[i2 * 3];
+        v2.y = objects[MESH].vertices[i2 * 3 + 1];
+        v2.z = objects[MESH].vertices[i2 * 3 + 2];
         
         Vec3<float> v3;
-        v3.x = mesh_vertices[i3 * 3];
-        v3.y = mesh_vertices[i3 * 3 + 1];
-        v3.z = mesh_vertices[i3 * 3 + 2];
+        v3.x = objects[MESH].vertices[i3 * 3];
+        v3.y = objects[MESH].vertices[i3 * 3 + 1];
+        v3.z = objects[MESH].vertices[i3 * 3 + 2];
         
         // Get the vertices of the triangle
         Vec3<float> u1 = subtract(v2, v1);
@@ -176,17 +175,17 @@ void Renderer::initializeMesh(Terrain *terrain)
         Vec3<float> normal = crossProduct(u1, u2);
         
         // // Add the normal to the normals array
-        mesh_normals[i1 * 3] += normal.x;
-        mesh_normals[i1 * 3 + 1] += normal.y;
-        mesh_normals[i1 * 3 + 2] += normal.z;
+        objects[MESH].normals[i1 * 3] += normal.x;
+        objects[MESH].normals[i1 * 3 + 1] += normal.y;
+        objects[MESH].normals[i1 * 3 + 2] += normal.z;
         
-        mesh_normals[i2 * 3] += normal.x;
-        mesh_normals[i2 * 3 + 1] += normal.y;
-        mesh_normals[i2 * 3 + 2] += normal.z;
+        objects[MESH].normals[i2 * 3] += normal.x;
+        objects[MESH].normals[i2 * 3 + 1] += normal.y;
+        objects[MESH].normals[i2 * 3 + 2] += normal.z;
         
-        mesh_normals[i3 * 3] += normal.x;
-        mesh_normals[i3 * 3 + 1] += normal.y;
-        mesh_normals[i3 * 3 + 2] += normal.z;
+        objects[MESH].normals[i3 * 3] += normal.x;
+        objects[MESH].normals[i3 * 3 + 1] += normal.y;
+        objects[MESH].normals[i3 * 3 + 2] += normal.z;
     }
         
     // Use maximum unsigned int as restart index
@@ -195,22 +194,22 @@ void Renderer::initializeMesh(Terrain *terrain)
 
     // Bind and fill the Vec buffer object
     glBindBuffer(GL_ARRAY_BUFFER, objects[MESH].vbo);
-    glBufferData(GL_ARRAY_BUFFER, mesh_vertices.size() * sizeof(float), mesh_vertices.data(), GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, objects[MESH].vertices.size() * sizeof(float), objects[MESH].vertices.data(), GL_STATIC_DRAW);
     glVertexPointer(3, GL_FLOAT, 0, 0);
 
     // Bind and fill the texture coordinate buffer object
     glBindBuffer(GL_ARRAY_BUFFER, objects[MESH].tbo);
-    glBufferData(GL_ARRAY_BUFFER, mesh_textures.size() * sizeof(float), mesh_textures.data(), GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, objects[MESH].textures.size() * sizeof(float), objects[MESH].textures.data(), GL_STATIC_DRAW);
     glTexCoordPointer(2, GL_FLOAT, 0, 0);
     
     // Bind and fill the normals buffer object
     glBindBuffer(GL_ARRAY_BUFFER, objects[MESH].nbo);
-    glBufferData(GL_ARRAY_BUFFER, mesh_normals.size() * sizeof(float), mesh_normals.data(), GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, objects[MESH].normals.size() * sizeof(float), objects[MESH].normals.data(), GL_STATIC_DRAW);
     glNormalPointer(GL_FLOAT, 0, 0);
     
     // Bind and fill indices buffer.
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, objects[MESH].ibo);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, mesh_indices.size() * sizeof(GLuint), mesh_indices.data(), GL_STATIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, objects[MESH].indices.size() * sizeof(GLuint), objects[MESH].indices.data(), GL_STATIC_DRAW);
 
     // Unbind everything
     glBindVertexArray(0);
@@ -261,16 +260,16 @@ void Renderer::initializeOrbit()
         {
             // Extract vertices
             aiVector3D Vec = mesh->mVertices[j];
-            sun_vertices.push_back(Vec.x);
-            sun_vertices.push_back(Vec.y - 15000);
-            sun_vertices.push_back(Vec.z);
+            objects[SUN].vertices.push_back(Vec.x);
+            objects[SUN].vertices.push_back(Vec.y - 15000);
+            objects[SUN].vertices.push_back(Vec.z);
 
             // Extract texture coordinates
             if (mesh->HasTextureCoords(0))
             {
                 aiVector3D texCoord = mesh->mTextureCoords[0][j];
-                sun_textures.push_back(texCoord.x);
-                sun_textures.push_back(texCoord.y);
+                objects[SUN].textures.push_back(texCoord.x);
+                objects[SUN].textures.push_back(texCoord.y);
             }
         }
 
@@ -282,9 +281,9 @@ void Renderer::initializeOrbit()
             // Assume triangular faces
             if (face.mNumIndices == 3)
             {
-                sun_indices.push_back(face.mIndices[0]);
-                sun_indices.push_back(face.mIndices[1]);
-                sun_indices.push_back(face.mIndices[2]);
+                objects[SUN].indices.push_back(face.mIndices[0]);
+                objects[SUN].indices.push_back(face.mIndices[1]);
+                objects[SUN].indices.push_back(face.mIndices[2]);
             }
         }
     }
@@ -301,17 +300,17 @@ void Renderer::initializeOrbit()
 
     // Bind and fill the Vec buffer object
     glBindBuffer(GL_ARRAY_BUFFER, objects[SUN].vbo);
-    glBufferData(GL_ARRAY_BUFFER, sun_vertices.size() * sizeof(float), sun_vertices.data(), GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, objects[SUN].vertices.size() * sizeof(float), objects[SUN].vertices.data(), GL_STATIC_DRAW);
     glVertexPointer(3, GL_FLOAT, 0, 0);
 
     // Bind and fill the texture coordinate buffer object
     glBindBuffer(GL_ARRAY_BUFFER, objects[SUN].tbo);
-    glBufferData(GL_ARRAY_BUFFER, sun_textures.size() * sizeof(float), sun_textures.data(), GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, objects[SUN].textures.size() * sizeof(float), objects[SUN].textures.data(), GL_STATIC_DRAW);
     glTexCoordPointer(2, GL_FLOAT, 0, 0);
     
     // Bind and fill indices buffer.
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, objects[SUN].ibo);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sun_indices.size() * sizeof(GLuint), sun_indices.data(), GL_STATIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, objects[SUN].indices.size() * sizeof(GLuint), objects[SUN].indices.data(), GL_STATIC_DRAW);
 
     // Unbind everything
     glBindVertexArray(0);
@@ -359,16 +358,16 @@ void Renderer::initializeOrbit()
         {
             // Extract vertices
             aiVector3D Vec = mesh->mVertices[j];
-            moon_vertices.push_back(Vec.x);
-            moon_vertices.push_back(Vec.y + 15000);
-            moon_vertices.push_back(Vec.z);
+            objects[MOON].vertices.push_back(Vec.x);
+            objects[MOON].vertices.push_back(Vec.y + 15000);
+            objects[MOON].vertices.push_back(Vec.z);
 
             // Extract texture coordinates
             if (mesh->HasTextureCoords(0))
             {
                 aiVector3D texCoord = mesh->mTextureCoords[0][j];
-                moon_textures.push_back(texCoord.x);
-                moon_textures.push_back(texCoord.y);
+                objects[MOON].textures.push_back(texCoord.x);
+                objects[MOON].textures.push_back(texCoord.y);
             }
         }
 
@@ -380,9 +379,9 @@ void Renderer::initializeOrbit()
             // Assume triangular faces
             if (face.mNumIndices == 3)
             {
-                moon_indices.push_back(face.mIndices[0]);
-                moon_indices.push_back(face.mIndices[1]);
-                moon_indices.push_back(face.mIndices[2]);
+                objects[MOON].indices.push_back(face.mIndices[0]);
+                objects[MOON].indices.push_back(face.mIndices[1]);
+                objects[MOON].indices.push_back(face.mIndices[2]);
             }
         }
     }
@@ -399,17 +398,17 @@ void Renderer::initializeOrbit()
 
     // Bind and fill the Vec buffer object
     glBindBuffer(GL_ARRAY_BUFFER, objects[MOON].vbo);
-    glBufferData(GL_ARRAY_BUFFER, moon_vertices.size() * sizeof(float), moon_vertices.data(), GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, objects[MOON].vertices.size() * sizeof(float), objects[MOON].vertices.data(), GL_STATIC_DRAW);
     glVertexPointer(3, GL_FLOAT, 0, 0);
 
     // Bind and fill the texture coordinate buffer object
     glBindBuffer(GL_ARRAY_BUFFER, objects[MOON].tbo);
-    glBufferData(GL_ARRAY_BUFFER, moon_textures.size() * sizeof(float), moon_textures.data(), GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, objects[MOON].textures.size() * sizeof(float), objects[MOON].textures.data(), GL_STATIC_DRAW);
     glTexCoordPointer(2, GL_FLOAT, 0, 0);
 
     // Bind and fill indices buffer.
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, objects[MOON].ibo);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, moon_indices.size() * sizeof(GLuint), moon_indices.data(), GL_STATIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, objects[MOON].indices.size() * sizeof(GLuint), objects[MOON].indices.data(), GL_STATIC_DRAW);
 
     // Unbind everything
     glBindVertexArray(0);
@@ -495,16 +494,16 @@ void Renderer::initializeSkydome()
         {
             // Extract vertices
             aiVector3D Vec = mesh->mVertices[j];
-            skydome_vertices.push_back(Vec.x);
-            skydome_vertices.push_back(Vec.y);
-            skydome_vertices.push_back(Vec.z);
+            objects[SKYDOME].vertices.push_back(Vec.x);
+            objects[SKYDOME].vertices.push_back(Vec.y);
+            objects[SKYDOME].vertices.push_back(Vec.z);
 
             // Extract texture coordinates
             if (mesh->HasTextureCoords(0))
             {
                 aiVector3D texCoord = mesh->mTextureCoords[0][j];
-                skydome_textures.push_back(texCoord.y);
-                skydome_textures.push_back(texCoord.x);
+                objects[SKYDOME].textures.push_back(texCoord.y);
+                objects[SKYDOME].textures.push_back(texCoord.x);
             }
         }
 
@@ -516,9 +515,9 @@ void Renderer::initializeSkydome()
             // Assume triangular faces
             if (face.mNumIndices == 3)
             {
-                skydome_indices.push_back(face.mIndices[0]);
-                skydome_indices.push_back(face.mIndices[1]);
-                skydome_indices.push_back(face.mIndices[2]);
+                objects[SKYDOME].indices.push_back(face.mIndices[0]);
+                objects[SKYDOME].indices.push_back(face.mIndices[1]);
+                objects[SKYDOME].indices.push_back(face.mIndices[2]);
             }
         }
     }
@@ -536,17 +535,17 @@ void Renderer::initializeSkydome()
 
     // Bind and fill the Vec buffer object
     glBindBuffer(GL_ARRAY_BUFFER, objects[SKYDOME].vbo);
-    glBufferData(GL_ARRAY_BUFFER, skydome_vertices.size() * sizeof(float), skydome_vertices.data(), GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, objects[SKYDOME].vertices.size() * sizeof(float), objects[SKYDOME].vertices.data(), GL_STATIC_DRAW);
     glVertexPointer(3, GL_FLOAT, 0, 0);
     
     // Bind and fill the texture coordinate buffer object
     glBindBuffer(GL_ARRAY_BUFFER, objects[SKYDOME].tbo);
-    glBufferData(GL_ARRAY_BUFFER, skydome_textures.size() * sizeof(float), skydome_textures.data(), GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, objects[SKYDOME].textures.size() * sizeof(float), objects[SKYDOME].textures.data(), GL_STATIC_DRAW);
     glTexCoordPointer(2, GL_FLOAT, 0, 0);
 
     // Bind and fill the index buffer object
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, objects[SKYDOME].ibo);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, skydome_indices.size() * sizeof(unsigned int), skydome_indices.data(), GL_STATIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, objects[SKYDOME].indices.size() * sizeof(unsigned int), objects[SKYDOME].indices.data(), GL_STATIC_DRAW);
 
     // Unbind everything
     glBindVertexArray(0);
@@ -930,7 +929,7 @@ void Renderer::drawMesh(int mesh_multiplier)
     if(mesh_multiplier == 0)
     {
         glEnable(GL_PRIMITIVE_RESTART);                                                       // Enable primitive restart
-        glDrawElements(GL_TRIANGLE_STRIP, instance->mesh_indices.size(), GL_UNSIGNED_INT, 0); // Draw the triangles
+        glDrawElements(GL_TRIANGLE_STRIP, instance->objects[MESH].indices.size(), GL_UNSIGNED_INT, 0); // Draw the triangles
         glDisable(GL_PRIMITIVE_RESTART);
     }
     else
@@ -942,13 +941,13 @@ void Renderer::drawMesh(int mesh_multiplier)
             for (int j = -mesh_multiplier; j <= mesh_multiplier; j++)
             {
                 // Create a temporary vector for updated Vec positions
-                std::vector<float> updated_vertices(instance->mesh_vertices.size());
+                std::vector<float> updated_vertices(instance->objects[MESH].vertices.size());
                 
-                for (size_t k = 0; k < instance->mesh_vertices.size(); k += 3)
+                for (size_t k = 0; k < instance->objects[MESH].vertices.size(); k += 3)
                 {
-                    updated_vertices[k] = instance->mesh_vertices[k] + world_dim*i;         // Update x coordinate
-                    updated_vertices[k + 1] = instance->mesh_vertices[k + 1];               // Keep y coordinate unchanged
-                    updated_vertices[k + 2] = instance->mesh_vertices[k + 2] + world_dim*j; // Update z coordinate
+                    updated_vertices[k] = instance->objects[MESH].vertices[k] + world_dim*i;         // Update x coordinate
+                    updated_vertices[k + 1] = instance->objects[MESH].vertices[k + 1];               // Keep y coordinate unchanged
+                    updated_vertices[k + 2] = instance->objects[MESH].vertices[k + 2] + world_dim*j; // Update z coordinate
                 }
                 
                 // Bind the Vec buffer object
@@ -958,7 +957,7 @@ void Renderer::drawMesh(int mesh_multiplier)
                 glBufferData(GL_ARRAY_BUFFER, updated_vertices.size() * sizeof(float), updated_vertices.data(), GL_STATIC_DRAW);
                 
                 glEnable(GL_PRIMITIVE_RESTART);                                                       // Enable primitive restart
-                glDrawElements(GL_TRIANGLE_STRIP, instance->mesh_indices.size(), GL_UNSIGNED_INT, 0); // Draw the triangles
+                glDrawElements(GL_TRIANGLE_STRIP, instance->objects[MESH].indices.size(), GL_UNSIGNED_INT, 0); // Draw the triangles
                 glDisable(GL_PRIMITIVE_RESTART);
             }
         }
@@ -992,7 +991,7 @@ void Renderer::drawOrbit()
         glEnableClientState(GL_VERTEX_ARRAY);
         glEnableClientState(GL_TEXTURE_COORD_ARRAY);
 
-        glDrawElements(GL_TRIANGLE_STRIP, instance->sun_indices.size(), GL_UNSIGNED_INT, 0); // Draw the triangles
+        glDrawElements(GL_TRIANGLE_STRIP, instance->objects[SUN].indices.size(), GL_UNSIGNED_INT, 0); // Draw the triangles
         
         glDisableClientState(GL_VERTEX_ARRAY);
         glDisableClientState(GL_TEXTURE_COORD_ARRAY);
@@ -1018,7 +1017,7 @@ void Renderer::drawOrbit()
         glEnableClientState(GL_VERTEX_ARRAY);
         glEnableClientState(GL_TEXTURE_COORD_ARRAY);
 
-        glDrawElements(GL_TRIANGLE_STRIP, instance->moon_indices.size(), GL_UNSIGNED_INT, 0); // Draw the triangles
+        glDrawElements(GL_TRIANGLE_STRIP, instance->objects[MOON].indices.size(), GL_UNSIGNED_INT, 0); // Draw the triangles
         
         glDisableClientState(GL_VERTEX_ARRAY);
         glDisableClientState(GL_TEXTURE_COORD_ARRAY);
@@ -1043,13 +1042,13 @@ void Renderer::drawSkydome()
     
     // Draw the skydome with blending enabled
     glBindTexture(GL_TEXTURE_2D, instance->objects[SKYDOME].texture);
-    glDrawElements(GL_TRIANGLES, instance->skydome_indices.size(), GL_UNSIGNED_INT, 0);
+    glDrawElements(GL_TRIANGLES, instance->objects[SKYDOME].indices.size(), GL_UNSIGNED_INT, 0);
     
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     
     glBindTexture(GL_TEXTURE_2D, instance->objects[SKYDOME].blend_texture);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, instance->night_texture.cols, instance->night_texture.rows, 0, GL_BGRA, GL_UNSIGNED_BYTE, instance->night_texture.data);
-    glDrawElements(GL_TRIANGLES, instance->skydome_indices.size(), GL_UNSIGNED_INT, 0);
+    glDrawElements(GL_TRIANGLES, instance->objects[SKYDOME].indices.size(), GL_UNSIGNED_INT, 0);
     
     glDisableClientState(GL_VERTEX_ARRAY);
     glDisableClientState(GL_TEXTURE_COORD_ARRAY);
@@ -1070,7 +1069,7 @@ void Renderer::drawSplashscreen()
         // Save the previous projection matrix
         glMatrixMode(GL_PROJECTION);
         glPushMatrix();
-
+        
         // Set the projection matrix to orthographic
         float width = glutGet(GLUT_WINDOW_WIDTH);
         float height = glutGet(GLUT_WINDOW_HEIGHT);
