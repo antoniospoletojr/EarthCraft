@@ -61,19 +61,19 @@ private:
     
     cv::VideoCapture menu_clips[6];
     cv::Mat menu_frame;
-
+    
     cv::Mat day_texture;
     cv::Mat night_texture;
     
-    float time = 12.0f; // time variable used to track time of the day and apply corresponding rotation to the sun and moon
-
+    float time = 180.0f; // time variable used to track time of the day and apply corresponding rotation to the sun and moon
+    
     void initializeOrbit();
     void initializeSkydome();
     void initializeSplashscreen();
     void initializeCanvas();
 
     void cycleDayNight();
-
+    
     static void drawMesh();
     static void drawOrbit();
     static void drawSkydome();
@@ -81,6 +81,7 @@ private:
     static void drawCanvas();
     static void drawSketch(short current_canvas);
     static void drawTime();
+    static void renderLight();
 
     static void timerCallback(int value);
     static void draw();

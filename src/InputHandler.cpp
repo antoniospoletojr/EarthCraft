@@ -42,7 +42,7 @@ void InputHandler::generate()
     std::thread inference_thread([](Inference *inference) { inference->predict(); }, instance->inference);
     inference_thread.join();
     
-    std::thread terrain_thread([](Terrain *terrain) { terrain->initialize(2, 1); }, instance->terrain);
+    std::thread terrain_thread([](Terrain *terrain) { terrain->initialize(WORLD_SCALE, TEXTURE_SCALE); }, instance->terrain);
     terrain_thread.join();
     
     instance->keys[13] = true;
@@ -124,7 +124,7 @@ void InputHandler::handleKeyboard()
             renderer->current_menu_page  = -1;
         else
             renderer->current_menu_page++;
-
+        
         printf(COLOR_MAGENTA "Entering page %d\n" COLOR_RESET, renderer->current_menu_page);
         fflush(stdout);
         
@@ -165,12 +165,11 @@ void InputHandler::handleKeyboard()
             case RENDERING_SCREEN:
                 generation_thread.join();
                 instance->camera->setTerrain(instance->terrain);
-                instance->renderer->initializeMesh(instance->terrain, 1);
+                instance->renderer->initializeMesh(instance->terrain, REPLICATION_FACTOR);
                 instance->sound_manager->playSuccessSound();
                 instance->sound_manager->playBackgroundMusic();
                 int bound = instance->terrain->getWorldDim()/2;
                 camera->setPosition(0, 1500, bound);
-                glEnable(GL_LIGHTING);
                 break;
         }
         keys[13] = false;

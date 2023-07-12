@@ -189,9 +189,10 @@ void Terrain::getInfo()
     printf("__________________________________________\n");
     printf("Heightmap size: {%d}x{%d}\n", this->dim, this->dim);
     printf("World scale: %f\n", this->world_scale);
-    printf("Texture scale: %f\n", this->texture_scale);
     printf("World dim: %f\n", this->dim * this->world_scale);
     printf("Height scale: %f\n", 10 + log10(this->world_scale));
+    printf("Texture scale: %f\n", this->texture_scale);
+    printf("Texture size: {%d}x{%d}\n", this->texture.rows, this->texture.cols);
     printf("Min x: %f, Max x: %f\n", this->bounds.min_x, this->bounds.max_x);
     printf("Min y: %f, Max y: %f\n", this->bounds.min_y, this->bounds.max_y);
     printf("Min z: %f, Max z: %f\n", this->bounds.min_z, this->bounds.max_z);

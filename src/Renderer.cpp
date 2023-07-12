@@ -54,15 +54,13 @@ void Renderer::initializeMesh(Terrain *terrain, int mesh_multiplier)
     this->terrain->getInfo();
     // Retrieve the map
     Vec3<float> *map = this->terrain->getMap();
-    
     // Load skydome texture image
     cv::Mat mesh_texture = this->terrain->getTexture();
-    printf("Mesh texture size: %d x %d\n", mesh_texture.cols, mesh_texture.rows);
-    fflush(stdout);
-
     // Get the dimension of the map, useful for allocations
     int dim = this->terrain->getDim();
-    
+    // Get the world dimension of the map, useful for texture mapping
+    float world_dim = this->terrain->getWorldDim();
+
     // Generate and bind a texture object
     glGenTextures(1, &objects[MESH].texture);
     glBindTexture(GL_TEXTURE_2D, objects[MESH].texture);
@@ -177,7 +175,6 @@ void Renderer::initializeMesh(Terrain *terrain, int mesh_multiplier)
     // If mesh_multiplier is greater than 0, the mesh will be replicated
     if (mesh_multiplier>0)
     {
-        float world_dim = this->terrain->getWorldDim();
         // Create a temporary vector for updated vertex positions
         std::vector<GLfloat> updated_vertices, updated_normals, updated_textures;
         std::vector<GLuint> updated_indices;
@@ -289,7 +286,7 @@ void Renderer::initializeOrbit()
             // Extract vertices
             aiVector3D Vec = mesh->mVertices[j];
             objects[SUN].vertices.push_back(Vec.x);
-            objects[SUN].vertices.push_back(Vec.y - 15000);
+            objects[SUN].vertices.push_back(Vec.y - 25000);
             objects[SUN].vertices.push_back(Vec.z);
 
             // Extract texture coordinates
@@ -387,7 +384,7 @@ void Renderer::initializeOrbit()
             // Extract vertices
             aiVector3D Vec = mesh->mVertices[j];
             objects[MOON].vertices.push_back(Vec.x);
-            objects[MOON].vertices.push_back(Vec.y + 15000);
+            objects[MOON].vertices.push_back(Vec.y + 25000);
             objects[MOON].vertices.push_back(Vec.z);
 
             // Extract texture coordinates
@@ -949,10 +946,11 @@ void Renderer::drawMesh()
     glEnableClientState(GL_TEXTURE_COORD_ARRAY);
     glEnableClientState(GL_NORMAL_ARRAY);
     
-    GLfloat diffuse_material[] = {0.7, 0.7f, 0.7f, 1.0f}; // Warm color for diffuse reflection
+    GLfloat diffuse_material[] = {1.f, 0.9f, 0.8f, 1.0f}; // Warm color for diffuse reflection
     glMaterialfv(GL_FRONT, GL_DIFFUSE, diffuse_material);
     
-    GLfloat ambient_material[] = {0.1, 0.1, 0.1, 1.0f};
+    float ambient_light = (1 - std::abs(static_cast<float>(instance->time) / 360.0f - 0.5f))*0.2f;
+    GLfloat ambient_material[] = {ambient_light, ambient_light, ambient_light, 1.0f};
     glMaterialfv(GL_FRONT, GL_AMBIENT, ambient_material);
     
     glEnable(GL_PRIMITIVE_RESTART);                                                                 // Enable primitive restart
@@ -974,6 +972,7 @@ void Renderer::drawOrbit()
     glMaterialfv(GL_FRONT, GL_AMBIENT, ambient_material);
 
     // Draw the sun
+    glMatrixMode(GL_MODELVIEW);
     glPushMatrix();
         glRotatef(instance->time, 0, 0, 1);
         
@@ -998,8 +997,8 @@ void Renderer::drawOrbit()
     glPopMatrix();
     
     // Draw the moon
+    glMatrixMode(GL_MODELVIEW);
     glPushMatrix();
-        glMatrixMode(GL_MODELVIEW);
 
         glRotatef(instance->time, 0, 0, 1);
 
@@ -1305,6 +1304,38 @@ void Renderer::drawTime()
     glMatrixMode(GL_MODELVIEW);
 }
 
+void Renderer::renderLight()
+{
+    static float diffuse_light_y = instance->terrain->getWorldDim()/2 * (REPLICATION_FACTOR*2 + 1);
+
+    GLfloat ambient_light_position[4] = {0.0f, 1.0f, 0.0f, 0.0f};
+    glLightfv(GL_LIGHT1, GL_POSITION, ambient_light_position);
+    
+    glMatrixMode(GL_MODELVIEW);
+    glPushMatrix();
+        // Draw the light source
+        GLfloat diffuse_light_position[4];
+        // Initialize the light position to the sun's position
+        diffuse_light_position[0] = 0;
+        diffuse_light_position[1] = diffuse_light_y;
+        diffuse_light_position[2] = 0;
+        diffuse_light_position[3] = 1;
+
+        GLfloat spot_direction[3] = {0.0f, -1.0f, 0.0f};
+        glLightfv(GL_LIGHT0, GL_SPOT_DIRECTION, spot_direction);
+        
+        GLfloat cutoff_angle = 90.0f;
+        glLightf(GL_LIGHT0, GL_SPOT_CUTOFF, cutoff_angle);
+
+        GLfloat exponent_value = 1.f;
+        glLightf(GL_LIGHT0, GL_SPOT_EXPONENT, exponent_value);
+
+        glRotatef(instance->time + 180, 0, 0, 1);
+        glLightfv(GL_LIGHT0, GL_POSITION, diffuse_light_position);
+
+        glPopMatrix();
+}
+
 void Renderer::draw()
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -1324,13 +1355,13 @@ void Renderer::draw()
         instance->drawSplashscreen();
         break;
     case RENDERING_SCREEN:
-        // Draw a text in the middle saying "Time"
-        glDisable(GL_LIGHTING);
         instance->drawSkydome();
         instance->drawOrbit();
         instance->drawTime();
         glEnable(GL_LIGHTING);
         instance->drawMesh();
+        instance->renderLight();
+        glDisable(GL_LIGHTING);
         break;
     case LOADING_SCREEN:
         instance->drawCanvas();
@@ -1358,21 +1389,6 @@ void Renderer::draw()
         instance->drawSketch(RIDGES);
         break;
     }
-    // Draw the light source
-    glMatrixMode(GL_MODELVIEW);
-    glPushMatrix();
-        glLoadIdentity();
-        glRotatef(instance->time, 0, 0, 1);
-        GLfloat light_position[4];
-        // Initialize the light position to the sun's position
-        light_position[0] = 0;
-        light_position[1] = -10000;
-        light_position[2] = 1;
-        light_position[3] = 1;
-        
-        glLightfv(GL_LIGHT0, GL_POSITION, light_position);
 
-        
-    glPopMatrix();
     glutSwapBuffers();
 }

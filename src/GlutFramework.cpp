@@ -49,37 +49,32 @@ void GlutFramework::initialize(int argc, char** argv)
     glEnable(GL_TEXTURE_2D);
     
     // Turn on OpenGL lighting.
-    glEnable(GL_LIGHT0);                                 // Enable particular light source.
+    glEnable(GL_LIGHT0);                                 // Enable spotlight diffuse light source.
+    glEnable(GL_LIGHT1);                                 // Enable directional ambient light source.
 
     // Light property vectors.
     float diffuse_light[] = {1.0, 0.9, 0.8, 1.0};
     float ambient_light[] = {1, 1, 1, 1.0};
     
     // Light properties.
-    glLightfv(GL_LIGHT0, GL_AMBIENT, ambient_light);
     glLightfv(GL_LIGHT0, GL_DIFFUSE, diffuse_light);
+    glLightfv(GL_LIGHT1, GL_AMBIENT, ambient_light);
+    
     //glLightfv(GL_LIGHT0, GL_SPECULAR, specular_light);
     
     //glLightModeli(GL_LIGHT_MODEL_LOCAL_VIEWER, GL_TRUE);
     //glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, GL_TRUE);
         
     // Set the cutoff angle to a larger value for wider light rays
-    // GLfloat cutoffAngle = 180.0f; // Example value
-    // glLightf(GL_LIGHT0, GL_SPOT_CUTOFF, cutoffAngle);
     
-    // GLfloat spotDirection[3] = {0.0f, -1.0f, 0.0f};
-    // glLightfv(GL_LIGHT0, GL_SPOT_DIRECTION, spotDirection);
-
-    // float constantAttenuation = 0.0f;
-    // float linearAttenuation = 0.0f;
-    // float quadraticAttenuation = 0.0f;
+    
+    // float constantAttenuation = 1.0f;
+    // float linearAttenuation = 1.0f;
+    // float quadraticAttenuation = 1.0f;
     
     // glLightf(GL_LIGHT0, GL_CONSTANT_ATTENUATION, constantAttenuation);
     // glLightf(GL_LIGHT0, GL_LINEAR_ATTENUATION, linearAttenuation);
     // glLightf(GL_LIGHT0, GL_QUADRATIC_ATTENUATION, quadraticAttenuation);
-    // // Set the exponent to a higher value for longer light rays
-    // GLfloat exponentValue = 30000.0f;  // Example value
-    // glLightf(GL_LIGHT0, GL_SPOT_EXPONENT, exponentValue);
 
     // Enable automatic normalization of surface normals to unit length
     glEnable(GL_NORMALIZE);

@@ -185,6 +185,14 @@ void Camera::update()
     gluLookAt(eyeX, eyeY, eyeZ, centerX, centerY, centerZ, upX, upY, upZ);
 }
 
+void Camera::getMatrix()
+{
+    GLdouble eyeX = position.x - sin(alfa);
+    GLdouble eyeY = position.y;
+    GLdouble eyeZ = position.z - cos(alfa);
+    glTranslatef(-eyeX, -eyeY, -eyeZ);
+}
+
 void Camera::setTerrain(Terrain *terrain)
 {
     this->terrain = terrain;
