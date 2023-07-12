@@ -801,22 +801,42 @@ void Renderer::takeSnapshot()
 void Renderer::cycleDayNight()
 {
     // Cycle the day/night cycle using the time variabl which sets the rotation for the orbit and the alpha value for the night texture
-    this->time += 2.f;
-    if (this->time > 360.0f)
-        this->time -= 360.0f;
+    this->time += 0.1f;
+    if (this->time > 24.f)
+        this->time -= 24.0f;
     
     // Calculate the alpha value for the night texture
-    float time_of_day = static_cast<float>(this->time) / 360.0f;
-    float alpha = (time_of_day < 0.5f) ? (1.0f - 2.0f * time_of_day) : ((time_of_day == 0.5f) ? 0.0f : (2.0f * time_of_day - 1.0f));
-    uchar alpha_byte = static_cast<uchar>(alpha * 255);
+    float normalized_time = static_cast<float>(this->time) / 24.0f;
+    uchar alpha = 0;
     
-    // Set the alpha value for the night texture
+    // If sunrise
+    if (normalized_time >= 0.25f && normalized_time < 0.33f)
+    {
+        alpha = static_cast<uchar>((1.0f - ((normalized_time - 0.25f) / 0.08f)) * 255);
+    }
+    // If day
+    else if (normalized_time >= 0.33f && normalized_time < 0.75f)
+    {
+        alpha = 0;
+    }
+    // If sunset
+    else if (normalized_time >= 0.75f && normalized_time < 0.83f)
+    {
+        alpha = static_cast<uchar>(((normalized_time - 0.75f) / 0.08f) * 255);
+    }
+    // If night
+    else
+    {
+        alpha = 255;
+    }
+    
+    // Set the alpha value for the night texture such that it is transparent during the day and opaque during the night
     for (int y = 0; y < instance->night_texture.rows; ++y)
     {
         cv::Vec4b *pixelRow = instance->night_texture.ptr<cv::Vec4b>(y);
         for (int x = 0; x < instance->night_texture.cols; ++x)
         {
-            pixelRow[x][3] = alpha_byte; // Modify alpha value based on desired transparency
+            pixelRow[x][3] = alpha;
         }
     }
 }
@@ -946,10 +966,20 @@ void Renderer::drawMesh()
     glEnableClientState(GL_TEXTURE_COORD_ARRAY);
     glEnableClientState(GL_NORMAL_ARRAY);
     
-    GLfloat diffuse_material[] = {1.f, 0.9f, 0.8f, 1.0f}; // Warm color for diffuse reflection
-    glMaterialfv(GL_FRONT, GL_DIFFUSE, diffuse_material);
+    // If daytime, use the diffuse
+    if (instance->time > 6 && instance->time < 18)
+    {
+        GLfloat diffuse_material[] = {1.f, 0.9f, 0.8f, 1.0f}; // Warm color for diffuse light
+        glMaterialfv(GL_FRONT, GL_DIFFUSE, diffuse_material);
+    }
+    else
+    {
+        GLfloat diffuse_material[] = {0.8f, 0.8f, 0.8f, 1.0f}; // Cold color for diffuse light
+        glMaterialfv(GL_FRONT, GL_DIFFUSE, diffuse_material);
+    }
+
     
-    float ambient_light = (1 - std::abs(static_cast<float>(instance->time) / 360.0f - 0.5f))*0.2f;
+    float ambient_light = (1 - std::abs(static_cast<float>(instance->time) / 24.f - 0.5f))*0.2f;
     GLfloat ambient_material[] = {ambient_light, ambient_light, ambient_light, 1.0f};
     glMaterialfv(GL_FRONT, GL_AMBIENT, ambient_material);
     
@@ -970,11 +1000,13 @@ void Renderer::drawOrbit()
 {
     GLfloat ambient_material[] = {1, 1, 1, 1.0f}; // Warm color for diffuse reflection
     glMaterialfv(GL_FRONT, GL_AMBIENT, ambient_material);
+    
+    float angle = instance->time/24.f*360.f;
 
     // Draw the sun
     glMatrixMode(GL_MODELVIEW);
     glPushMatrix();
-        glRotatef(instance->time, 0, 0, 1);
+        glRotatef(angle, 0, 0, 1);
         
         // Bind the sun texture
         glBindTexture(GL_TEXTURE_2D, instance->objects[SUN].texture);
@@ -1000,7 +1032,7 @@ void Renderer::drawOrbit()
     glMatrixMode(GL_MODELVIEW);
     glPushMatrix();
 
-        glRotatef(instance->time, 0, 0, 1);
+        glRotatef(angle, 0, 0, 1);
 
         // Bind the sun texture
         glBindTexture(GL_TEXTURE_2D, instance->objects[MOON].texture);
@@ -1278,7 +1310,7 @@ void Renderer::drawTime()
             glColor3f(1.0f, 1.0f, 1.0f); // White color
             
             // Convert the time to a string. Divide by 360 to normalize the time [0,1] and then multiply by to 24 hours, 60 minutes and 60 seconds.
-            int total_seconds = static_cast<int>(instance->time * 24.0f * 60.0f * 60.0f / 360.0f);
+            int total_seconds = static_cast<int>(instance->time * 60.0f * 60.0f);
             // Calculate hours, minutes, and seconds
             int hours = total_seconds / 3600;
             int minutes = (total_seconds % 3600) / 60;
@@ -1317,7 +1349,6 @@ void Renderer::renderLight()
         GLfloat diffuse_light_position[4];
         // Initialize the light position to the sun's position
         diffuse_light_position[0] = 0;
-        diffuse_light_position[1] = diffuse_light_y;
         diffuse_light_position[2] = 0;
         diffuse_light_position[3] = 1;
 
@@ -1329,8 +1360,23 @@ void Renderer::renderLight()
 
         GLfloat exponent_value = 1.f;
         glLightf(GL_LIGHT0, GL_SPOT_EXPONENT, exponent_value);
-
-        glRotatef(instance->time + 180, 0, 0, 1);
+        
+        if (instance->time > 6 && instance->time < 18)
+        {
+            float diffuse_light[] = {1.0, 0.9, 0.8, 1.0};
+            glLightfv(GL_LIGHT0, GL_DIFFUSE, diffuse_light);
+            diffuse_light_position[1] = diffuse_light_y;
+        }
+        else
+        {
+            float diffuse_light[] = {0.25, 0.5, 0.75, 1.0};
+            glLightfv(GL_LIGHT0, GL_DIFFUSE, diffuse_light);
+            diffuse_light_position[1] = -diffuse_light_y;
+        }
+        
+        
+        float angle = instance->time / 24.f * 360 + 180;
+        glRotatef(angle, 0, 0, 1);
         glLightfv(GL_LIGHT0, GL_POSITION, diffuse_light_position);
 
         glPopMatrix();

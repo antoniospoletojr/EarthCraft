@@ -65,7 +65,7 @@ private:
     cv::Mat day_texture;
     cv::Mat night_texture;
     
-    float time = 180.0f; // time variable used to track time of the day and apply corresponding rotation to the sun and moon
+    float time = 12.f; // time variable used to track time of the day and apply corresponding rotation to the sun and moon
     
     void initializeOrbit();
     void initializeSkydome();
