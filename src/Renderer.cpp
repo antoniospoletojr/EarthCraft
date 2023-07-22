@@ -1,5 +1,5 @@
 #include "Renderer.h"
-
+#include <fstream>
 
 using namespace std;
 
@@ -47,14 +47,14 @@ Renderer::~Renderer()
     Renderer::instance = nullptr;
 }
 
-void Renderer::initializeMesh(Terrain *terrain, int mesh_multiplier)
+void Renderer::initializeMesh(Terrain *terrain)
 {    
     this->terrain = terrain;
     // Print the map info
     this->terrain->getInfo();
     // Retrieve the map
     Vec3<float> *map = this->terrain->getMap();
-    // Load skydome texture image
+    // Load the mesh texture image
     cv::Mat mesh_texture = this->terrain->getTexture();
     // Get the dimension of the map, useful for allocations
     int dim = this->terrain->getDim();
@@ -91,7 +91,7 @@ void Renderer::initializeMesh(Terrain *terrain, int mesh_multiplier)
     objects[MESH].textures.clear();
     objects[MESH].normals.clear();
     
-    // Generate vertices and colors
+    // Generate vertices, textures and nomals vakues for the mesh
     for (int i = 0; i < dim; i++)
     {
         for (int j = 0; j < dim; j++)
@@ -102,7 +102,7 @@ void Renderer::initializeMesh(Terrain *terrain, int mesh_multiplier)
             
             objects[MESH].textures.push_back((float)i / dim);
             objects[MESH].textures.push_back((float)j / dim);
-            
+
             objects[MESH].normals.push_back(0.0f);
             objects[MESH].normals.push_back(0.0f);
             objects[MESH].normals.push_back(0.0f);
@@ -110,20 +110,25 @@ void Renderer::initializeMesh(Terrain *terrain, int mesh_multiplier)
     }
     
     // Generate indices for triangle strips
-    for (int z = 0; z < dim - 1; z++)
+    for (int z = 0; z < dim - 1; z++)               // 449
     {
         // Start a new strip
         objects[MESH].indices.push_back(z * dim);
-        for (int x = 0; x < dim; x++)
+        for (int x = 0; x < dim; x++)               // 902
         {
             // Add vertices to strip
-            objects[MESH].indices.push_back(z * dim + x);
             objects[MESH].indices.push_back((z + 1) * dim + x);
+            objects[MESH].indices.push_back(z * dim + x);
         }
         // Use primitive restart to start a new strip
         objects[MESH].indices.push_back(0xFFFFFFFFu);
     }
     
+    // Determine indices matrix sizes, useful for later calculations
+    int indices_rows = dim - 1;
+    int indices_columns = objects[MESH].indices.size() / indices_rows;
+    // Indices is, without considering mesh replication, 449(rows)x902(columns)
+
     // Calculate normals
     for (int i = 0; i < objects[MESH].indices.size()-3; i += 2)
     {    
@@ -172,46 +177,16 @@ void Renderer::initializeMesh(Terrain *terrain, int mesh_multiplier)
         objects[MESH].normals[i3 * 3 + 2] += normal.z;
     }
     
-    // If mesh_multiplier is greater than 0, the mesh will be replicated
-    if (mesh_multiplier>0)
-    {
-        // Create a temporary vector for updated vertex positions
-        std::vector<GLfloat> updated_vertices, updated_normals, updated_textures;
-        std::vector<GLuint> updated_indices;
-
-        for (int i = -mesh_multiplier; i <= mesh_multiplier; i++)
-        {
-            for (int j = -mesh_multiplier; j <= mesh_multiplier; j++)
-            {
-                for (size_t k = 0; k < instance->objects[MESH].vertices.size(); k += 3)
-                {
-                    updated_vertices.push_back(instance->objects[MESH].vertices[k] + world_dim * i);        // Update x coordinate
-                    updated_vertices.push_back(instance->objects[MESH].vertices[k + 1]);                    // Keep y coordinate unchanged
-                    updated_vertices.push_back(instance->objects[MESH].vertices[k + 2] + world_dim * j);    // Update z coordinate
-
-                    updated_normals.push_back(instance->objects[MESH].normals[k]);                          // Keep x coordinate unchanged
-                    updated_normals.push_back(instance->objects[MESH].normals[k + 1]);                      // Keep y coordinate unchanged
-                    updated_normals.push_back(instance->objects[MESH].normals[k + 2]);                      // Keep z coordinate unchanged
-                }
-
-                for (size_t k = 0; k < instance->objects[MESH].textures.size(); k += 2)
-                {
-                    updated_textures.push_back(instance->objects[MESH].textures[k]);                        // Keep x coordinate unchanged
-                    updated_textures.push_back(instance->objects[MESH].textures[k + 1]);                    // Keep y coordinate unchanged
-                }
-
-                short step_number = (i + mesh_multiplier) * (mesh_multiplier * 2 + 1) + (j + mesh_multiplier);
-                for (size_t k = 0; k < instance->objects[MESH].indices.size(); k++)
-                {
-                    updated_indices.push_back(instance->objects[MESH].indices[k] + instance->objects[MESH].vertices.size()/3 * step_number);
-                }
-            }
-        }
-        objects[MESH].vertices = updated_vertices;
-        objects[MESH].normals = updated_normals;
-        objects[MESH].textures = updated_textures;
-        objects[MESH].indices = updated_indices;
-    }
+    
+    printf("Mesh vertices: %lu\n", objects[MESH].vertices.size()/3);
+    printf("Mesh normals: %lu\n", objects[MESH].normals.size()/3);
+    printf("Mesh textures: %lu\n", objects[MESH].textures.size()/2);
+    printf("Mesh indices: %lu\n", objects[MESH].indices.size()); // 404998
+    printf("Mesh indices rows: %d\n", indices_rows); // 449
+    printf("Mesh indices columns: %d\n", indices_columns); // 902
+    
+    instance->quadtree = new QuadTree(0, indices_columns, 0, indices_rows);
+    instance->quadtree->build(objects[MESH].indices);
             
     // Use maximum unsigned int as restart index
     glEnable(GL_PRIMITIVE_RESTART);
@@ -977,14 +952,21 @@ void Renderer::drawMesh()
         GLfloat diffuse_material[] = {0.8f, 0.8f, 0.8f, 1.0f}; // Cold color for diffuse light
         glMaterialfv(GL_FRONT, GL_DIFFUSE, diffuse_material);
     }
-
+    
+    // FRUSTUM CULLING
+    Vec3<float> position = instance->camera->getPosition();
+    Vec3<float> direction = instance->camera->getDirection();
+    vector<GLuint> *indices = instance->quadtree->frustumCull(position, direction);
+    
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, instance->objects[MESH].ibo);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices->size() * sizeof(unsigned int), indices->data(), GL_DYNAMIC_DRAW);
     
     float ambient_light = (1 - std::abs(static_cast<float>(instance->time) / 24.f - 0.5f))*0.2f;
     GLfloat ambient_material[] = {ambient_light, ambient_light, ambient_light, 1.0f};
     glMaterialfv(GL_FRONT, GL_AMBIENT, ambient_material);
     
     glEnable(GL_PRIMITIVE_RESTART);                                                                 // Enable primitive restart
-    glDrawElements(GL_QUAD_STRIP, instance->objects[MESH].indices.size(), GL_UNSIGNED_INT, 0);  // Draw the triangles
+    glDrawElements(GL_QUAD_STRIP, indices->size(), GL_UNSIGNED_INT, 0);      // Draw the triangles
     glDisable(GL_PRIMITIVE_RESTART);
     
     glDisableClientState(GL_VERTEX_ARRAY);
@@ -1071,6 +1053,7 @@ void Renderer::drawSkydome()
     glBindTexture(GL_TEXTURE_2D, instance->objects[SKYDOME].texture);
     glDrawElements(GL_TRIANGLES, instance->objects[SKYDOME].indices.size(), GL_UNSIGNED_INT, 0);
     
+    // Enable blending
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     
     glBindTexture(GL_TEXTURE_2D, instance->objects[SKYDOME].blend_texture);
@@ -1339,7 +1322,7 @@ void Renderer::drawTime()
 void Renderer::renderLight()
 {
     // Set the light position based on the mesh size
-    static float diffuse_light_y = instance->terrain->getWorldDim()/2 * (REPLICATION_FACTOR*2 + 1);
+    static float diffuse_light_y = instance->terrain->getWorldDim()/2;
 
     GLfloat ambient_light_position[4] = {0.0f, 1.0f, 0.0f, 0.0f};
     glLightfv(GL_LIGHT1, GL_POSITION, ambient_light_position);
@@ -1358,7 +1341,7 @@ void Renderer::renderLight()
         
         GLfloat cutoff_angle = 90.0f;
         glLightf(GL_LIGHT0, GL_SPOT_CUTOFF, cutoff_angle);
-
+        
         GLfloat exponent_value = 1.f;
         glLightf(GL_LIGHT0, GL_SPOT_EXPONENT, exponent_value);
         

@@ -14,6 +14,7 @@
 #include "random"
 
 #include "Camera.h"
+#include "QuadTree.h"
 #include "Terrain.h"
 #include "Constants.h"
 #include "Vec.hpp"
@@ -50,12 +51,13 @@ public:
     void sketch(float x, float y);
     void resetSketches();
     void takeSnapshot();
-    void initializeMesh(Terrain *terrain, int mesh_multiplier);
+    void initializeMesh(Terrain *terrain);
 
 private:
     static Renderer *instance;
     Camera *camera;
     Terrain *terrain;
+    QuadTree *quadtree;
     
     std::vector<Object> objects;
     
@@ -71,7 +73,7 @@ private:
     void initializeSkydome();
     void initializeSplashscreen();
     void initializeCanvas();
-
+    
     void cycleDayNight();
     
     static void drawMesh();

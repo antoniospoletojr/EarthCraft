@@ -37,7 +37,6 @@ void Terrain::loadMap()
 {
     // Load the terrain heightmap using opencv library
     cv::Mat image = cv::imread("./assets/sketches/heightmap.png", cv::IMREAD_GRAYSCALE);
-    //cv::Mat smoothedImage;
     cv::GaussianBlur(image, image, cv::Size(5, 5), 0); // Adjust the kernel size (5, 5) as needed
     
     unsigned char* data = image.data;
@@ -70,9 +69,9 @@ void Terrain::loadMap()
         for (int j = 0; j < this->dim; j++)
         {
             // Set the vertices
-            this->map[i * dim + j].x = ((i - dim / 2) * this->world_scale);
-            this->map[i * dim + j].y = (data[(j * dim + i)] * (15 + log(this->world_scale)));
-            this->map[i * dim + j].z = ((j - dim / 2) * this->world_scale);
+            this->map[i * dim + j].x = ((j - (dim / 2)) * this->world_scale);
+            this->map[i * dim + j].y = (data[(i * dim + j)] * this->world_scale);
+            this->map[i * dim + j].z = ((i - (dim / 2)) * this->world_scale);
             
             // Update the bounds based on the current Vec
             bounds.min_x = (map[i * dim + j].x < bounds.min_x) ? map[i * dim + j].x : bounds.min_x;
@@ -90,13 +89,13 @@ void Terrain::loadTexture()
     short original_texture_size = tiles[0].texture.rows;
     // Allocate memory for the opencv texture map based on texture_1 size
     this->texture.create(original_texture_size * texture_scale, original_texture_size * texture_scale, CV_8UC3);
-    float terrain_texture_ratio = (float)this->dim / (float) texture.rows;
+    float terrain_texture_ratio = (float)(this->dim / (float) texture.rows);
     
     int i_map;
     int j_map;
     float normalized_height;
     float weights[5];
-
+    
     // Cycle through the texture which must be generated
     for (int i = 0; i < this->texture.cols; i++)
     {
@@ -104,8 +103,8 @@ void Terrain::loadTexture()
         {
             i_map = (int)floor(i * terrain_texture_ratio);
             j_map = (int)floor(j * terrain_texture_ratio);
-            normalized_height = (float) (this->map[j_map * dim + i_map].y / this->bounds.max_y);
-            
+            normalized_height = (float)(this->map[j_map * this->dim + i_map].y / this->bounds.max_y);
+
             for (short k = 0; k < 5; k++)
             {
                 if (normalized_height >= this->tiles[k].region.low && normalized_height <= this->tiles[k].region.high)
@@ -177,9 +176,9 @@ float Terrain::getWorldDim()
     return dim * world_scale;
 }
 
-float Terrain::getMaxHeight()
+TerrainBounds* Terrain::getBounds()
 {
-    return this->bounds.max_y;
+    return &this->bounds;
 }
 
 // Print terrain info
@@ -205,15 +204,15 @@ void Terrain::getInfo()
 bool Terrain::checkCollision(Vec3<float> position)
 {
     // Get the i,j coordinates of the height map
-    int i = ((static_cast<int>(std::floor(position.x / this->world_scale + this->dim / 2)) % this->dim) + this->dim) % this->dim;
-    int j = ((static_cast<int>(std::floor(position.z / this->world_scale + this->dim / 2)) % this->dim) + this->dim) % this->dim;
+    int i = ((static_cast<int>(std::floor(position.z / this->world_scale + this->dim / 2)) % this->dim) + this->dim) % this->dim;
+    int j = ((static_cast<int>(std::floor(position.x / this->world_scale + this->dim / 2)) % this->dim) + this->dim) % this->dim;
     
     // Get the height of the terrain at the i,j coordinates
     float height = this->map[i * this->dim + j].y;
 
     // Check if the height of the terrain is greater than the height of the object (add an offset for visual purposes)
     if (height > position.y-50)
-        return true;
-    
+        return false;
+
     return false;
 }

@@ -30,9 +30,10 @@ class Camera
         void rotateLeftRight(GLdouble delta);
         void rotateUpDown(GLdouble delta);
         void update();
-        
+
+        Vec3<float> getDirection();
+        Vec3<float> getPosition();
         void setTerrain(Terrain *terrain);
-        void getMatrix();
     
     private:
         Vec3<float> position;

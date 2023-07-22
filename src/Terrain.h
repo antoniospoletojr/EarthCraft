@@ -43,13 +43,14 @@ public:
 	
 	int getDim();
 	float getWorldDim();
-	float getMaxHeight();
+	TerrainBounds* getBounds();
 	void getInfo();
 	bool checkCollision(Vec3<float> position);
 
 private:
 	int dim;
 	float world_scale, texture_scale;
+	short replication_factor;
 	TerrainBounds bounds;
 
 	Vec3<float> *map;

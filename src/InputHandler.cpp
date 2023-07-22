@@ -165,11 +165,11 @@ void InputHandler::handleKeyboard()
             case RENDERING_SCREEN:
                 generation_thread.join();
                 instance->camera->setTerrain(instance->terrain);
-                instance->renderer->initializeMesh(instance->terrain, REPLICATION_FACTOR);
+                instance->renderer->initializeMesh(instance->terrain);
                 instance->sound_manager->playSuccessSound();
                 instance->sound_manager->playBackgroundMusic();
                 int bound = instance->terrain->getWorldDim()/2;
-                camera->setPosition(0, 1500, bound);
+                camera->setPosition(0, 100, bound);
                 break;
         }
         keys[13] = false;

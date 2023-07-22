@@ -170,27 +170,48 @@ void Camera::rotateUpDown(GLdouble delta)
 void Camera::update()
 {
     // Explicitly set gluLookAt() parameters
-    GLdouble eyeX = position.x - sin(alfa);
-    GLdouble eyeY = position.y;
-    GLdouble eyeZ = position.z - cos(alfa);
+    GLdouble eye_x = position.x - sin(alfa);
+    GLdouble eye_y = position.y;
+    GLdouble eye_z = position.z - cos(alfa);
     
-    GLdouble centerX = position.x - LOS_DISTANCE * sin(alfa);
-    GLdouble centerY = position.y + beta;
-    GLdouble centerZ = position.z - LOS_DISTANCE * cos(alfa);
+    GLdouble center_x = position.x - LOS_DISTANCE * sin(alfa);
+    GLdouble center_y = position.y + beta;
+    GLdouble center_z = position.z - LOS_DISTANCE * cos(alfa);
     
-    GLdouble upX = 0.0;
-    GLdouble upY = 1.0;
-    GLdouble upZ = 0.0;
-
-    gluLookAt(eyeX, eyeY, eyeZ, centerX, centerY, centerZ, upX, upY, upZ);
+    GLdouble up_x = 0.0;
+    GLdouble up_y = 1.0;
+    GLdouble up_z = 0.0;
+    
+    Vec3 <float> eye = (Vec3<float>(eye_x, eye_y, eye_z));
+    Vec3 <float> center = (Vec3<float>(center_x, center_y, center_z));
+        
+    gluLookAt(eye_x, eye_y, eye_z, center_x, center_y, center_z, up_x, up_y, up_z);
 }
 
-void Camera::getMatrix()
+Vec3<float> Camera::getDirection()
 {
-    GLdouble eyeX = position.x - sin(alfa);
-    GLdouble eyeY = position.y;
-    GLdouble eyeZ = position.z - cos(alfa);
-    glTranslatef(-eyeX, -eyeY, -eyeZ);
+    Vec3<float> eye = (Vec3<float>(position.x - sin(alfa), position.y, position.z - cos(alfa)));
+    Vec3<float> center = (Vec3<float>(position.x - LOS_DISTANCE * sin(alfa), position.y + beta, position.z - LOS_DISTANCE * cos(alfa)));
+    Vec3<float> difference = normalize(subtract(center, eye));
+
+    return difference;
+}
+
+Vec3<float> Camera::getPosition()
+{
+    float min_x = terrain->getBounds()->min_x;
+    float max_x = terrain->getBounds()->max_x;
+    float min_z = terrain->getBounds()->min_z;
+    float max_z = terrain->getBounds()->max_z;
+    float min_y = terrain->getBounds()->min_y;
+    float max_y = terrain->getBounds()->max_y;
+    
+    Vec3<float> eye = (Vec3<float>(position.x - sin(alfa), position.y, position.z - cos(alfa)));
+
+    eye.x = (eye.x-min_x)/(max_x-min_x);
+    eye.y = (eye.y-min_y)/(max_y-min_y);
+    eye.z = (eye.z-min_z)/(max_z-min_z);
+    return eye;
 }
 
 void Camera::setTerrain(Terrain *terrain)
