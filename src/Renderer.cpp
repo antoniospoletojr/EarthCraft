@@ -1338,6 +1338,7 @@ void Renderer::drawTime()
 
 void Renderer::renderLight()
 {
+    // Set the light position based on the mesh size
     static float diffuse_light_y = instance->terrain->getWorldDim()/2 * (REPLICATION_FACTOR*2 + 1);
 
     GLfloat ambient_light_position[4] = {0.0f, 1.0f, 0.0f, 0.0f};
@@ -1361,12 +1362,14 @@ void Renderer::renderLight()
         GLfloat exponent_value = 1.f;
         glLightf(GL_LIGHT0, GL_SPOT_EXPONENT, exponent_value);
         
+        // If daytime, use the diffuse sunlight
         if (instance->time > 6 && instance->time < 18)
         {
             float diffuse_light[] = {1.0, 0.9, 0.8, 1.0};
             glLightfv(GL_LIGHT0, GL_DIFFUSE, diffuse_light);
             diffuse_light_position[1] = diffuse_light_y;
         }
+        // If nighttime, use the diffuse moonlight
         else
         {
             float diffuse_light[] = {0.25, 0.5, 0.75, 1.0};
