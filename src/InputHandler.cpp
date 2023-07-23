@@ -164,8 +164,12 @@ void InputHandler::handleKeyboard()
             
             case RENDERING_SCREEN:
                 generation_thread.join();
+                // Pass the terrain to the camera for collision detection
                 instance->camera->setTerrain(instance->terrain);
+                // Initialize the mesh
                 instance->renderer->initializeMesh(instance->terrain);
+                // Initialize the water
+                instance->renderer->initializeWater();
                 instance->sound_manager->playSuccessSound();
                 instance->sound_manager->playBackgroundMusic();
                 int bound = instance->terrain->getWorldDim()/2;

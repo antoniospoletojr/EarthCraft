@@ -20,7 +20,7 @@ Terrain::Terrain()
 // Destructor
 Terrain::~Terrain()
 {
-    delete[] map;
+    delete[] heightmap;
 }
 
 // Parametrized constructor
@@ -29,11 +29,12 @@ void Terrain::initialize(float world_scale, float texture_scale)
     this->world_scale = world_scale;
     this->texture_scale = texture_scale;
     
-    loadMap();
+    loadHeightmap();
+    loadWatermap();
     loadTexture();
 }
 
-void Terrain::loadMap()
+void Terrain::loadHeightmap()
 {
     // Load the terrain heightmap using opencv library
     cv::Mat image = cv::imread("./assets/sketches/heightmap.png", cv::IMREAD_GRAYSCALE);
@@ -51,7 +52,7 @@ void Terrain::loadMap()
     this->dim = image.rows;
 
     // Allocate memory for the height map
-    this->map = new Vec3<float>[this->dim * this->dim];
+    this->heightmap = new Vec3<float>[this->dim * this->dim];
     
     // Initialize the bounds struct
     this->bounds.min_x = FLT_MAX;
@@ -69,19 +70,99 @@ void Terrain::loadMap()
         for (int j = 0; j < this->dim; j++)
         {
             // Set the vertices
-            this->map[i * dim + j].x = ((j - (dim / 2)) * this->world_scale);
-            this->map[i * dim + j].y = (data[(i * dim + j)] * this->world_scale);
-            this->map[i * dim + j].z = ((i - (dim / 2)) * this->world_scale);
+            this->heightmap[i * dim + j].x = ((j - (dim / 2)) * this->world_scale);
+            this->heightmap[i * dim + j].y = (data[(i * dim + j)] * this->world_scale);
+            this->heightmap[i * dim + j].z = ((i - (dim / 2)) * this->world_scale);
             
             // Update the bounds based on the current Vec
-            bounds.min_x = (map[i * dim + j].x < bounds.min_x) ? map[i * dim + j].x : bounds.min_x;
-            bounds.max_x = (map[i * dim + j].x > bounds.max_x) ? map[i * dim + j].x : bounds.max_x;
-            bounds.min_y = (map[i * dim + j].y < bounds.min_y) ? map[i * dim + j].y : bounds.min_y;
-            bounds.max_y = (map[i * dim + j].y > bounds.max_y) ? map[i * dim + j].y : bounds.max_y;
-            bounds.min_z = (map[i * dim + j].z < bounds.min_z) ? map[i * dim + j].z : bounds.min_z;
-            bounds.max_z = (map[i * dim + j].z > bounds.max_z) ? map[i * dim + j].z : bounds.max_z;
+            bounds.min_x = (heightmap[i * dim + j].x < bounds.min_x) ? heightmap[i * dim + j].x : bounds.min_x;
+            bounds.max_x = (heightmap[i * dim + j].x > bounds.max_x) ? heightmap[i * dim + j].x : bounds.max_x;
+            bounds.min_y = (heightmap[i * dim + j].y < bounds.min_y) ? heightmap[i * dim + j].y : bounds.min_y;
+            bounds.max_y = (heightmap[i * dim + j].y > bounds.max_y) ? heightmap[i * dim + j].y : bounds.max_y;
+            bounds.min_z = (heightmap[i * dim + j].z < bounds.min_z) ? heightmap[i * dim + j].z : bounds.min_z;
+            bounds.max_z = (heightmap[i * dim + j].z > bounds.max_z) ? heightmap[i * dim + j].z : bounds.max_z;
         }
     }
+}
+
+// void bfs(cv::Mat &image, int row, int col, int label, cv::Mat &labeled_image)
+// {
+//     std::queue<std::pair<int, int>> pixel_queue;
+//     pixel_queue.push(std::make_pair(row, col));
+
+//     while (!pixel_queue.empty())
+//     {
+//         auto current_pixel = pixel_queue.front();
+//         pixel_queue.pop();
+
+//         int r = current_pixel.first;
+//         int c = current_pixel.second;
+        
+//         if (r < 0 || r >= image.rows || c < 0 || c >= image.cols || labeled_image.at<int>(r, c) != 0)
+//             continue;
+        
+//         labeled_image.at<int>(r, c) = label;
+//         pixel_queue.push(std::make_pair(r - 1, c));
+//         pixel_queue.push(std::make_pair(r + 1, c));
+//         pixel_queue.push(std::make_pair(r, c - 1));
+//         pixel_queue.push(std::make_pair(r, c + 1));
+//     }
+// }
+
+// // Function to find connected regions in a grayscale image using BFS
+// cv::Mat findConnectedRegions(const cv::Mat &image)
+// {
+//     cv::Mat labeled_image(image.size(), CV_32S, cv::Scalar(0));
+//     int label = 1;
+
+//     for (int row = 0; row < image.rows; row++)
+//     {
+//         for (int col = 0; col < image.cols; col++)
+//         {
+//             if (labeled_image.at<int>(row, col) == 0)
+//             {
+//                 bfs(image, row, col, label, labeled_image);
+//                 label++;
+//             }
+//         }
+//     }
+
+//     return labeled_image;
+// }
+
+// // Function to suppress adjacent regions based on pixel values
+// void suppressAdjacentRegions(cv::Mat &image, const std::vector<std::vector<cv::Point>> &contours)
+// {
+//     cv::Mat mask(image.size(), CV_8UC1, cv::Scalar(0));
+
+//     // Create a mask for each contour
+//     for (size_t i = 0; i < contours.size(); i++)
+//     {
+//         cv::drawContours(mask, contours, static_cast<int>(i), cv::Scalar(255), -1);
+//     }
+
+//     // Suppress regions adjacent to regions with lower pixel values
+//     cv::Mat suppressedImage;
+//     cv::max(image, suppressedImage, mask);
+
+//     image = suppressedImage;
+// }
+
+void Terrain::loadWatermap()
+{
+//     // Load the terrain heightmap using opencv library
+//     cv::Mat image = cv::imread("./assets/sketches/heightmap.png", cv::IMREAD_GRAYSCALE);
+    
+//     // cv::Mat labeled_image = findConnectedRegions(image);
+
+//     // // Step 2: Suppress regions adjacent to regions with lower pixel values
+//     std::vector<std::vector<cv::Point>> contours;
+//     cv::findContours(image, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
+
+//     suppressAdjacentRegions(image, contours);
+
+//     // Save the final result
+//     cv::imwrite("output.png", image);
 }
 
 void Terrain::loadTexture()
@@ -103,7 +184,7 @@ void Terrain::loadTexture()
         {
             i_map = (int)floor(i * terrain_texture_ratio);
             j_map = (int)floor(j * terrain_texture_ratio);
-            normalized_height = (float)(this->map[j_map * this->dim + i_map].y / this->bounds.max_y);
+            normalized_height = (float)(this->heightmap[j_map * this->dim + i_map].y / this->bounds.max_y);
 
             for (short k = 0; k < 5; k++)
             {
@@ -153,9 +234,15 @@ void Terrain::loadTexture()
 }
 
 // Return the height map
-Vec3<float> *Terrain::getMap()
+Vec3<float> *Terrain::getHeightmap()
 {
-    return map;
+    return heightmap;
+}
+
+// Return the water map
+Vec3<float> *Terrain::getWatermap()
+{
+    return heightmap;
 }
 
 // Return the texture map
@@ -208,7 +295,7 @@ bool Terrain::checkCollision(Vec3<float> position)
     int j = ((static_cast<int>(std::floor(position.x / this->world_scale + this->dim / 2)) % this->dim) + this->dim) % this->dim;
     
     // Get the height of the terrain at the i,j coordinates
-    float height = this->map[i * this->dim + j].y;
+    float height = this->heightmap[i * this->dim + j].y;
 
     // Check if the height of the terrain is greater than the height of the object (add an offset for visual purposes)
     if (height > position.y-50)

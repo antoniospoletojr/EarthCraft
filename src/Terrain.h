@@ -38,7 +38,9 @@ public:
 	~Terrain();
 
 	void initialize(float world_scale, float texture_scale);
-	Vec3<float>* getMap();
+	Vec3<float>* getHeightmap();
+	Vec3<float>* getWatermap();
+
 	cv::Mat getTexture();
 	
 	int getDim();
@@ -50,14 +52,14 @@ public:
 private:
 	int dim;
 	float world_scale, texture_scale;
-	short replication_factor;
 	TerrainBounds bounds;
 
-	Vec3<float> *map;
+	Vec3<float> *heightmap;
 	cv::Mat texture;
 	TextureTile tiles[5];
-	
-	void loadMap();
+
+	void loadHeightmap();
+	void loadWatermap();
 	void loadTexture();
 };
 

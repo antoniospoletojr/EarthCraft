@@ -18,6 +18,7 @@
 #define SUN 4
 #define MOON 5
 #define SKETCH 6
+#define WATER 7
 
 #define LOS_DISTANCE 2
 

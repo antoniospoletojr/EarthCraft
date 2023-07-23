@@ -52,6 +52,7 @@ public:
     void resetSketches();
     void takeSnapshot();
     void initializeMesh(Terrain *terrain);
+    void initializeWater();
 
 private:
     static Renderer *instance;
@@ -83,6 +84,7 @@ private:
     static void drawCanvas();
     static void drawSketch(short current_canvas);
     static void drawTime();
+    static void drawWater();
     static void renderLight();
 
     static void timerCallback(int value);

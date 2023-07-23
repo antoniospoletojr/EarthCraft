@@ -29,14 +29,11 @@ void GlutFramework::initialize(int argc, char** argv)
     glewExperimental = GL_TRUE;
     glewInit();
 
-     // Set the clear color for the color buffer to white with 0 alpha (fully opaque)
+    // Set the clear color for the color buffer to white with 0 alpha (fully opaque)
     glClearColor(0.0, 0.0, 0.0, 0.0);
     
     // Set polygon mode to be not filled
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-    
-    // Set the front face of polygons to be the one with counter-clockwise winding
-    //glFrontFace(GL_CW);
     
     // Set the culling mode to be back face culling
     glEnable(GL_CULL_FACE);
@@ -49,10 +46,10 @@ void GlutFramework::initialize(int argc, char** argv)
     glEnable(GL_TEXTURE_2D);
     
     // Turn on OpenGL lighting.
-    glEnable(GL_LIGHT0);                                 // Enable spotlight diffuse light source.
-    glEnable(GL_LIGHT1);                                 // Enable directional ambient light source.
+    glEnable(GL_LIGHT0);                                // Enable spotlight diffuse light source.
+    glEnable(GL_LIGHT1);                                // Enable directional ambient light source.
+    glEnable(GL_LIGHT2);                                // Enable directional specular light source.
     
-
     // Light property vectors.
     float ambient_light[] = {1, 1, 1, 1.0};
     
@@ -80,6 +77,9 @@ void GlutFramework::initialize(int argc, char** argv)
 
     // Enable blending
     glEnable(GL_BLEND);
+
+    // Enable blending
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 }
 
 // OpenGL window reshape routine.
