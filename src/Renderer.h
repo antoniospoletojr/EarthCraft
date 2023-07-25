@@ -43,7 +43,6 @@ class Renderer
 {
 public:
     short current_menu_page = 0; // keeps track of the current page in the menu
-
     Renderer();
     ~Renderer();
 
@@ -53,6 +52,8 @@ public:
     void takeSnapshot();
     void initializeMesh(Terrain *terrain);
     void initializeWater();
+    void initializeOrbit(int orbit_height);
+    void initializeVegetation();
 
 private:
     static Renderer *instance;
@@ -69,8 +70,7 @@ private:
     cv::Mat night_texture;
     
     float time = 12.f; // time variable used to track time of the day and apply corresponding rotation to the sun and moon
-    
-    void initializeOrbit();
+
     void initializeSkydome();
     void initializeSplashscreen();
     void initializeCanvas();
@@ -85,8 +85,9 @@ private:
     static void drawSketch(short current_canvas);
     static void drawTime();
     static void drawWater();
+    static void drawVegetation();
     static void renderLight();
-
+    
     static void timerCallback(int value);
     static void draw();
 };

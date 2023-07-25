@@ -17,8 +17,9 @@
 #define SKYDOME 3
 #define SUN 4
 #define MOON 5
-#define SKETCH 6
-#define WATER 7
+#define WATER 6
+#define VEGETATION 7
+#define SKETCH 8
 
 #define LOS_DISTANCE 2
 
@@ -28,6 +29,7 @@
 #define BOTTOM_SKETCH_BORDER 0.87
 
 #define WORLD_SCALE 100
-#define TEXTURE_SCALE 20
+#define TEXTURE_SCALE 1
+#define FLOODING_FACTOR 0.33
 
 #define CULLING_ANGLE 45

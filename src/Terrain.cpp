@@ -7,8 +7,8 @@ Terrain::Terrain()
     this->tiles[0].region = HeightRegion{0.f, 0.15f, 0.25f};
     this->tiles[1].region = HeightRegion{0.15f, 0.30f, 0.50f};
     this->tiles[2].region = HeightRegion{0.30f, 0.50f, 0.70f};
-    this->tiles[3].region = HeightRegion{0.50f, 0.75f, 0.95f};
-    this->tiles[4].region = HeightRegion{0.90f, 0.95f, 1.0f};
+    this->tiles[3].region = HeightRegion{0.50f, 0.75f, 0.90f};
+    this->tiles[4].region = HeightRegion{0.85f, 0.90f, 1.0f};
     
     this->tiles[0].texture = cv::imread("assets/textures/1.jpg", cv::IMREAD_COLOR);
     this->tiles[1].texture = cv::imread("assets/textures/2.jpg", cv::IMREAD_COLOR);
@@ -266,6 +266,29 @@ float Terrain::getWorldDim()
 TerrainBounds* Terrain::getBounds()
 {
     return &this->bounds;
+}
+
+// Return the water level
+int Terrain::getWaterLevel()
+{
+    // Calculate the total number of vertices in the map
+    int num_vertices = this->dim * this->dim;
+    
+    printf("Number of vertices: %d\n", num_vertices);
+    
+    std::vector<int> heights;
+    for (int i = 0; i < num_vertices; i++)
+        heights.push_back((int)this->heightmap[i].y);
+    
+    // Sort the heights of the vertices in ascending order
+    std::sort(heights.begin(), heights.end());
+    
+    // Find the index corresponding to the 10th percentile
+    int percentile_index = static_cast<int>(num_vertices * FLOODING_FACTOR);
+
+    printf("water level: %d\n", heights[percentile_index]);
+    // The value at the percentile index will be your water level
+    return heights[percentile_index];
 }
 
 // Print terrain info

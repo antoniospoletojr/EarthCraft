@@ -62,7 +62,7 @@ void InputHandler::handleKeyboard()
             camera->moveLeft();
         if (keys['d'])
             camera->moveRight();
-        
+            
         // If Spacebar is pressed then increase the y value of the camera
         if (keys[32])
             camera->moveUp();
@@ -135,6 +135,7 @@ void InputHandler::handleKeyboard()
                 instance->sound_manager->playBackgroundMusic();
                 instance->inference->reset();
                 instance->camera->reset();
+                instance->renderer->resetSketches();
                 glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
                 glDisable(GL_LIGHTING);
                 break;
@@ -153,7 +154,6 @@ void InputHandler::handleKeyboard()
             case LOADING_SCREEN:
             {
                 instance->sound_manager->playClickSound();
-                instance->renderer->resetSketches();
 
                 // When the prediction is complete, the thread simulates an enter key press.
                 generation_thread = std::thread([this](){InputHandler::instance->generate();});
@@ -170,10 +170,17 @@ void InputHandler::handleKeyboard()
                 instance->renderer->initializeMesh(instance->terrain);
                 // Initialize the water
                 instance->renderer->initializeWater();
+                // Initialize the orbit
+                int orbit_height = instance->terrain->getWorldDim()/2;
+                instance->renderer->initializeOrbit(orbit_height);
+                // Initialize the vegetation
+                instance->renderer->initializeVegetation();
+                
                 instance->sound_manager->playSuccessSound();
                 instance->sound_manager->playBackgroundMusic();
-                int bound = instance->terrain->getWorldDim()/2;
-                camera->setPosition(0, 100, bound);
+                int z = instance->terrain->getWorldDim()/2;
+                int y = instance->terrain->getBounds()->max_y;
+                camera->setPosition(0, y, z);
                 break;
         }
         keys[13] = false;

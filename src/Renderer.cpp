@@ -178,12 +178,12 @@ void Renderer::initializeMesh(Terrain *terrain)
     }
     
     
-    printf("Mesh vertices: %lu\n", objects[MESH].vertices.size()/3);
-    printf("Mesh normals: %lu\n", objects[MESH].normals.size()/3);
-    printf("Mesh textures: %lu\n", objects[MESH].textures.size()/2);
-    printf("Mesh indices: %lu\n", objects[MESH].indices.size()); // 404998
-    printf("Mesh indices rows: %d\n", indices_rows); // 449
-    printf("Mesh indices columns: %d\n", indices_columns); // 902
+    // printf("Mesh vertices: %lu\n", objects[MESH].vertices.size()/3);
+    // printf("Mesh normals: %lu\n", objects[MESH].normals.size()/3);
+    // printf("Mesh textures: %lu\n", objects[MESH].textures.size()/2);
+    // printf("Mesh indices: %lu\n", objects[MESH].indices.size()); // 404998
+    // printf("Mesh indices rows: %d\n", indices_rows); // 449
+    // printf("Mesh indices columns: %d\n", indices_columns); // 902
     
     instance->quadtree = new QuadTree(0, indices_columns, 0, indices_rows);
     instance->quadtree->build(objects[MESH].indices);
@@ -221,6 +221,7 @@ void Renderer::initializeWater()
     Vec3<float> *map = this->terrain->getHeightmap();
     
     int dim = this->terrain->getDim();
+    int water_level = this->terrain->getWaterLevel();
     
     objects[WATER].vertices.clear();
     objects[WATER].indices.clear();
@@ -233,7 +234,7 @@ void Renderer::initializeWater()
         for (int j = 0; j < dim; j++)
         {
             objects[WATER].vertices.push_back(map[i * dim + j].x);
-            objects[WATER].vertices.push_back(400);
+            objects[WATER].vertices.push_back(water_level);
             objects[WATER].vertices.push_back(map[i * dim + j].z);
             
             objects[WATER].textures.push_back((float)i / dim * 20);
@@ -300,7 +301,7 @@ void Renderer::initializeWater()
 
     // Bind and fill the vertex buffer object
     glBindBuffer(GL_ARRAY_BUFFER, objects[WATER].vbo);
-    glBufferData(GL_ARRAY_BUFFER, objects[WATER].vertices.size() * sizeof(float), objects[WATER].vertices.data(), GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, objects[WATER].vertices.size() * sizeof(float), objects[WATER].vertices.data(), GL_DYNAMIC_DRAW);
     glVertexPointer(3, GL_FLOAT, 0, 0);
 
     // Bind and fill the texture coordinate buffer object
@@ -321,10 +322,106 @@ void Renderer::initializeWater()
     glBindVertexArray(0);
 }
 
-void Renderer::initializeOrbit()
+void Renderer::initializeVegetation()
 {
+    // Retrieve the map
+    Vec3<float> *map = this->terrain->getHeightmap();
+
+    int dim = this->terrain->getDim();
+
+    objects[VEGETATION].vertices.clear();
+    objects[VEGETATION].textures.clear();
+    
+    for (int i = 0; i < dim; i++)
+    {
+        for (int j = 0; j < dim; j++)
+        {
+            // With probability 0.05 add 2 crossing vertical quads at the current location
+            if (rand() % 50 == 0)
+            {
+                if (map[i * dim + j].y < 2000)
+                {
+                    objects[VEGETATION].vertices.push_back(map[i * dim + j].x + 250);
+                    objects[VEGETATION].vertices.push_back(map[i * dim + j].y);
+                    objects[VEGETATION].vertices.push_back(map[i * dim + j].z);
+                    
+                    objects[VEGETATION].vertices.push_back(map[i * dim + j].x + 250);
+                    objects[VEGETATION].vertices.push_back(map[i * dim + j].y + 250);
+                    objects[VEGETATION].vertices.push_back(map[i * dim + j].z);
+
+                    objects[VEGETATION].vertices.push_back(map[i * dim + j].x - 250);
+                    objects[VEGETATION].vertices.push_back(map[i * dim + j].y + 250);
+                    objects[VEGETATION].vertices.push_back(map[i * dim + j].z);
+                    
+                    objects[VEGETATION].vertices.push_back(map[i * dim + j].x - 250);
+                    objects[VEGETATION].vertices.push_back(map[i * dim + j].y);
+                    objects[VEGETATION].vertices.push_back(map[i * dim + j].z);
+                    
+                    objects[VEGETATION].textures.push_back(1.0f);
+                    objects[VEGETATION].textures.push_back(1.0f);
+                    
+                    objects[VEGETATION].textures.push_back(1.0f);
+                    objects[VEGETATION].textures.push_back(0.0f);
+
+                    objects[VEGETATION].textures.push_back(0.0f);
+                    objects[VEGETATION].textures.push_back(0.0f);
+                    
+                    objects[VEGETATION].textures.push_back(0.0f);
+                    objects[VEGETATION].textures.push_back(1.0f);
+                }    
+            }
+        }
+    }
+    
+    // Generate and bind a texture object
+    glGenTextures(1, &objects[VEGETATION].texture);
+    glBindTexture(GL_TEXTURE_2D, objects[VEGETATION].texture);
+    
+    // Set texture parameters
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    
+    
+    // Load grass texture in opencv using 4 channels
+    cv::Mat grass_texture = cv::imread("./assets/textures/grass.png", cv::IMREAD_UNCHANGED);
+
+    // Upload the texture image data
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, grass_texture.cols, grass_texture.rows, 0, GL_BGRA, GL_UNSIGNED_BYTE, grass_texture.data);
+
+    // Generate the vertexarray object for the mesh
+    glGenVertexArrays(1, &objects[VEGETATION].vao);
+    // Bind the vertexarray object for the mesh
+    glBindVertexArray(objects[VEGETATION].vao);
+
+    // Generate the buffer objects
+    glGenBuffers(1, &objects[VEGETATION].vbo);
+    glGenBuffers(1, &objects[VEGETATION].tbo);
+
+    // Bind and fill the vertex buffer object
+    glBindBuffer(GL_ARRAY_BUFFER, objects[VEGETATION].vbo);
+    glBufferData(GL_ARRAY_BUFFER, objects[VEGETATION].vertices.size() * sizeof(float), objects[VEGETATION].vertices.data(), GL_DYNAMIC_DRAW);
+    glVertexPointer(3, GL_FLOAT, 0, 0);
+
+    // Bind and fill the texture coordinate buffer object
+    glBindBuffer(GL_ARRAY_BUFFER, objects[VEGETATION].tbo);
+    glBufferData(GL_ARRAY_BUFFER, objects[VEGETATION].textures.size() * sizeof(float), objects[VEGETATION].textures.data(), GL_STATIC_DRAW);
+    glTexCoordPointer(2, GL_FLOAT, 0, 0);
+
+    // Unbind everything
+    glBindVertexArray(0);
+}
+
+void Renderer::initializeOrbit(int orbit_height)
+{
+
     // SUN OBJECT
-    // Load skydome texture image
+
+    // Clear the sun object before initializing it
+    objects[SUN].vertices.clear();
+    objects[SUN].indices.clear();
+    objects[SUN].textures.clear();
+
+    // Load sun texture image
     cv::Mat sun_texture = cv::imread("./assets/textures/sun.png");
 
     // Check if the image was loaded successfully
@@ -367,7 +464,7 @@ void Renderer::initializeOrbit()
             // Extract vertices
             aiVector3D Vec = mesh->mVertices[j];
             objects[SUN].vertices.push_back(Vec.x);
-            objects[SUN].vertices.push_back(Vec.y - 25000);
+            objects[SUN].vertices.push_back(Vec.y - orbit_height);
             objects[SUN].vertices.push_back(Vec.z);
 
             // Extract texture coordinates
@@ -424,9 +521,15 @@ void Renderer::initializeOrbit()
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
     // MOON OBJECT
+
+    // Clear the moon object before initializing it
+    objects[MOON].vertices.clear();
+    objects[MOON].indices.clear();
+    objects[MOON].textures.clear();
+
     // Load skydome texture image
     cv::Mat moon_texture = cv::imread("./assets/textures/moon.jpg");
-
+    
     // Check if the image was loaded successfully
     if (moon_texture.empty())
     {
@@ -465,7 +568,7 @@ void Renderer::initializeOrbit()
             // Extract vertices
             aiVector3D Vec = mesh->mVertices[j];
             objects[MOON].vertices.push_back(Vec.x);
-            objects[MOON].vertices.push_back(Vec.y + 25000);
+            objects[MOON].vertices.push_back(Vec.y + orbit_height);
             objects[MOON].vertices.push_back(Vec.z);
 
             // Extract texture coordinates
@@ -783,11 +886,10 @@ void Renderer::initialize(Camera *camera)
     // Set the camera
     this->camera = camera;
     
-    // Allocate space for 7 objects (Mesh, Splashscreen, Canvas, Skydome, Sun, Moon, Water and the 4 sketches)
-    objects.resize(11);
+    // Allocate space for 8 objects (Mesh, Splashscreen, Canvas, Skydome, Sun, Moon, Water, Vegetation and the 4 sketches)
+    objects.resize(12);
     
     // Initialize non-terrain-related objects
-    this->initializeOrbit();
     this->initializeSplashscreen();
     this->initializeCanvas();
     this->initializeSkydome();
@@ -967,7 +1069,7 @@ void Renderer::sketch(float x, float y)
 
 void Renderer::resetSketches()
 {
-    // current page is used as index for the sketch vertices, colors and indices arrays
+    // Clear sketch buffers
     for (short current_canvas = 0; current_canvas < 4; current_canvas++)
     {
         objects[SKETCH + current_canvas].vertices.clear();
@@ -1058,7 +1160,7 @@ void Renderer::drawMesh()
         GLfloat diffuse_material[] = {0.8f, 0.8f, 0.8f, 1.0f}; // Cold color for diffuse light
         glMaterialfv(GL_FRONT, GL_DIFFUSE, diffuse_material);
     }
-    
+
     // FRUSTUM CULLING
     Vec3<float> position = instance->camera->getPosition();
     Vec3<float> direction = instance->camera->getDirection();
@@ -1067,7 +1169,7 @@ void Renderer::drawMesh()
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, instance->objects[MESH].ibo);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices->size() * sizeof(unsigned int), indices->data(), GL_DYNAMIC_DRAW);
     
-    float ambient_light = (1 - std::abs(static_cast<float>(instance->time) / 24.f - 0.5f))*0.2f;
+    float ambient_light = (1 - std::abs(static_cast<float>(instance->time) / 24.f - 0.5f))*0.3f;
     GLfloat ambient_material[] = {ambient_light, ambient_light, ambient_light, 1.0f};
     glMaterialfv(GL_FRONT, GL_AMBIENT, ambient_material);
     
@@ -1088,7 +1190,7 @@ void Renderer::drawWater()
 {
     // Bind the water texture
     glBindTexture(GL_TEXTURE_2D, instance->objects[WATER].texture);
-
+    
     // Bind the water VAO
     glBindVertexArray(instance->objects[WATER].vao);
     
@@ -1096,8 +1198,12 @@ void Renderer::drawWater()
     glEnableClientState(GL_VERTEX_ARRAY);
     glEnableClientState(GL_TEXTURE_COORD_ARRAY);
     glEnableClientState(GL_NORMAL_ARRAY);
-
-    // Bind the vertexbuffer object
+    
+    // Set the material for specular reflection simultaint the reflaction of water
+    GLfloat material[] = {1.0f, 1.0f, 1.0f, 1.0f}; // White color for specular reflection
+    glMaterialfv(GL_FRONT, GL_DIFFUSE, material);
+    
+    // Bind the texture buffer object
     glBindBuffer(GL_ARRAY_BUFFER, instance->objects[WATER].tbo);
     
     // Update textures coordinates
@@ -1120,8 +1226,57 @@ void Renderer::drawWater()
 
     // Unbind the vertexarray object and texture
     glBindVertexArray(0);
-
 }
+
+void Renderer::drawVegetation()
+{
+    glPushMatrix();
+        // Bind the vegetation texture
+        glBindTexture(GL_TEXTURE_2D, instance->objects[VEGETATION].texture);
+        
+        // Bind the vegetation VAO
+        glBindVertexArray(instance->objects[VEGETATION].vao);
+        
+        // Enable two vertex arrays: coordinates and texture coordinates.
+        glEnableClientState(GL_VERTEX_ARRAY);
+        glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+        
+        vector<float> vertices = instance->objects[VEGETATION].vertices;
+        
+        // Update the vertices such that the vegetation is always facing the camera
+        Vec3<float> direction = instance->camera->getDirection();
+        float radians = atan2(direction.z, direction.x);
+        float degrees = abs(fmod(radians * (180.0f / M_PI) + 270.0f, 360.0f) - 180.0f) / 180.0f;
+        
+        for (unsigned int i = 0; i < instance->objects[VEGETATION].vertices.size(); i += 12)
+        {
+            vertices[i] -= degrees * 500;               // x1
+            vertices[i + 2] += direction.x * 250;       // z1
+            vertices[i + 3] -= degrees * 500;           // x2
+            vertices[i + 5] += direction.x * 250;       // z2
+            
+            vertices[i + 6] += degrees * 500;           // x3
+            vertices[i + 8] -= direction.x * 250;       // z3
+            vertices[i + 9] += degrees * 500;           // x4
+            vertices[i + 11] -= direction.x * 250;      // z4
+        }
+        
+        // Bind the VBO and modify the vertices such that the vegetation is always facing the camera
+        glBindBuffer(GL_ARRAY_BUFFER, instance->objects[VEGETATION].vbo);
+        glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_DYNAMIC_DRAW);
+        
+        // Draw quads with glDrawArrays
+        glDrawArrays(GL_QUADS, 0, vertices.size() / 3);
+
+        glDisableClientState(GL_VERTEX_ARRAY);
+        glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+
+        // Unbind the vertex array object and texture
+        glBindVertexArray(0);
+    
+    glPopMatrix();
+}
+
 
 void Renderer::drawOrbit()
 {
@@ -1331,7 +1486,7 @@ void Renderer::drawSketch(short current_canvas)
         // Save the previous projection matrix
         glMatrixMode(GL_PROJECTION);
         glPushMatrix();
-
+        
         // Set the projection matrix to orthographic
         float width = glutGet(GLUT_WINDOW_WIDTH);
         float height = glutGet(GLUT_WINDOW_HEIGHT);
@@ -1340,6 +1495,7 @@ void Renderer::drawSketch(short current_canvas)
 
         // Update sketch_vertices to fit the screen: vertices is the non-normalized version of sketch_vertices
         vector<float> vertices(instance->objects[SKETCH + current_canvas].vertices.size());
+
         for (int i = 0; i < instance->objects[SKETCH + current_canvas].vertices.size(); i = i + 3)
         {
             vertices[i] = instance->objects[SKETCH + current_canvas].vertices[i] * width;
@@ -1397,9 +1553,6 @@ void Renderer::drawSketch(short current_canvas)
         glDisableClientState(GL_VERTEX_ARRAY);
         glDisableClientState(GL_COLOR_ARRAY);
         glDisableClientState(GL_TEXTURE_COORD_ARRAY);
-        
-        // Deallocate memory
-        vertices.clear();
         
         // Restore the previous projection matrix
         glMatrixMode(GL_PROJECTION);
@@ -1472,11 +1625,11 @@ void Renderer::renderLight()
     glMatrixMode(GL_MODELVIEW);
     glPushMatrix();
         // Draw the light source
-        GLfloat diffuse_light_position[4];
+        GLfloat light_position[4];
         // Initialize the light position to the sun's position
-        diffuse_light_position[0] = 0;
-        diffuse_light_position[2] = 0;
-        diffuse_light_position[3] = 1;
+        light_position[0] = 0;
+        light_position[2] = 0;
+        light_position[3] = 1;
 
         GLfloat spot_direction[3] = {0.0f, -1.0f, 0.0f};
         glLightfv(GL_LIGHT0, GL_SPOT_DIRECTION, spot_direction);
@@ -1490,23 +1643,22 @@ void Renderer::renderLight()
         // If daytime, use the diffuse sunlight
         if (instance->time > 6 && instance->time < 18)
         {
-            float diffuse_light[] = {1.0, 0.9, 0.8, 1.0};
-            glLightfv(GL_LIGHT0, GL_DIFFUSE, diffuse_light);
-            diffuse_light_position[1] = diffuse_light_y;
+            float light[] = {1.0, 0.9, 0.8, 1.0};
+
+            glLightfv(GL_LIGHT0, GL_DIFFUSE, light);
+            light_position[1] = diffuse_light_y;
         }
         // If nighttime, use the diffuse moonlight
         else
         {
-            float diffuse_light[] = {0.25, 0.5, 0.75, 1.0};
-            glLightfv(GL_LIGHT0, GL_DIFFUSE, diffuse_light);
-            diffuse_light_position[1] = -diffuse_light_y;
+            float light[] = {0.25, 0.5, 0.75, 1.0};
+            glLightfv(GL_LIGHT0, GL_DIFFUSE, light);
+            light_position[1] = -diffuse_light_y;
         }
-        
         
         float angle = instance->time / 24.f * 360 + 180;
         glRotatef(angle, 0, 0, 1);
-        glLightfv(GL_LIGHT0, GL_POSITION, diffuse_light_position);
-
+        glLightfv(GL_LIGHT0, GL_POSITION, light_position);
         glPopMatrix();
 }
 
@@ -1532,9 +1684,10 @@ void Renderer::draw()
         instance->drawSkydome();
         instance->drawOrbit();
         instance->drawTime();
-        glEnable(GL_LIGHTING);
+        //glEnable(GL_LIGHTING);
         instance->drawMesh();
         instance->drawWater();
+        instance->drawVegetation();
         instance->renderLight();
         glDisable(GL_LIGHTING);
         break;
@@ -1564,6 +1717,6 @@ void Renderer::draw()
         instance->drawSketch(RIDGES);
         break;
     }
-
+    
     glutSwapBuffers();
 }

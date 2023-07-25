@@ -34,7 +34,7 @@ void Camera::reset()
     this->position.z = 0;
     this->alfa = 0.0f;
     this->beta = 0.0f;
-    this->movement_speed = 4.0f;
+    this->movement_speed = 4.0f * 6;
     this->rotation_speed = 1.5f;
 }
 
@@ -181,9 +181,6 @@ void Camera::update()
     GLdouble up_x = 0.0;
     GLdouble up_y = 1.0;
     GLdouble up_z = 0.0;
-    
-    Vec3 <float> eye = (Vec3<float>(eye_x, eye_y, eye_z));
-    Vec3 <float> center = (Vec3<float>(center_x, center_y, center_z));
         
     gluLookAt(eye_x, eye_y, eye_z, center_x, center_y, center_z, up_x, up_y, up_z);
 }
@@ -199,19 +196,10 @@ Vec3<float> Camera::getDirection()
 
 Vec3<float> Camera::getPosition()
 {
-    float min_x = terrain->getBounds()->min_x;
-    float max_x = terrain->getBounds()->max_x;
-    float min_z = terrain->getBounds()->min_z;
-    float max_z = terrain->getBounds()->max_z;
-    float min_y = terrain->getBounds()->min_y;
-    float max_y = terrain->getBounds()->max_y;
     
-    Vec3<float> eye = (Vec3<float>(position.x - sin(alfa), position.y, position.z - cos(alfa)));
+    Vec3<float> position = (Vec3<float>(position.x - sin(alfa), position.y, position.z - cos(alfa)));
 
-    eye.x = (eye.x-min_x)/(max_x-min_x);
-    eye.y = (eye.y-min_y)/(max_y-min_y);
-    eye.z = (eye.z-min_z)/(max_z-min_z);
-    return eye;
+    return position;
 }
 
 void Camera::setTerrain(Terrain *terrain)

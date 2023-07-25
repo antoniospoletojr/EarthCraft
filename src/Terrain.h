@@ -2,10 +2,12 @@
 #define TERRAIN_H
 
 #include "Vec.hpp"
+#include "Constants.h"
 #include "Colors.h"
 #include <cmath>
 #include <opencv2/opencv.hpp>
 #include <vector>
+#include <algorithm>
 
 typedef struct
 {
@@ -46,6 +48,7 @@ public:
 	int getDim();
 	float getWorldDim();
 	TerrainBounds* getBounds();
+	int getWaterLevel();
 	void getInfo();
 	bool checkCollision(Vec3<float> position);
 

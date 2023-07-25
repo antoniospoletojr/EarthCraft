@@ -48,15 +48,12 @@ void GlutFramework::initialize(int argc, char** argv)
     // Turn on OpenGL lighting.
     glEnable(GL_LIGHT0);                                // Enable spotlight diffuse light source.
     glEnable(GL_LIGHT1);                                // Enable directional ambient light source.
-    glEnable(GL_LIGHT2);                                // Enable directional specular light source.
     
     // Light property vectors.
     float ambient_light[] = {1, 1, 1, 1.0};
     
     // Light properties.
     glLightfv(GL_LIGHT1, GL_AMBIENT, ambient_light);
-    
-    //glLightfv(GL_LIGHT0, GL_SPECULAR, specular_light);
     
     //glLightModeli(GL_LIGHT_MODEL_LOCAL_VIEWER, GL_TRUE);
     //glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, GL_TRUE);
