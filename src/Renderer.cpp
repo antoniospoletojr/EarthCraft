@@ -260,9 +260,7 @@ void Renderer::initializeWater()
         // Use primitive restart to start a new strip
         objects[WATER].indices.push_back(0xFFFFFFFFu);
     }
-
-    printf("Water vertices: %lu\n", objects[WATER].vertices.size()/3);
-
+    
     // Generate and bind a texture object
     glGenTextures(1, &objects[WATER].texture);
     glBindTexture(GL_TEXTURE_2D, objects[WATER].texture);
@@ -328,7 +326,7 @@ void Renderer::initializeVegetation()
     Vec3<float> *map = this->terrain->getHeightmap();
 
     int dim = this->terrain->getDim();
-
+    
     objects[VEGETATION].vertices.clear();
     objects[VEGETATION].textures.clear();
     
@@ -341,19 +339,19 @@ void Renderer::initializeVegetation()
             {
                 if (map[i * dim + j].y < 2000)
                 {
-                    objects[VEGETATION].vertices.push_back(map[i * dim + j].x + 250);
+                    objects[VEGETATION].vertices.push_back(map[i * dim + j].x + BUSH_SIZE);
                     objects[VEGETATION].vertices.push_back(map[i * dim + j].y);
                     objects[VEGETATION].vertices.push_back(map[i * dim + j].z);
-                    
-                    objects[VEGETATION].vertices.push_back(map[i * dim + j].x + 250);
-                    objects[VEGETATION].vertices.push_back(map[i * dim + j].y + 250);
+
+                    objects[VEGETATION].vertices.push_back(map[i * dim + j].x + BUSH_SIZE);
+                    objects[VEGETATION].vertices.push_back(map[i * dim + j].y + BUSH_SIZE);
                     objects[VEGETATION].vertices.push_back(map[i * dim + j].z);
 
-                    objects[VEGETATION].vertices.push_back(map[i * dim + j].x - 250);
-                    objects[VEGETATION].vertices.push_back(map[i * dim + j].y + 250);
+                    objects[VEGETATION].vertices.push_back(map[i * dim + j].x - BUSH_SIZE);
+                    objects[VEGETATION].vertices.push_back(map[i * dim + j].y + BUSH_SIZE);
                     objects[VEGETATION].vertices.push_back(map[i * dim + j].z);
-                    
-                    objects[VEGETATION].vertices.push_back(map[i * dim + j].x - 250);
+
+                    objects[VEGETATION].vertices.push_back(map[i * dim + j].x - BUSH_SIZE);
                     objects[VEGETATION].vertices.push_back(map[i * dim + j].y);
                     objects[VEGETATION].vertices.push_back(map[i * dim + j].z);
                     
@@ -464,7 +462,7 @@ void Renderer::initializeOrbit(int orbit_height)
             // Extract vertices
             aiVector3D Vec = mesh->mVertices[j];
             objects[SUN].vertices.push_back(Vec.x);
-            objects[SUN].vertices.push_back(Vec.y - orbit_height);
+            objects[SUN].vertices.push_back(Vec.y - orbit_height - orbit_height*0.1);
             objects[SUN].vertices.push_back(Vec.z);
 
             // Extract texture coordinates
@@ -521,7 +519,7 @@ void Renderer::initializeOrbit(int orbit_height)
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
     // MOON OBJECT
-
+    
     // Clear the moon object before initializing it
     objects[MOON].vertices.clear();
     objects[MOON].indices.clear();
@@ -568,7 +566,7 @@ void Renderer::initializeOrbit(int orbit_height)
             // Extract vertices
             aiVector3D Vec = mesh->mVertices[j];
             objects[MOON].vertices.push_back(Vec.x);
-            objects[MOON].vertices.push_back(Vec.y + orbit_height);
+            objects[MOON].vertices.push_back(Vec.y + orbit_height + orbit_height*0.1);
             objects[MOON].vertices.push_back(Vec.z);
 
             // Extract texture coordinates
@@ -605,7 +603,7 @@ void Renderer::initializeOrbit(int orbit_height)
     glGenBuffers(1, &objects[MOON].tbo);
     glGenBuffers(1, &objects[MOON].ibo);
 
-    // Bind and fill the vertexbuffer object
+    // Bind and fill the vertex buffer object
     glBindBuffer(GL_ARRAY_BUFFER, objects[MOON].vbo);
     glBufferData(GL_ARRAY_BUFFER, objects[MOON].vertices.size() * sizeof(float), objects[MOON].vertices.data(), GL_STATIC_DRAW);
     glVertexPointer(3, GL_FLOAT, 0, 0);
@@ -730,7 +728,7 @@ void Renderer::initializeSkydome()
             }
         }
     }
-
+    
     // Generate the vertexarray object for the skydome
     glGenVertexArrays(1, &objects[SKYDOME].vao);
     
@@ -1250,15 +1248,15 @@ void Renderer::drawVegetation()
         
         for (unsigned int i = 0; i < instance->objects[VEGETATION].vertices.size(); i += 12)
         {
-            vertices[i] -= degrees * 500;               // x1
-            vertices[i + 2] += direction.x * 250;       // z1
-            vertices[i + 3] -= degrees * 500;           // x2
-            vertices[i + 5] += direction.x * 250;       // z2
-            
-            vertices[i + 6] += degrees * 500;           // x3
-            vertices[i + 8] -= direction.x * 250;       // z3
-            vertices[i + 9] += degrees * 500;           // x4
-            vertices[i + 11] -= direction.x * 250;      // z4
+            vertices[i] -= degrees * BUSH_SIZE * 2;               // x1
+            vertices[i + 2] += direction.x * BUSH_SIZE; // z1
+            vertices[i + 3] -= degrees * BUSH_SIZE * 2;     // x2
+            vertices[i + 5] += direction.x * BUSH_SIZE; // z2
+
+            vertices[i + 6] += degrees * BUSH_SIZE * 2;     // x3
+            vertices[i + 8] -= direction.x * BUSH_SIZE; // z3
+            vertices[i + 9] += degrees * BUSH_SIZE * 2;     // x4
+            vertices[i + 11] -= direction.x * BUSH_SIZE; // z4
         }
         
         // Bind the VBO and modify the vertices such that the vegetation is always facing the camera
@@ -1279,12 +1277,10 @@ void Renderer::drawVegetation()
 
 
 void Renderer::drawOrbit()
-{
-    GLfloat ambient_material[] = {1, 1, 1, 1.0f}; // Warm color for diffuse reflection
-    glMaterialfv(GL_FRONT, GL_AMBIENT, ambient_material);
-    
+{  
     float angle = instance->time/24.f*360.f;
 
+    glDisable(GL_CULL_FACE);
     // Draw the sun
     glMatrixMode(GL_MODELVIEW);
     glPushMatrix();
@@ -1295,13 +1291,13 @@ void Renderer::drawOrbit()
         
         // Draw the sun
         glBindVertexArray(instance->objects[SUN].vao);
-
+        
         // Enable two vertexarrays: co-ordinates and color.
         glEnableClientState(GL_VERTEX_ARRAY);
         glEnableClientState(GL_TEXTURE_COORD_ARRAY);
 
         glDrawElements(GL_TRIANGLE_STRIP, instance->objects[SUN].indices.size(), GL_UNSIGNED_INT, 0); // Draw the triangles
-        
+
         glDisableClientState(GL_VERTEX_ARRAY);
         glDisableClientState(GL_TEXTURE_COORD_ARRAY);
 
@@ -1335,6 +1331,7 @@ void Renderer::drawOrbit()
         glBindVertexArray(0);
         glBindTexture(GL_TEXTURE_2D, 0);
     glPopMatrix();
+    glEnable(GL_CULL_FACE);
 }
 
 void Renderer::drawSkydome()
@@ -1684,7 +1681,7 @@ void Renderer::draw()
         instance->drawSkydome();
         instance->drawOrbit();
         instance->drawTime();
-        //glEnable(GL_LIGHTING);
+        glEnable(GL_LIGHTING);
         instance->drawMesh();
         instance->drawWater();
         instance->drawVegetation();

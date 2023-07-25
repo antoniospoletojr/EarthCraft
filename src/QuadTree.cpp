@@ -30,7 +30,6 @@ void QuadTree::build(const std::vector<GLuint> &indices)
         this->root->indices.push_back(index);
         //Insert(index, root);
     }
-    printf("Build indices size %d\n", root->indices.size());
 }
 
 void QuadTree::clear()

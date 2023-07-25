@@ -59,8 +59,8 @@ private:
 
 	Vec3<float> *heightmap;
 	cv::Mat texture;
-	TextureTile tiles[5];
-
+	TextureTile tiles[6];
+	
 	void loadHeightmap();
 	void loadWatermap();
 	void loadTexture();

@@ -4,17 +4,19 @@
 Terrain::Terrain()
 {
     // Initialize the texture tiles
-    this->tiles[0].region = HeightRegion{0.f, 0.15f, 0.25f};
-    this->tiles[1].region = HeightRegion{0.15f, 0.30f, 0.50f};
-    this->tiles[2].region = HeightRegion{0.30f, 0.50f, 0.70f};
-    this->tiles[3].region = HeightRegion{0.50f, 0.75f, 0.90f};
-    this->tiles[4].region = HeightRegion{0.85f, 0.90f, 1.0f};
+    this->tiles[0].region = HeightRegion{0.0f, 0.20f, 0.30f};
+    this->tiles[1].region = HeightRegion{0.15f, 0.35f, 0.45f};
+    this->tiles[2].region = HeightRegion{0.30f, 0.50f, 0.65f};
+    this->tiles[3].region = HeightRegion{0.50f, 0.70f, 0.80f};
+    this->tiles[4].region = HeightRegion{0.70f, 0.90f, 1.0f};
+    this->tiles[5].region = HeightRegion{0.85f, 0.95f, 1.0f};
     
     this->tiles[0].texture = cv::imread("assets/textures/1.jpg", cv::IMREAD_COLOR);
     this->tiles[1].texture = cv::imread("assets/textures/2.jpg", cv::IMREAD_COLOR);
     this->tiles[2].texture = cv::imread("assets/textures/3.jpg", cv::IMREAD_COLOR);
     this->tiles[3].texture = cv::imread("assets/textures/4.jpg", cv::IMREAD_COLOR);
     this->tiles[4].texture = cv::imread("assets/textures/5.jpg", cv::IMREAD_COLOR);
+    this->tiles[5].texture = cv::imread("assets/textures/6.jpg", cv::IMREAD_COLOR);
 }
 
 // Destructor
@@ -175,7 +177,7 @@ void Terrain::loadTexture()
     int i_map;
     int j_map;
     float normalized_height;
-    float weights[5];
+    float weights[6];
     
     // Cycle through the texture which must be generated
     for (int i = 0; i < this->texture.cols; i++)
@@ -186,7 +188,7 @@ void Terrain::loadTexture()
             j_map = (int)floor(j * terrain_texture_ratio);
             normalized_height = (float)(this->heightmap[j_map * this->dim + i_map].y / this->bounds.max_y);
 
-            for (short k = 0; k < 5; k++)
+            for (short k = 0; k < 6; k++)
             {
                 if (normalized_height >= this->tiles[k].region.low && normalized_height <= this->tiles[k].region.high)
                 {
@@ -205,7 +207,7 @@ void Terrain::loadTexture()
                     }
                     else if (normalized_height > this->tiles[k].region.optimal)
                     {
-                        if (k == 4)
+                        if (k == 5)
                             weights[k] = 1;
                         else
                         {
@@ -221,11 +223,11 @@ void Terrain::loadTexture()
             
             
             float sum = 0.0;
-            for (int k = 0; k < 5; k++)
+            for (int k = 0; k < 6; k++)
                 sum += weights[k];
 
             cv::Vec3b interpolated_pixel(0, 0, 0);
-            for (int k = 0; k < 5; k++)
+            for (int k = 0; k < 6; k++)
                 this->texture.at<cv::Vec3b>(i, j) += weights[k] / sum * tiles[k].texture.at<cv::Vec3b>(i % original_texture_size, j % original_texture_size);
         }
     }
@@ -274,8 +276,6 @@ int Terrain::getWaterLevel()
     // Calculate the total number of vertices in the map
     int num_vertices = this->dim * this->dim;
     
-    printf("Number of vertices: %d\n", num_vertices);
-    
     std::vector<int> heights;
     for (int i = 0; i < num_vertices; i++)
         heights.push_back((int)this->heightmap[i].y);
@@ -285,8 +285,8 @@ int Terrain::getWaterLevel()
     
     // Find the index corresponding to the 10th percentile
     int percentile_index = static_cast<int>(num_vertices * FLOODING_FACTOR);
-
-    printf("water level: %d\n", heights[percentile_index]);
+    
+    printf("Water level: %d\n", heights[percentile_index]);
     // The value at the percentile index will be your water level
     return heights[percentile_index];
 }
