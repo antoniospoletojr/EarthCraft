@@ -192,7 +192,7 @@ void Renderer::initializeMesh(Terrain *terrain)
     glEnable(GL_PRIMITIVE_RESTART);
     glPrimitiveRestartIndex(0xFFFFFFFFu);
     
-    // Bind and fill the vertexbuffer object
+    // Bind and fill the vertex buffer object
     glBindBuffer(GL_ARRAY_BUFFER, objects[MESH].vbo);
     glBufferData(GL_ARRAY_BUFFER, objects[MESH].vertices.size() * sizeof(float), objects[MESH].vertices.data(), GL_STATIC_DRAW);
     glVertexPointer(3, GL_FLOAT, 0, 0);
@@ -237,11 +237,11 @@ void Renderer::initializeWater()
             objects[WATER].vertices.push_back(water_level);
             objects[WATER].vertices.push_back(map[i * dim + j].z);
             
-            objects[WATER].textures.push_back((float)i / dim * 20);
-            objects[WATER].textures.push_back((float)j / dim * 20);
+            objects[WATER].textures.push_back((float)i / dim * 30);
+            objects[WATER].textures.push_back((float)j / dim * 30);
 
             objects[WATER].normals.push_back(0.0f);
-            objects[WATER].normals.push_back(1.0f);
+            objects[WATER].normals.push_back(0.0f);
             objects[WATER].normals.push_back(0.0f);
         }
     }
@@ -309,7 +309,7 @@ void Renderer::initializeWater()
     
     // Bind and fill the normals buffer object
     glBindBuffer(GL_ARRAY_BUFFER, objects[WATER].nbo);
-    glBufferData(GL_ARRAY_BUFFER, objects[WATER].normals.size() * sizeof(float), objects[WATER].normals.data(), GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, objects[WATER].normals.size() * sizeof(float), objects[WATER].normals.data(), GL_DYNAMIC_DRAW);
     glNormalPointer(GL_FLOAT, 0, 0);
 
     // Bind and fill indices buffer.
@@ -499,7 +499,7 @@ void Renderer::initializeOrbit(int orbit_height)
     glGenBuffers(1, &objects[SUN].tbo);
     glGenBuffers(1, &objects[SUN].ibo);
 
-    // Bind and fill the vertexbuffer object
+    // Bind and fill the vertex buffer object
     glBindBuffer(GL_ARRAY_BUFFER, objects[SUN].vbo);
     glBufferData(GL_ARRAY_BUFFER, objects[SUN].vertices.size() * sizeof(float), objects[SUN].vertices.data(), GL_STATIC_DRAW);
     glVertexPointer(3, GL_FLOAT, 0, 0);
@@ -740,7 +740,7 @@ void Renderer::initializeSkydome()
     glGenBuffers(1, &objects[SKYDOME].tbo);
     glGenBuffers(1, &objects[SKYDOME].ibo);
 
-    // Bind and fill the vertexbuffer object
+    // Bind and fill the vertex buffer object
     glBindBuffer(GL_ARRAY_BUFFER, objects[SKYDOME].vbo);
     glBufferData(GL_ARRAY_BUFFER, objects[SKYDOME].vertices.size() * sizeof(float), objects[SKYDOME].vertices.data(), GL_STATIC_DRAW);
     glVertexPointer(3, GL_FLOAT, 0, 0);
@@ -771,7 +771,7 @@ void Renderer::initializeSplashscreen()
     // Bind the vertexarray object for the SPLASHSCREEN
     glBindVertexArray(objects[SPLASHSCREEN].vao);
     
-    // Generate the vertexbuffer objects
+    // Generate the vertex buffer objects
     glGenBuffers(1, &objects[SPLASHSCREEN].vbo);
     // Generate the texture buffer objects
     glGenBuffers(1, &objects[SPLASHSCREEN].tbo);
@@ -788,9 +788,9 @@ void Renderer::initializeSplashscreen()
     glEnableClientState(GL_COLOR_ARRAY);
     glEnableClientState(GL_TEXTURE_COORD_ARRAY);
 
-    // Bind the vertexbuffer object
+    // Bind the vertex buffer object
     glBindBuffer(GL_ARRAY_BUFFER, objects[SPLASHSCREEN].vbo);
-    // Copy data into the vertexbuffer
+    // Copy data into the vertex buffer
     glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(GLfloat), NULL, GL_STATIC_DRAW);
     // Specify vertexpointer location
     glVertexPointer(2, GL_FLOAT, 0, 0);
@@ -832,7 +832,7 @@ void Renderer::initializeCanvas()
     // Bind the vertexarray object for the canvas
     glBindVertexArray(objects[CANVAS].vao);
 
-    // Generate the vertexbuffer objects
+    // Generate the vertex buffer objects
     glGenBuffers(1, &objects[CANVAS].vbo);
     // Generate the texture buffer objects
     glGenBuffers(1, &objects[CANVAS].tbo);
@@ -849,9 +849,9 @@ void Renderer::initializeCanvas()
     glEnableClientState(GL_COLOR_ARRAY);
     glEnableClientState(GL_TEXTURE_COORD_ARRAY);
 
-    // Bind the vertexbuffer object
+    // Bind the vertex buffer object
     glBindBuffer(GL_ARRAY_BUFFER, objects[CANVAS].vbo);
-    // Copy data into the vertexbuffer
+    // Copy data into the vertex buffer
     glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(GLfloat), NULL, GL_STATIC_DRAW);
     // Specify vertexpointer location
     glVertexPointer(2, GL_FLOAT, 0, 0);
@@ -897,6 +897,9 @@ void Renderer::initialize(Camera *camera)
 
     // Set the glut display callback
     glutDisplayFunc(Renderer::draw);
+
+    const siv::PerlinNoise::seed_type seed = 420;
+    this->perlin_noise = siv::PerlinNoise(seed);
 }
 
 void Renderer::takeSnapshot()
@@ -1186,6 +1189,8 @@ void Renderer::drawMesh()
 
 void Renderer::drawWater()
 {
+    static float time = 0;
+    glEnable(GL_BLEND);
     // Bind the water texture
     glBindTexture(GL_TEXTURE_2D, instance->objects[WATER].texture);
     
@@ -1197,37 +1202,107 @@ void Renderer::drawWater()
     glEnableClientState(GL_TEXTURE_COORD_ARRAY);
     glEnableClientState(GL_NORMAL_ARRAY);
     
-    // Set the material for specular reflection simultaint the reflaction of water
-    GLfloat material[] = {1.0f, 1.0f, 1.0f, 1.0f}; // White color for specular reflection
-    glMaterialfv(GL_FRONT, GL_DIFFUSE, material);
-    
     // Bind the texture buffer object
     glBindBuffer(GL_ARRAY_BUFFER, instance->objects[WATER].tbo);
-    
     // Update textures coordinates
     for (unsigned int i = 0; i < instance->objects[WATER].textures.size(); i += 2)
     {
         instance->objects[WATER].textures[i] += 0.001f;
         instance->objects[WATER].textures[i + 1] += 0.001f;
     }
-    
     glBufferData(GL_ARRAY_BUFFER, instance->objects[WATER].textures.size() * sizeof(float), instance->objects[WATER].textures.data(), GL_DYNAMIC_DRAW);
-    glTexCoordPointer(2, GL_FLOAT, 0, 0);
     
-    glEnable(GL_PRIMITIVE_RESTART);                                         // Enable primitive restart
+    // Bind the vertex buffer object
+    glBindBuffer(GL_ARRAY_BUFFER, instance->objects[WATER].vbo);
+    // Generate Perlin noise values based on vertex positions and time
+    vector<float> vertices = instance->objects[WATER].vertices;
+    float amplitude = 300.0f; // Adjust the amplitude to control the wave height
+    float frequency = 0.0005f; // Adjust the frequency to control the wave speed
+    for (unsigned int i = 0; i < instance->objects[WATER].vertices.size(); i += 3)
+    {
+        float x = instance->objects[WATER].vertices[i];
+        float z = instance->objects[WATER].vertices[i + 2];
+        float noiseValue = amplitude * instance->perlin_noise.noise3D_01(x * frequency, z * frequency, time);
+        
+        vertices[i + 1] += noiseValue;
+    }
+    time += 0.01f;
+    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_DYNAMIC_DRAW);
+    
+    // Bind the normal buffer object
+    glBindBuffer(GL_ARRAY_BUFFER, instance->objects[WATER].nbo);
+    // Calculate updated normals for every triangle 
+    std::vector<float> normals = instance->objects[WATER].normals;
+
+    // Calculate normals
+    for (int i = 0; i < instance->objects[WATER].indices.size() - 3; i += 2)
+    {
+        if (instance->objects[WATER].indices[i + 1] == 0xFFFFFFFFu)
+            continue;
+
+        // Get the indices of the triangle
+        int i1 = instance->objects[WATER].indices[i];
+        int i2 = instance->objects[WATER].indices[i + 1];
+        int i3 = instance->objects[WATER].indices[i + 2];
+
+        // Get the vertices of the triangle into Vec3 objects
+        Vec3<float> v1;
+        v1.x = vertices[i1 * 3];
+        v1.y = vertices[i1 * 3 + 1];
+        v1.z = vertices[i1 * 3 + 2];
+
+        Vec3<float> v2;
+        v2.x = vertices[i2 * 3];
+        v2.y = vertices[i2 * 3 + 1];
+        v2.z = vertices[i2 * 3 + 2];
+
+        Vec3<float> v3;
+        v3.x = vertices[i3 * 3];
+        v3.y = vertices[i3 * 3 + 1];
+        v3.z = vertices[i3 * 3 + 2];
+
+        // Get the vertices of the triangle
+        Vec3<float> u1 = subtract(v2, v1);
+        Vec3<float> u2 = subtract(v3, v1);
+        
+        // Calculate the normal of the triangle
+        Vec3<float> normal = crossProduct(u1, u2);
+
+        // // Add the normal to the normals array
+        normals[i1 * 3] += normal.x;
+        normals[i1 * 3 + 1] += normal.y;
+        normals[i1 * 3 + 2] += normal.z;
+
+        normals[i2 * 3] += normal.x;
+        normals[i2 * 3 + 1] += normal.y;
+        normals[i2 * 3 + 2] += normal.z;
+
+        normals[i3 * 3] += normal.x;
+        normals[i3 * 3 + 1] += normal.y;
+        normals[i3 * 3 + 2] += normal.z;
+    }
+    glBufferData(GL_ARRAY_BUFFER, normals.size() * sizeof(float), normals.data(), GL_DYNAMIC_DRAW);
+
+    glEnable(GL_PRIMITIVE_RESTART);                                                                 // Enable primitive restart
     glDrawElements(GL_TRIANGLE_STRIP, instance->objects[WATER].indices.size(), GL_UNSIGNED_INT, 0); // Draw the triangles
     glDisable(GL_PRIMITIVE_RESTART);
-
+    
     glDisableClientState(GL_VERTEX_ARRAY);
     glDisableClientState(GL_TEXTURE_COORD_ARRAY);
     glDisableClientState(GL_NORMAL_ARRAY);
 
     // Unbind the vertexarray object and texture
     glBindVertexArray(0);
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glDisable(GL_BLEND);
+
 }
 
 void Renderer::drawVegetation()
 {
+    // Enable blending
+    glEnable(GL_BLEND);
+
     glPushMatrix();
         // Bind the vegetation texture
         glBindTexture(GL_TEXTURE_2D, instance->objects[VEGETATION].texture);
@@ -1273,13 +1348,15 @@ void Renderer::drawVegetation()
         glBindVertexArray(0);
     
     glPopMatrix();
+    
+    glDisable(GL_BLEND);
 }
 
 
 void Renderer::drawOrbit()
 {  
     float angle = instance->time/24.f*360.f;
-
+    
     glDisable(GL_CULL_FACE);
     // Draw the sun
     glMatrixMode(GL_MODELVIEW);
@@ -1297,10 +1374,10 @@ void Renderer::drawOrbit()
         glEnableClientState(GL_TEXTURE_COORD_ARRAY);
 
         glDrawElements(GL_TRIANGLE_STRIP, instance->objects[SUN].indices.size(), GL_UNSIGNED_INT, 0); // Draw the triangles
-
+        
         glDisableClientState(GL_VERTEX_ARRAY);
         glDisableClientState(GL_TEXTURE_COORD_ARRAY);
-
+        
         // Unbind the vertexarray object and texture
         glBindVertexArray(0);
         glBindTexture(GL_TEXTURE_2D, 0);
@@ -1309,7 +1386,7 @@ void Renderer::drawOrbit()
     // Draw the moon
     glMatrixMode(GL_MODELVIEW);
     glPushMatrix();
-
+        
         glRotatef(angle, 0, 0, 1);
 
         // Bind the sun texture
@@ -1336,13 +1413,16 @@ void Renderer::drawOrbit()
 
 void Renderer::drawSkydome()
 {
+    // Enable blending
+    glEnable(GL_BLEND);
+
     // Disable depth testing
     glDisable(GL_DEPTH_TEST);
     glCullFace(GL_FRONT);
-
+    
     // Bind the vertexarray object for the skydome
     glBindVertexArray(instance->objects[SKYDOME].vao);
-
+    
     glEnableClientState(GL_VERTEX_ARRAY);
     glEnableClientState(GL_TEXTURE_COORD_ARRAY);
     
@@ -1364,7 +1444,9 @@ void Renderer::drawSkydome()
     // Re-enable depth testing
     glCullFace(GL_BACK);
     glEnable(GL_DEPTH_TEST);
+    glDisable(GL_BLEND);
 }
+
 
 void Renderer::drawSplashscreen()
 {
@@ -1450,9 +1532,9 @@ void Renderer::drawCanvas()
         // Render the splash screen
         glBindVertexArray(instance->objects[CANVAS].vao);
 
-        // Bind the vertexbuffer object
+        // Bind the vertex buffer object
         glBindBuffer(GL_ARRAY_BUFFER, instance->objects[CANVAS].vbo);
-        // Update the vertexbuffer data
+        // Update the vertex buffer data
         glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(GLfloat), vertices.data(), GL_STATIC_DRAW);
 
         glDrawArrays(GL_QUADS, 0, 4);
@@ -1508,16 +1590,16 @@ void Renderer::drawSketch(short current_canvas)
         // Render the sketch
         glBindVertexArray(instance->objects[SKETCH].vao);
         
-        // Bind the vertexbuffer object
+        // Bind the vertex buffer object
         glBindBuffer(GL_ARRAY_BUFFER, instance->objects[SKETCH].vbo);
-        // Update the vertexbuffer data for points
+        // Update the vertex buffer data for points
         glBufferData(GL_ARRAY_BUFFER, instance->objects[SKETCH + current_canvas].vertices.size() * sizeof(GLfloat), vertices.data(), GL_DYNAMIC_DRAW);
         // Set the vertexattribute pointer for positions
         glVertexPointer(3, GL_FLOAT, 0, vertices.data());
         
-        // Bind the vertexbuffer object
+        // Bind the vertex buffer object
         glBindBuffer(GL_ARRAY_BUFFER, instance->objects[SKETCH].cbo);
-        // Update the vertexbuffer data for points
+        // Update the vertex buffer data for points
         glBufferData(GL_ARRAY_BUFFER, instance->objects[SKETCH + current_canvas].colors.size() * sizeof(GLfloat), instance->objects[SKETCH + current_canvas].colors.data(), GL_DYNAMIC_DRAW);
         // Set the vertexattribute pointer for colors
         glColorPointer(3, GL_FLOAT, 0, instance->objects[SKETCH + current_canvas].colors.data());
@@ -1686,6 +1768,7 @@ void Renderer::draw()
         instance->drawWater();
         instance->drawVegetation();
         instance->renderLight();
+        
         glDisable(GL_LIGHTING);
         break;
     case LOADING_SCREEN:

@@ -8,7 +8,7 @@ Camera::Camera()
     this->position.z = 0;
     this->alfa = 0.0f;
     this->beta = 0.0f;
-    this->movement_speed = 4.0f * 20;
+    this->movement_speed = 4.0f * 10;
     this->rotation_speed = 1.5f;
 }
 
@@ -34,7 +34,7 @@ void Camera::reset()
     this->position.z = 0;
     this->alfa = 0.0f;
     this->beta = 0.0f;
-    this->movement_speed = 4.0f * 6;
+    this->movement_speed = 4.0f * 10;
     this->rotation_speed = 1.5f;
 }
 

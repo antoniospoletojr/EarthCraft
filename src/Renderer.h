@@ -8,6 +8,7 @@
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
+#include <assimp/material.h>
 #include <opencv2/opencv.hpp>
 #include <vector>
 #include <cmath>
@@ -18,6 +19,7 @@
 #include "Terrain.h"
 #include "Constants.h"
 #include "Vec.hpp"
+#include "PerlinNoise.hpp"
 
 typedef struct Object
 {
@@ -70,7 +72,8 @@ private:
     cv::Mat night_texture;
     
     float time = 12.f; // time variable used to track time of the day and apply corresponding rotation to the sun and moon
-
+    siv::PerlinNoise perlin_noise;
+    
     void initializeSkydome();
     void initializeSplashscreen();
     void initializeCanvas();

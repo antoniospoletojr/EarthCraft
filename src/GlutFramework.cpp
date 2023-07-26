@@ -44,6 +44,7 @@ void GlutFramework::initialize(int argc, char** argv)
 
     // Enable 2D texturing
     glEnable(GL_TEXTURE_2D);
+    //glEnable(GL_COLOR_MATERIAL);
     
     // Turn on OpenGL lighting.
     glEnable(GL_LIGHT0);                                // Enable spotlight diffuse light source.
@@ -71,10 +72,7 @@ void GlutFramework::initialize(int argc, char** argv)
 
     // Enable automatic normalization of surface normals to unit length
     glEnable(GL_NORMALIZE);
-
-    // Enable blending
-    glEnable(GL_BLEND);
-
+    
     // Enable blending
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 }
