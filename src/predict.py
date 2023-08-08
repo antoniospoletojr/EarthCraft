@@ -7,7 +7,6 @@ from tensorflow.keras.models import Model
 import numpy as np
 from PIL import Image
 from typing import Dict, Tuple
-import time
 
 
 class TerrainGANBuilder:

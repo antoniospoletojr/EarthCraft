@@ -90,7 +90,7 @@ void GlutFramework::resize(int w, int h)
     glLoadIdentity();
     
     // Set up a perspective projection with a field of view of 118 degrees, an aspect ratio of w/h, and a near/far clipping plane of 30.0 and 100.0 respectively.
-    gluPerspective(50, (GLfloat)w / h, 1.0, 100000.0);
+    gluPerspective(50, (GLfloat)w / h, 1.0, 300000.0);
     
     // Switch back to the modelview matrix.
     glMatrixMode(GL_MODELVIEW);

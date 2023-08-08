@@ -52,10 +52,11 @@ public:
     void sketch(float x, float y);
     void resetSketches();
     void takeSnapshot();
-    void initializeMesh(Terrain *terrain);
+    void initializeMesh();
     void initializeWater();
     void initializeOrbit(int orbit_height);
     void initializeVegetation();
+    void setTerrain(Terrain *terrain);
 
 private:
     static Renderer *instance;

@@ -13,8 +13,8 @@ using namespace std;
 Camera camera;
 InputHandler input_handler;
 GlutFramework glut_framework;
-Renderer renderer;
 SoundManager sound_manager;
+Renderer renderer;
 
 // Main routine.
 int main(int argc, char **argv)

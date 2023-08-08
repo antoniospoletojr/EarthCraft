@@ -10,7 +10,6 @@
 #include <GL/freeglut.h>
 #include <thread>
 
-using namespace irrklang;
 
 class InputHandler
 {

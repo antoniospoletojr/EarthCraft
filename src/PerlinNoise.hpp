@@ -107,7 +107,7 @@ namespace siv
 		//
 		//	Constructors
 		//
-
+		
 		SIVPERLIN_NODISCARD_CXX20
 		constexpr BasicPerlinNoise() noexcept;
 

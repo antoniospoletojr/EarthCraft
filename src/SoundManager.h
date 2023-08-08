@@ -1,15 +1,26 @@
 #ifndef SOUNDMANAGER_H
 #define SOUNDMANAGER_H
 
-#include <irrklang/irrKlang.h>
+#include "AL/al.h"
+#include <AL/alc.h>
+#include <AL/alext.h>
+#include <sndfile.h>
+#include <inttypes.h>
+#include <climits> 
+#include <iostream>
+#include <vector>
+#include "Colors.h"
+#include "Constants.h"
+#include "Vec.hpp"
 
-using namespace irrklang;
 
 class SoundManager
 {
 public:
     SoundManager();
     ~SoundManager();
+
+    void updateListener(float distance);
     
     void playClickSound();
     void playSuccessSound();
@@ -17,7 +28,12 @@ public:
     void playBackgroundMusic();
 
 private:
-    irrklang::ISoundEngine *sound_engine;
+    ALCdevice* device;
+    ALCcontext* context;
+    
+    std::vector<ALuint> buffers, sources;
+
+    void loadSound(const char* filename);
 };
 
 #endif

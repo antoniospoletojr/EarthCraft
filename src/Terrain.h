@@ -48,9 +48,9 @@ public:
 	int getDim();
 	float getWorldDim();
 	TerrainBounds* getBounds();
-	int getWaterLevel();
 	void getInfo();
 	bool checkCollision(Vec3<float> position);
+	float distanceFromWater(Vec3<float> position);
 
 private:
 	int dim;
@@ -58,6 +58,7 @@ private:
 	TerrainBounds bounds;
 
 	Vec3<float> *heightmap;
+	Vec3<float> *watermap;
 	cv::Mat texture;
 	TextureTile tiles[6];
 	

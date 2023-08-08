@@ -190,16 +190,15 @@ Vec3<float> Camera::getDirection()
     Vec3<float> eye = (Vec3<float>(position.x - sin(alfa), position.y, position.z - cos(alfa)));
     Vec3<float> center = (Vec3<float>(position.x - LOS_DISTANCE * sin(alfa), position.y + beta, position.z - LOS_DISTANCE * cos(alfa)));
     Vec3<float> difference = normalize(subtract(center, eye));
-
+    
     return difference;
 }
 
 Vec3<float> Camera::getPosition()
 {
     
-    Vec3<float> position = (Vec3<float>(position.x - sin(alfa), position.y, position.z - cos(alfa)));
-
-    return position;
+    Vec3<float> coordinates = (Vec3<float>(position.x - sin(alfa), position.y, position.z - cos(alfa)));
+    return coordinates;
 }
 
 void Camera::setTerrain(Terrain *terrain)

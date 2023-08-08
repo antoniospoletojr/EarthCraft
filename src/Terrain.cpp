@@ -32,8 +32,8 @@ void Terrain::initialize(float world_scale, float texture_scale)
     this->texture_scale = texture_scale;
     
     loadHeightmap();
-    loadWatermap();
     loadTexture();
+    loadWatermap();
 }
 
 void Terrain::loadHeightmap()
@@ -41,7 +41,7 @@ void Terrain::loadHeightmap()
     // Load the terrain heightmap using opencv library
     cv::Mat image = cv::imread("./assets/sketches/heightmap.png", cv::IMREAD_GRAYSCALE);
     cv::GaussianBlur(image, image, cv::Size(5, 5), 0); // Adjust the kernel size (5, 5) as needed
-    
+
     unsigned char* data = image.data;
     
     // Check for an error during the load process
@@ -75,7 +75,7 @@ void Terrain::loadHeightmap()
             this->heightmap[i * dim + j].x = ((j - (dim / 2)) * this->world_scale);
             this->heightmap[i * dim + j].y = (data[(i * dim + j)] * this->world_scale);
             this->heightmap[i * dim + j].z = ((i - (dim / 2)) * this->world_scale);
-            
+
             // Update the bounds based on the current Vec
             bounds.min_x = (heightmap[i * dim + j].x < bounds.min_x) ? heightmap[i * dim + j].x : bounds.min_x;
             bounds.max_x = (heightmap[i * dim + j].x > bounds.max_x) ? heightmap[i * dim + j].x : bounds.max_x;
@@ -136,7 +136,7 @@ void Terrain::loadHeightmap()
 // void suppressAdjacentRegions(cv::Mat &image, const std::vector<std::vector<cv::Point>> &contours)
 // {
 //     cv::Mat mask(image.size(), CV_8UC1, cv::Scalar(0));
-
+    
 //     // Create a mask for each contour
 //     for (size_t i = 0; i < contours.size(); i++)
 //     {
@@ -146,25 +146,53 @@ void Terrain::loadHeightmap()
 //     // Suppress regions adjacent to regions with lower pixel values
 //     cv::Mat suppressedImage;
 //     cv::max(image, suppressedImage, mask);
-
+    
 //     image = suppressedImage;
 // }
 
 void Terrain::loadWatermap()
 {
-//     // Load the terrain heightmap using opencv library
-//     cv::Mat image = cv::imread("./assets/sketches/heightmap.png", cv::IMREAD_GRAYSCALE);
+    // Calcualte the water level
+    // Calculate the total number of vertices in the map
+    std::vector<int> heights(this->dim * this->dim);
     
-//     // cv::Mat labeled_image = findConnectedRegions(image);
+    for (int i = 0; i < this->dim; i++)
+    {
+        for (int j = 0; j < this->dim; j++)
+        {
+            int height = (int) this->heightmap[i * this->dim + j].y;
+            heights[i*this->dim +j] = height;
+        }
+    }
+    
+    // Sort the heights of the vertices in ascending order
+    std::sort(heights.begin(), heights.end());
+    
+    // Find the index corresponding to the 10th percentile
+    int percentile_index = static_cast<int>(this->dim * this->dim * FLOODING_FACTOR);
 
-//     // // Step 2: Suppress regions adjacent to regions with lower pixel values
-//     std::vector<std::vector<cv::Point>> contours;
-//     cv::findContours(image, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
+    printf("Water level: %d\n", heights[percentile_index]);
 
-//     suppressAdjacentRegions(image, contours);
+    // The value at the percentile index will be your water level
+    int water_level = heights[percentile_index];
+    
+    this->watermap = new Vec3<float>[this->dim * this->dim];
+    
+    // Fill the watermap using water accumulation algorith,
+    cv::Mat image = cv::imread("./assets/sketches/heightmap.png", cv::IMREAD_GRAYSCALE);
+    cv::GaussianBlur(image, image, cv::Size(5, 5), 0); // Adjust the kernel size (5, 5) as needed
 
-//     // Save the final result
-//     cv::imwrite("output.png", image);
+    // Fill in the height map
+    for (int i = 0; i < this->dim; i++)
+    {
+        for (int j = 0; j < this->dim; j++)
+        {
+            // Set the vertices
+            this->watermap[i * this->dim + j].x = ((j - (this->dim / 2)) * this->world_scale);
+            this->watermap[i * this->dim + j].y = water_level;
+            this->watermap[i * this->dim + j].z = ((i - (this->dim / 2)) * this->world_scale);
+        }
+    }
 }
 
 void Terrain::loadTexture()
@@ -179,7 +207,7 @@ void Terrain::loadTexture()
     float normalized_height;
     float weights[6];
     
-    // Cycle through the texture which must be generated
+    // Cycle through the texel which must be generated
     for (int i = 0; i < this->texture.cols; i++)
     {
         for (int j = 0; j < this->texture.rows; j++)
@@ -221,7 +249,6 @@ void Terrain::loadTexture()
                     weights[k] = 0;
             }
             
-            
             float sum = 0.0;
             for (int k = 0; k < 6; k++)
                 sum += weights[k];
@@ -244,7 +271,7 @@ Vec3<float> *Terrain::getHeightmap()
 // Return the water map
 Vec3<float> *Terrain::getWatermap()
 {
-    return heightmap;
+    return watermap;
 }
 
 // Return the texture map
@@ -270,27 +297,6 @@ TerrainBounds* Terrain::getBounds()
     return &this->bounds;
 }
 
-// Return the water level
-int Terrain::getWaterLevel()
-{
-    // Calculate the total number of vertices in the map
-    int num_vertices = this->dim * this->dim;
-    
-    std::vector<int> heights;
-    for (int i = 0; i < num_vertices; i++)
-        heights.push_back((int)this->heightmap[i].y);
-    
-    // Sort the heights of the vertices in ascending order
-    std::sort(heights.begin(), heights.end());
-    
-    // Find the index corresponding to the 10th percentile
-    int percentile_index = static_cast<int>(num_vertices * FLOODING_FACTOR);
-    
-    printf("Water level: %d\n", heights[percentile_index]);
-    // The value at the percentile index will be your water level
-    return heights[percentile_index];
-}
-
 // Print terrain info
 void Terrain::getInfo()
 {
@@ -307,7 +313,7 @@ void Terrain::getInfo()
     printf("Min z: %f, Max z: %f\n", this->bounds.min_z, this->bounds.max_z);
     printf("__________________________________________\n");
     printf(COLOR_RESET);
-
+    
     fflush(stdout);
 }
 
@@ -322,7 +328,18 @@ bool Terrain::checkCollision(Vec3<float> position)
 
     // Check if the height of the terrain is greater than the height of the object (add an offset for visual purposes)
     if (height > position.y-50)
-        return false;
+        return true;
 
     return false;
+}
+
+float Terrain::distanceFromWater(Vec3<float> position)
+{
+    // Get the i,j coordinates of the height map
+    int i = ((static_cast<int>(std::floor(position.z / this->world_scale + this->dim / 2)) % this->dim) + this->dim) % this->dim;
+    int j = ((static_cast<int>(std::floor(position.x / this->world_scale + this->dim / 2)) % this->dim) + this->dim) % this->dim;
+    
+    // Get the height of the terrain at the i,j coordinates
+    float distance = abs(position.y - this->watermap[i * this->dim + j].y);
+    return distance;
 }

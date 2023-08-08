@@ -81,6 +81,12 @@ void InputHandler::handleKeyboard()
             camera->rotateUp();
         if (special_keys[GLUT_KEY_DOWN])
             camera->rotateDown();
+        
+        // Check water distance for sound purposes
+        float distance = terrain->distanceFromWater(camera->getPosition());
+        
+        // Update the sound manager listener position
+        sound_manager->updateListener(distance);
     }
      
      // Exit the program if the Esc key is pressed.
@@ -164,10 +170,11 @@ void InputHandler::handleKeyboard()
             
             case RENDERING_SCREEN:
                 generation_thread.join();
-                // Pass the terrain to the camera for collision detection
+                // Pass the terrain to the camera for collision detection and to the renderer
                 instance->camera->setTerrain(instance->terrain);
+                instance->renderer->setTerrain(instance->terrain);
                 // Initialize the mesh
-                instance->renderer->initializeMesh(instance->terrain);
+                instance->renderer->initializeMesh();
                 // Initialize the water
                 instance->renderer->initializeWater();
                 // Initialize the orbit

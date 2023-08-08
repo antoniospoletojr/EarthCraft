@@ -15,7 +15,7 @@ Renderer::Renderer()
 // Destructor
 Renderer::~Renderer()
 {
-    // Disable the vertexarrays
+    // Disable the vertex arrays
     glDisableClientState(GL_VERTEX_ARRAY);
     glDisableClientState(GL_COLOR_ARRAY);
     glDisableClientState(GL_TEXTURE_COORD_ARRAY);
@@ -47,11 +47,38 @@ Renderer::~Renderer()
     Renderer::instance = nullptr;
 }
 
-void Renderer::initializeMesh(Terrain *terrain)
-{    
+void Renderer::setTerrain(Terrain *terrain)
+{
     this->terrain = terrain;
     // Print the map info
     this->terrain->getInfo();
+}
+
+void Renderer::initialize(Camera *camera)
+{
+    // Set the camera
+    this->camera = camera;
+
+    // Allocate space for 8 objects (Mesh, Splashscreen, Canvas, Skydome, Sun, Moon, Water, Vegetation and the 4 sketches)
+    objects.resize(12);
+
+    // Initialize non-terrain-related objects
+    this->initializeSplashscreen();
+    this->initializeCanvas();
+    this->initializeSkydome();
+    
+    // Set the glut timer callback for the sun animaton
+    glutTimerFunc(100, Renderer::timerCallback, 0);
+
+    // Set the glut display callback
+    glutDisplayFunc(Renderer::draw);
+
+    const siv::PerlinNoise::seed_type seed = 12345;
+    this->perlin_noise = siv::PerlinNoise(seed);
+}
+
+void Renderer::initializeMesh()
+{    
     // Retrieve the map
     Vec3<float> *map = this->terrain->getHeightmap();
     // Load the mesh texture image
@@ -218,23 +245,22 @@ void Renderer::initializeMesh(Terrain *terrain)
 void Renderer::initializeWater()
 {
     // Retrieve the map
-    Vec3<float> *map = this->terrain->getHeightmap();
+    Vec3<float> *map = this->terrain->getWatermap();
     
     int dim = this->terrain->getDim();
-    int water_level = this->terrain->getWaterLevel();
     
     objects[WATER].vertices.clear();
     objects[WATER].indices.clear();
     objects[WATER].textures.clear();
     objects[WATER].normals.clear();
-
+    
     // Find depression points by comparing each low point with the neighbors
     for (int i = 0; i < dim; i++)
     {
         for (int j = 0; j < dim; j++)
         {
             objects[WATER].vertices.push_back(map[i * dim + j].x);
-            objects[WATER].vertices.push_back(water_level);
+            objects[WATER].vertices.push_back(map[i * dim + j].y);
             objects[WATER].vertices.push_back(map[i * dim + j].z);
             
             objects[WATER].textures.push_back((float)i / dim * 30);
@@ -337,7 +363,7 @@ void Renderer::initializeVegetation()
             // With probability 0.05 add 2 crossing vertical quads at the current location
             if (rand() % 50 == 0)
             {
-                if (map[i * dim + j].y < 2000)
+                if (map[i * dim + j].y < this->terrain->getBounds()->max_y / 3)
                 {
                     objects[VEGETATION].vertices.push_back(map[i * dim + j].x + BUSH_SIZE);
                     objects[VEGETATION].vertices.push_back(map[i * dim + j].y);
@@ -360,7 +386,7 @@ void Renderer::initializeVegetation()
                     
                     objects[VEGETATION].textures.push_back(1.0f);
                     objects[VEGETATION].textures.push_back(0.0f);
-
+                    
                     objects[VEGETATION].textures.push_back(0.0f);
                     objects[VEGETATION].textures.push_back(0.0f);
                     
@@ -413,7 +439,7 @@ void Renderer::initializeOrbit(int orbit_height)
 {
 
     // SUN OBJECT
-
+    
     // Clear the sun object before initializing it
     objects[SUN].vertices.clear();
     objects[SUN].indices.clear();
@@ -462,7 +488,7 @@ void Renderer::initializeOrbit(int orbit_height)
             // Extract vertices
             aiVector3D Vec = mesh->mVertices[j];
             objects[SUN].vertices.push_back(Vec.x);
-            objects[SUN].vertices.push_back(Vec.y - orbit_height - orbit_height*0.1);
+            objects[SUN].vertices.push_back(Vec.y - orbit_height*2);
             objects[SUN].vertices.push_back(Vec.z);
 
             // Extract texture coordinates
@@ -566,9 +592,9 @@ void Renderer::initializeOrbit(int orbit_height)
             // Extract vertices
             aiVector3D Vec = mesh->mVertices[j];
             objects[MOON].vertices.push_back(Vec.x);
-            objects[MOON].vertices.push_back(Vec.y + orbit_height + orbit_height*0.1);
+            objects[MOON].vertices.push_back(Vec.y + orbit_height*2);
             objects[MOON].vertices.push_back(Vec.z);
-
+            
             // Extract texture coordinates
             if (mesh->HasTextureCoords(0))
             {
@@ -626,10 +652,10 @@ void Renderer::initializeOrbit(int orbit_height)
 void Renderer::initializeSkydome()
 {
     // Load skydome texture image
-    instance->day_texture = cv::imread("./assets/textures/day.jpg");
-    
+    cv::Mat day_texture = cv::imread("./assets/textures/day.jpg");
+
     // Check if the image was loaded successfully
-    if (instance->day_texture.empty())
+    if (day_texture.empty())
     {
         // Handle error
         std::cerr << "Failed to load skydome texture image." << std::endl;
@@ -637,7 +663,7 @@ void Renderer::initializeSkydome()
     }
 
     // Add alpha channel to day_texture in place
-    cv::cvtColor(instance->day_texture, instance->day_texture, cv::COLOR_BGR2BGRA);
+    cv::cvtColor(day_texture, day_texture, cv::COLOR_BGR2BGRA);
 
     // Load night texture image
     instance->night_texture = cv::imread("./assets/textures/night.jpg");
@@ -664,7 +690,7 @@ void Renderer::initializeSkydome()
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     
     // Upload the texture image data
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, instance->day_texture.cols, instance->day_texture.rows, 0, GL_BGRA, GL_UNSIGNED_BYTE, instance->day_texture.data);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, day_texture.cols, day_texture.rows, 0, GL_BGRA, GL_UNSIGNED_BYTE, day_texture.data);
 
     // Generate and bind a texture object for the night texture
     glGenTextures(1, &objects[SKYDOME].blend_texture);
@@ -701,9 +727,9 @@ void Renderer::initializeSkydome()
         {
             // Extract vertices
             aiVector3D Vec = mesh->mVertices[j];
-            objects[SKYDOME].vertices.push_back(Vec.x);
-            objects[SKYDOME].vertices.push_back(Vec.y);
-            objects[SKYDOME].vertices.push_back(Vec.z);
+            objects[SKYDOME].vertices.push_back(Vec.x*4);
+            objects[SKYDOME].vertices.push_back(Vec.y*4);
+            objects[SKYDOME].vertices.push_back(Vec.z*4);
 
             // Extract texture coordinates
             if (mesh->HasTextureCoords(0))
@@ -783,7 +809,7 @@ void Renderer::initializeSplashscreen()
     std::vector<GLfloat> colors = {1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f};
     std::vector<GLfloat> texture_coords = {0, 1, 1, 1, 1, 0, 0, 0};
 
-    // Enable the vertexarrays
+    // Enable the vertex arrays
     glEnableClientState(GL_VERTEX_ARRAY);
     glEnableClientState(GL_COLOR_ARRAY);
     glEnableClientState(GL_TEXTURE_COORD_ARRAY);
@@ -844,7 +870,7 @@ void Renderer::initializeCanvas()
     std::vector<GLfloat> colors = {1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f};
     std::vector<GLfloat> texture_coords = {0, 1, 1, 1, 1, 0, 0, 0};
 
-    // Enable the vertexarrays
+    // Enable the vertex arrays
     glEnableClientState(GL_VERTEX_ARRAY);
     glEnableClientState(GL_COLOR_ARRAY);
     glEnableClientState(GL_TEXTURE_COORD_ARRAY);
@@ -877,29 +903,6 @@ void Renderer::initializeCanvas()
     glDisableClientState(GL_TEXTURE_COORD_ARRAY);
 
     glGenTextures(1, &objects[CANVAS].texture);
-}
-
-void Renderer::initialize(Camera *camera)
-{
-    // Set the camera
-    this->camera = camera;
-    
-    // Allocate space for 8 objects (Mesh, Splashscreen, Canvas, Skydome, Sun, Moon, Water, Vegetation and the 4 sketches)
-    objects.resize(12);
-    
-    // Initialize non-terrain-related objects
-    this->initializeSplashscreen();
-    this->initializeCanvas();
-    this->initializeSkydome();
-
-    // Set the glut timer callback for the sun animaton
-    glutTimerFunc(100, Renderer::timerCallback, 0);
-
-    // Set the glut display callback
-    glutDisplayFunc(Renderer::draw);
-
-    const siv::PerlinNoise::seed_type seed = 420;
-    this->perlin_noise = siv::PerlinNoise(seed);
 }
 
 void Renderer::takeSnapshot()
@@ -985,7 +988,7 @@ void Renderer::takeSnapshot()
 void Renderer::cycleDayNight()
 {
     // Cycle the day/night cycle using the time variabl which sets the rotation for the orbit and the alpha value for the night texture
-    this->time += 0.1f;
+    this->time += 0.02f;
     if (this->time > 24.f)
         this->time -= 24.0f;
     
@@ -1145,7 +1148,7 @@ void Renderer::drawMesh()
     // Draw the terrain
     glBindVertexArray(instance->objects[MESH].vao);
     
-    // Enable two vertexarrays: co-ordinates and color.
+    // Enable two vertex arrays: co-ordinates and color.
     glEnableClientState(GL_VERTEX_ARRAY);
     glEnableClientState(GL_TEXTURE_COORD_ARRAY);
     glEnableClientState(GL_NORMAL_ARRAY);
@@ -1197,7 +1200,7 @@ void Renderer::drawWater()
     // Bind the water VAO
     glBindVertexArray(instance->objects[WATER].vao);
     
-    // Enable two vertexarrays: co-ordinates and color.
+    // Enable two vertex arrays: co-ordinates and color.
     glEnableClientState(GL_VERTEX_ARRAY);
     glEnableClientState(GL_TEXTURE_COORD_ARRAY);
     glEnableClientState(GL_NORMAL_ARRAY);
@@ -1207,8 +1210,8 @@ void Renderer::drawWater()
     // Update textures coordinates
     for (unsigned int i = 0; i < instance->objects[WATER].textures.size(); i += 2)
     {
-        instance->objects[WATER].textures[i] += 0.001f;
-        instance->objects[WATER].textures[i + 1] += 0.001f;
+        instance->objects[WATER].textures[i] += 0.002f;
+        instance->objects[WATER].textures[i + 1] += 0.002f;
     }
     glBufferData(GL_ARRAY_BUFFER, instance->objects[WATER].textures.size() * sizeof(float), instance->objects[WATER].textures.data(), GL_DYNAMIC_DRAW);
     
@@ -1216,7 +1219,7 @@ void Renderer::drawWater()
     glBindBuffer(GL_ARRAY_BUFFER, instance->objects[WATER].vbo);
     // Generate Perlin noise values based on vertex positions and time
     vector<float> vertices = instance->objects[WATER].vertices;
-    float amplitude = 300.0f; // Adjust the amplitude to control the wave height
+    float amplitude = 600.0f; // Adjust the amplitude to control the wave height
     float frequency = 0.0005f; // Adjust the frequency to control the wave speed
     for (unsigned int i = 0; i < instance->objects[WATER].vertices.size(); i += 3)
     {
@@ -1224,7 +1227,7 @@ void Renderer::drawWater()
         float z = instance->objects[WATER].vertices[i + 2];
         float noiseValue = amplitude * instance->perlin_noise.noise3D_01(x * frequency, z * frequency, time);
         
-        vertices[i + 1] += noiseValue;
+        vertices[i + 1] += 50 + noiseValue;
     }
     time += 0.01f;
     glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_DYNAMIC_DRAW);
@@ -1343,7 +1346,7 @@ void Renderer::drawVegetation()
 
         glDisableClientState(GL_VERTEX_ARRAY);
         glDisableClientState(GL_TEXTURE_COORD_ARRAY);
-
+        
         // Unbind the vertex array object and texture
         glBindVertexArray(0);
     
@@ -1369,7 +1372,7 @@ void Renderer::drawOrbit()
         // Draw the sun
         glBindVertexArray(instance->objects[SUN].vao);
         
-        // Enable two vertexarrays: co-ordinates and color.
+        // Enable two vertex arrays: co-ordinates and color.
         glEnableClientState(GL_VERTEX_ARRAY);
         glEnableClientState(GL_TEXTURE_COORD_ARRAY);
 
@@ -1395,7 +1398,7 @@ void Renderer::drawOrbit()
         // Draw the sun
         glBindVertexArray(instance->objects[MOON].vao);
         
-        // Enable two vertexarrays: co-ordinates and color.
+        // Enable two vertex arrays: co-ordinates and color.
         glEnableClientState(GL_VERTEX_ARRAY);
         glEnableClientState(GL_TEXTURE_COORD_ARRAY);
 
@@ -1447,7 +1450,6 @@ void Renderer::drawSkydome()
     glDisable(GL_BLEND);
 }
 
-
 void Renderer::drawSplashscreen()
 {
     if (!instance->menu_frame.empty())
@@ -1475,7 +1477,7 @@ void Renderer::drawSplashscreen()
         // Update the vertex buffer data
         glBufferSubData(GL_ARRAY_BUFFER, 0, vertices.size() * sizeof(GLfloat), vertices.data());
 
-        // Enable the vertexarrays
+        // Enable the vertex arrays
         glEnableClientState(GL_VERTEX_ARRAY);
         glEnableClientState(GL_COLOR_ARRAY);
         glEnableClientState(GL_TEXTURE_COORD_ARRAY);
@@ -1524,7 +1526,7 @@ void Renderer::drawCanvas()
         // Update width and height values in a single line
         std::vector<GLfloat> vertices = {0, 0, width, 0, width, height, 0, height};
 
-        // Enable the vertexarrays
+        // Enable the vertex arrays
         glEnableClientState(GL_VERTEX_ARRAY);
         glEnableClientState(GL_COLOR_ARRAY);
         glEnableClientState(GL_TEXTURE_COORD_ARRAY);
@@ -1536,7 +1538,7 @@ void Renderer::drawCanvas()
         glBindBuffer(GL_ARRAY_BUFFER, instance->objects[CANVAS].vbo);
         // Update the vertex buffer data
         glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(GLfloat), vertices.data(), GL_STATIC_DRAW);
-
+        
         glDrawArrays(GL_QUADS, 0, 4);
         
         glBindVertexArray(0);
@@ -1574,7 +1576,7 @@ void Renderer::drawSketch(short current_canvas)
 
         // Update sketch_vertices to fit the screen: vertices is the non-normalized version of sketch_vertices
         vector<float> vertices(instance->objects[SKETCH + current_canvas].vertices.size());
-
+        
         for (int i = 0; i < instance->objects[SKETCH + current_canvas].vertices.size(); i = i + 3)
         {
             vertices[i] = instance->objects[SKETCH + current_canvas].vertices[i] * width;
@@ -1582,7 +1584,7 @@ void Renderer::drawSketch(short current_canvas)
             vertices[i + 2] = instance->objects[SKETCH + current_canvas].vertices[i + 2];
         }
 
-        // Enable the vertexarrays
+        // Enable the vertex arrays
         glEnableClientState(GL_VERTEX_ARRAY);
         glEnableClientState(GL_COLOR_ARRAY);
         glEnableClientState(GL_TEXTURE_COORD_ARRAY);
@@ -1655,7 +1657,7 @@ void Renderer::drawTime()
         GLfloat scaling_factor = screen_width / screen_height * 0.2;
         GLfloat text_pos_x = (screen_width - text_width * scaling_factor) / 2.0f; // Center horizontally
         GLfloat text_pos_y = screen_height - 80.0f;                  // Position at the top with 80 pixels offset
-
+        
         // Set up an orthographic projection
         glOrtho(0, screen_width, 0, screen_height, -1, 1);
 
@@ -1763,12 +1765,11 @@ void Renderer::draw()
         instance->drawSkydome();
         instance->drawOrbit();
         instance->drawTime();
-        glEnable(GL_LIGHTING);
+        //glEnable(GL_LIGHTING);
         instance->drawMesh();
         instance->drawWater();
         instance->drawVegetation();
         instance->renderLight();
-        
         glDisable(GL_LIGHTING);
         break;
     case LOADING_SCREEN:
