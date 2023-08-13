@@ -55,7 +55,7 @@ SoundManager::SoundManager()
 	alSource3f(sources[EFFECTS], AL_POSITION, 0.f, 0.f, 0.f);
 	alSource3f(sources[EFFECTS], AL_VELOCITY, 0.f, 0.f, 0.f);
 	alSourcei(sources[EFFECTS], AL_LOOPING, true);
-	alSourcef(sources[EFFECTS], AL_ROLLOFF_FACTOR, 5.f);
+	alSourcef(sources[EFFECTS], AL_ROLLOFF_FACTOR, 3.f);
 	alSourcef(sources[EFFECTS], AL_REFERENCE_DISTANCE, 1000.f);
     
     // Initialize buffers
@@ -228,6 +228,5 @@ void SoundManager::playBackgroundMusic()
 void SoundManager::updateListener(float distance)
 {
 	// Set listener position (x, y, z)
-	printf("Distance: %f\n", distance);
 	alSource3f(sources[EFFECTS], AL_POSITION, 0.f, distance, 0.f);
 }

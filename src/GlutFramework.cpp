@@ -21,7 +21,7 @@ void GlutFramework::initialize(int argc, char** argv)
 {    
     glutInit(&argc, argv);
     glutInitContextProfile(GLUT_COMPATIBILITY_PROFILE);
-    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH);
+    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH | GLUT_STENCIL);
     glutCreateWindow("Window");
     glutFullScreen();
     glutReshapeFunc(GlutFramework::resize);
@@ -75,6 +75,9 @@ void GlutFramework::initialize(int argc, char** argv)
     
     // Enable blending
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glEnable(GL_STENCIL_TEST);
+    glClearStencil(0); // Set clearing value for stencil buffer.
+    
 }
 
 // OpenGL window reshape routine.

@@ -186,8 +186,8 @@ void InputHandler::handleKeyboard()
                 instance->sound_manager->playSuccessSound();
                 instance->sound_manager->playBackgroundMusic();
                 int z = instance->terrain->getWorldDim()/2;
-                int y = instance->terrain->getBounds()->max_y;
-                camera->setPosition(0, y, z);
+                //int y = instance->terrain->getBounds()->max_y;
+                camera->setPosition(0, 50, z);
                 break;
         }
         keys[13] = false;

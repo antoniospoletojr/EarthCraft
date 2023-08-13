@@ -42,6 +42,7 @@ public:
 	void initialize(float world_scale, float texture_scale);
 	Vec3<float>* getHeightmap();
 	Vec3<float>* getWatermap();
+	int getWaterLevel();
 
 	cv::Mat getTexture();
 	
@@ -56,6 +57,7 @@ private:
 	int dim;
 	float world_scale, texture_scale;
 	TerrainBounds bounds;
+	int water_level;
 
 	Vec3<float> *heightmap;
 	Vec3<float> *watermap;

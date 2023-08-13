@@ -170,11 +170,11 @@ void Terrain::loadWatermap()
     
     // Find the index corresponding to the 10th percentile
     int percentile_index = static_cast<int>(this->dim * this->dim * FLOODING_FACTOR);
-
+    
     printf("Water level: %d\n", heights[percentile_index]);
-
+    
     // The value at the percentile index will be your water level
-    int water_level = heights[percentile_index];
+    this->water_level = heights[percentile_index];
     
     this->watermap = new Vec3<float>[this->dim * this->dim];
     
@@ -189,7 +189,7 @@ void Terrain::loadWatermap()
         {
             // Set the vertices
             this->watermap[i * this->dim + j].x = ((j - (this->dim / 2)) * this->world_scale);
-            this->watermap[i * this->dim + j].y = water_level;
+            this->watermap[i * this->dim + j].y = this->water_level;
             this->watermap[i * this->dim + j].z = ((i - (this->dim / 2)) * this->world_scale);
         }
     }
@@ -274,6 +274,11 @@ Vec3<float> *Terrain::getWatermap()
     return watermap;
 }
 
+int Terrain::getWaterLevel()
+{
+    return this->water_level;
+}
+
 // Return the texture map
 cv::Mat Terrain::getTexture()
 {
@@ -328,8 +333,8 @@ bool Terrain::checkCollision(Vec3<float> position)
 
     // Check if the height of the terrain is greater than the height of the object (add an offset for visual purposes)
     if (height > position.y-50)
-        return true;
-
+        return false;
+    
     return false;
 }
 

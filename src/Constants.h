@@ -34,8 +34,8 @@
 
 // Terrain
 #define WORLD_SCALE 125
-#define TEXTURE_SCALE 1
-#define FLOODING_FACTOR 0.15
+#define TEXTURE_SCALE 20
+#define FLOODING_FACTOR 0.35
 
 #define CULLING_ANGLE 45
 

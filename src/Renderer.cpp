@@ -28,7 +28,7 @@ Renderer::~Renderer()
     // Deallocate memory
     objects.clear();
     
-    // Delete the vertexarray objects
+    // Delete the vertex array objects
     glDeleteVertexArrays(1, &objects[MESH].vao);
     glDeleteVertexArrays(1, &objects[SUN].vao);
     glDeleteVertexArrays(1, &objects[MOON].vao);
@@ -101,9 +101,9 @@ void Renderer::initializeMesh()
     // Upload the texture image data
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, mesh_texture.cols, mesh_texture.rows, 0, GL_BGR, GL_UNSIGNED_BYTE, mesh_texture.data);
 
-    // Generate the vertexarray object for the mesh
+    // Generate the vertex array object for the mesh
     glGenVertexArrays(1, &objects[MESH].vao);
-    // Bind the vertexarray object for the mesh
+    // Bind the vertex array object for the mesh
     glBindVertexArray(objects[MESH].vao);
 
     // Generate the buffer objects
@@ -263,8 +263,8 @@ void Renderer::initializeWater()
             objects[WATER].vertices.push_back(map[i * dim + j].y);
             objects[WATER].vertices.push_back(map[i * dim + j].z);
             
-            objects[WATER].textures.push_back((float)i / dim * 30);
-            objects[WATER].textures.push_back((float)j / dim * 30);
+            objects[WATER].textures.push_back((float)i / dim * 100);
+            objects[WATER].textures.push_back((float)j / dim * 100);
 
             objects[WATER].normals.push_back(0.0f);
             objects[WATER].normals.push_back(0.0f);
@@ -312,9 +312,9 @@ void Renderer::initializeWater()
     // Upload the texture image data
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, water_texture.cols, water_texture.rows, 0, GL_BGRA, GL_UNSIGNED_BYTE, water_texture.data);
 
-    // Generate the vertexarray object for the mesh
+    // Generate the vertex array object for the mesh
     glGenVertexArrays(1, &objects[WATER].vao);
-    // Bind the vertexarray object for the mesh
+    // Bind the vertex array object for the mesh
     glBindVertexArray(objects[WATER].vao);
     
     // Generate the buffer objects
@@ -412,9 +412,9 @@ void Renderer::initializeVegetation()
     // Upload the texture image data
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, grass_texture.cols, grass_texture.rows, 0, GL_BGRA, GL_UNSIGNED_BYTE, grass_texture.data);
 
-    // Generate the vertexarray object for the mesh
+    // Generate the vertex array object for the mesh
     glGenVertexArrays(1, &objects[VEGETATION].vao);
-    // Bind the vertexarray object for the mesh
+    // Bind the vertex array object for the mesh
     glBindVertexArray(objects[VEGETATION].vao);
 
     // Generate the buffer objects
@@ -515,9 +515,9 @@ void Renderer::initializeOrbit(int orbit_height)
         }
     }
     
-    // Generate the vertexarray object for the sun
+    // Generate the vertex array object for the sun
     glGenVertexArrays(1, &objects[SUN].vao);
-    // Bind the vertexarray object for the sun
+    // Bind the vertex array object for the sun
     glBindVertexArray(objects[SUN].vao);
 
     // Generate the buffer objects
@@ -619,9 +619,9 @@ void Renderer::initializeOrbit(int orbit_height)
         }
     }
 
-    // Generate the vertexarray object for the sun
+    // Generate the vertex array object for the sun
     glGenVertexArrays(1, &objects[MOON].vao);
-    // Bind the vertexarray object for the sun
+    // Bind the vertex array object for the sun
     glBindVertexArray(objects[MOON].vao);
 
     // Generate the buffer objects
@@ -755,10 +755,10 @@ void Renderer::initializeSkydome()
         }
     }
     
-    // Generate the vertexarray object for the skydome
+    // Generate the vertex array object for the skydome
     glGenVertexArrays(1, &objects[SKYDOME].vao);
     
-    // Bind the vertexarray object for the skydome
+    // Bind the vertex array object for the skydome
     glBindVertexArray(objects[SKYDOME].vao);
 
     // Generate the buffer objects
@@ -792,9 +792,9 @@ void Renderer::initializeSplashscreen()
     instance->menu_clips[LANDING_SCREEN].open("./assets/menu/Splashscreen.mp4");
     instance->menu_clips[LANDING_SCREEN].read(instance->menu_frame);
 
-    // Generate the vertexarray object for the SPLASHSCREEN
+    // Generate the vertex array object for the SPLASHSCREEN
     glGenVertexArrays(1, &objects[SPLASHSCREEN].vao);
-    // Bind the vertexarray object for the SPLASHSCREEN
+    // Bind the vertex array object for the SPLASHSCREEN
     glBindVertexArray(objects[SPLASHSCREEN].vao);
     
     // Generate the vertex buffer objects
@@ -853,9 +853,9 @@ void Renderer::initializeCanvas()
     instance->menu_clips[BASINS_SCREEN].open("./assets/menu/Basins.mp4");
     instance->menu_clips[LOADING_SCREEN].open("./assets/menu/Loadingscreen.mp4");
 
-    // Generate the vertexarray object for the canvas
+    // Generate the vertex array object for the canvas
     glGenVertexArrays(1, &objects[CANVAS].vao);
-    // Bind the vertexarray object for the canvas
+    // Bind the vertex array object for the canvas
     glBindVertexArray(objects[CANVAS].vao);
 
     // Generate the vertex buffer objects
@@ -1185,15 +1185,17 @@ void Renderer::drawMesh()
     glDisableClientState(GL_TEXTURE_COORD_ARRAY);
     glDisableClientState(GL_NORMAL_ARRAY);
     
-    // Unbind the vertexarray object and texture
+    // Unbind the vertex array object and texture
     glBindVertexArray(0);
     glBindTexture(GL_TEXTURE_2D, 0);
 }
+
 
 void Renderer::drawWater()
 {
     static float time = 0;
     glEnable(GL_BLEND);
+    
     // Bind the water texture
     glBindTexture(GL_TEXTURE_2D, instance->objects[WATER].texture);
     
@@ -1210,8 +1212,8 @@ void Renderer::drawWater()
     // Update textures coordinates
     for (unsigned int i = 0; i < instance->objects[WATER].textures.size(); i += 2)
     {
-        instance->objects[WATER].textures[i] += 0.002f;
-        instance->objects[WATER].textures[i + 1] += 0.002f;
+        instance->objects[WATER].textures[i] += 0.01f;
+        instance->objects[WATER].textures[i + 1] += 0.01f;
     }
     glBufferData(GL_ARRAY_BUFFER, instance->objects[WATER].textures.size() * sizeof(float), instance->objects[WATER].textures.data(), GL_DYNAMIC_DRAW);
     
@@ -1219,15 +1221,23 @@ void Renderer::drawWater()
     glBindBuffer(GL_ARRAY_BUFFER, instance->objects[WATER].vbo);
     // Generate Perlin noise values based on vertex positions and time
     vector<float> vertices = instance->objects[WATER].vertices;
-    float amplitude = 600.0f; // Adjust the amplitude to control the wave height
-    float frequency = 0.0005f; // Adjust the frequency to control the wave speed
+    float macro_amplitude = 500.0f; // Adjust the amplitude to control the wave height
+    float macro_frequency = 0.0005f; // Adjust the frequency to control the wave speed
+    // Add micro waves using sine and cosine functions
+    float micro_amplitude = 25.0f; // Adjust the amplitude of micro waves
+    float micro_frequency_x = 0.01f; // Adjust the frequency of micro waves in X direction
+    float micro_frequency_z = 0.01f; // Adjust the frequency of micro waves in Z direction
+
     for (unsigned int i = 0; i < instance->objects[WATER].vertices.size(); i += 3)
     {
         float x = instance->objects[WATER].vertices[i];
         float z = instance->objects[WATER].vertices[i + 2];
-        float noiseValue = amplitude * instance->perlin_noise.noise3D_01(x * frequency, z * frequency, time);
-        
-        vertices[i + 1] += 50 + noiseValue;
+        float macro_wave = macro_amplitude * instance->perlin_noise.noise3D_01(x * macro_frequency, z * macro_frequency, time*2);
+        float micro_wave_x = micro_amplitude * sin(x * micro_frequency_x + time * 2.0f);
+        float micro_wave_z = micro_amplitude * cos(z * micro_frequency_z + time * 2.0f);
+
+        // Combine perlin noise and micro waves
+        vertices[i + 1] += macro_wave + micro_wave_x + micro_wave_z;
     }
     time += 0.01f;
     glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_DYNAMIC_DRAW);
@@ -1236,7 +1246,6 @@ void Renderer::drawWater()
     glBindBuffer(GL_ARRAY_BUFFER, instance->objects[WATER].nbo);
     // Calculate updated normals for every triangle 
     std::vector<float> normals = instance->objects[WATER].normals;
-
     // Calculate normals
     for (int i = 0; i < instance->objects[WATER].indices.size() - 3; i += 2)
     {
@@ -1285,7 +1294,88 @@ void Renderer::drawWater()
         normals[i3 * 3 + 2] += normal.z;
     }
     glBufferData(GL_ARRAY_BUFFER, normals.size() * sizeof(float), normals.data(), GL_DYNAMIC_DRAW);
+    
+    // Disable writing of the frame and depth buffers as only the 
+    // stencil buffer need be written next.
+    glEnable(GL_STENCIL_TEST); // Enable stencil testing
+    glClearStencil(0); // Set clearing value for stencil buffer.
+    
+    glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+    glDepthMask(GL_FALSE);
+    glDisable(GL_DEPTH_TEST);
+    
+    glStencilFunc(GL_ALWAYS, 1, 1); // The stencil test always passes (the reference value and mask are both 1).
+    glStencilOp(GL_REPLACE, GL_REPLACE, GL_REPLACE); // In all cases replace the stencil tag
+    
+    glEnable(GL_PRIMITIVE_RESTART);                                                                 // Enable primitive restart
+    glDrawElements(GL_TRIANGLE_STRIP, instance->objects[WATER].indices.size(), GL_UNSIGNED_INT, 0); // Draw the triangles
+    glDisable(GL_PRIMITIVE_RESTART);
+    
+    // Enable writing of the frame and depth buffers - actually drawing now begins.
+    glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+    glDepthMask(GL_TRUE);
+    glEnable(GL_DEPTH_TEST);
+    
+    glStencilFunc(GL_EQUAL, 1, 1); // The stencil test passes only if the corresponding stencil buffer tag is 1.
+    glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP); // The stencil buffer itself is not updated.	
 
+    glPushMatrix();
+        glScalef(1.0, -1.0, 1.0);
+        
+        // // Disable depth testing
+        glDisable(GL_DEPTH_TEST);
+        
+        // Bind the vertex array object for the skydome
+        glBindVertexArray(instance->objects[SKYDOME].vao);
+        
+        glEnableClientState(GL_VERTEX_ARRAY);
+        glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+        
+        // Draw the skydome with blending enabled
+        glBindTexture(GL_TEXTURE_2D, instance->objects[SKYDOME].texture);
+        glDrawElements(GL_TRIANGLES, instance->objects[SKYDOME].indices.size(), GL_UNSIGNED_INT, 0);
+        
+        glBindTexture(GL_TEXTURE_2D, instance->objects[SKYDOME].blend_texture);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, instance->night_texture.cols, instance->night_texture.rows, 0, GL_BGRA, GL_UNSIGNED_BYTE, instance->night_texture.data);
+        glDrawElements(GL_TRIANGLES, instance->objects[SKYDOME].indices.size(), GL_UNSIGNED_INT, 0);
+        
+        glDisableClientState(GL_VERTEX_ARRAY);
+        glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+        
+        // Unbind the vertex array object and texture
+        glBindVertexArray(0);
+        glBindTexture(GL_TEXTURE_2D, 0);
+        
+        // Re-enable depth testing
+        glEnable(GL_DEPTH_TEST);
+
+        instance -> drawOrbit();
+    glPopMatrix();
+
+    glPushMatrix();
+        // Change front face to clockwise
+        glFrontFace(GL_CW);
+        glEnable(GL_CLIP_PLANE0);
+        double surface_level = instance->terrain->getWaterLevel() + macro_amplitude + micro_amplitude*2;
+        double equation[4] = { 0.0, -1.0, 0.0, surface_level};
+        glClipPlane(GL_CLIP_PLANE0, equation);
+        glTranslatef(0.0, 2*surface_level, 0.0);
+        glScalef(1.0, -1.0, 1.0);
+        instance -> drawMesh();
+        // Change front face to counter-clockwise
+        glDisable(GL_CLIP_PLANE0);
+        glFrontFace(GL_CCW);
+    glPopMatrix();
+    
+    
+    glDisable(GL_STENCIL_TEST); // Disable the stencil test
+    
+    // Bind the water texture
+    glBindTexture(GL_TEXTURE_2D, instance->objects[WATER].texture);
+    
+    // Bind the water VAO
+    glBindVertexArray(instance->objects[WATER].vao);
+    
     glEnable(GL_PRIMITIVE_RESTART);                                                                 // Enable primitive restart
     glDrawElements(GL_TRIANGLE_STRIP, instance->objects[WATER].indices.size(), GL_UNSIGNED_INT, 0); // Draw the triangles
     glDisable(GL_PRIMITIVE_RESTART);
@@ -1293,8 +1383,8 @@ void Renderer::drawWater()
     glDisableClientState(GL_VERTEX_ARRAY);
     glDisableClientState(GL_TEXTURE_COORD_ARRAY);
     glDisableClientState(GL_NORMAL_ARRAY);
-
-    // Unbind the vertexarray object and texture
+    
+    // Unbind the vertex array object and texture
     glBindVertexArray(0);
     glBindTexture(GL_TEXTURE_2D, 0);
     glDisable(GL_BLEND);
@@ -1381,7 +1471,7 @@ void Renderer::drawOrbit()
         glDisableClientState(GL_VERTEX_ARRAY);
         glDisableClientState(GL_TEXTURE_COORD_ARRAY);
         
-        // Unbind the vertexarray object and texture
+        // Unbind the vertex array object and texture
         glBindVertexArray(0);
         glBindTexture(GL_TEXTURE_2D, 0);
     glPopMatrix();
@@ -1407,7 +1497,7 @@ void Renderer::drawOrbit()
         glDisableClientState(GL_VERTEX_ARRAY);
         glDisableClientState(GL_TEXTURE_COORD_ARRAY);
         
-        // Unbind the vertexarray object and texture
+        // Unbind the vertex array object and texture
         glBindVertexArray(0);
         glBindTexture(GL_TEXTURE_2D, 0);
     glPopMatrix();
@@ -1416,14 +1506,14 @@ void Renderer::drawOrbit()
 
 void Renderer::drawSkydome()
 {
-    // Enable blending
+    // // Enable blending
     glEnable(GL_BLEND);
-
+    
     // Disable depth testing
     glDisable(GL_DEPTH_TEST);
     glCullFace(GL_FRONT);
     
-    // Bind the vertexarray object for the skydome
+    // Bind the vertex array object for the skydome
     glBindVertexArray(instance->objects[SKYDOME].vao);
     
     glEnableClientState(GL_VERTEX_ARRAY);
@@ -1440,7 +1530,7 @@ void Renderer::drawSkydome()
     glDisableClientState(GL_VERTEX_ARRAY);
     glDisableClientState(GL_TEXTURE_COORD_ARRAY);
     
-    // Unbind the vertexarray object and texture
+    // Unbind the vertex array object and texture
     glBindVertexArray(0);
     glBindTexture(GL_TEXTURE_2D, 0);
     
@@ -1745,9 +1835,8 @@ void Renderer::renderLight()
 
 void Renderer::draw()
 {
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
     glColor3f(1.0, 1.0, 1.0);
-    
     // Set the modelview matrix
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
@@ -1765,9 +1854,10 @@ void Renderer::draw()
         instance->drawSkydome();
         instance->drawOrbit();
         instance->drawTime();
-        //glEnable(GL_LIGHTING);
-        instance->drawMesh();
+        glEnable(GL_LIGHTING);
         instance->drawWater();
+        instance->drawMesh();
+        
         instance->drawVegetation();
         instance->renderLight();
         glDisable(GL_LIGHTING);
