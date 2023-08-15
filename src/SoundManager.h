@@ -21,6 +21,7 @@ public:
     ~SoundManager();
 
     void updateListener(float distance);
+    void setWindAltitude(float altitude);
     
     void playClickSound();
     void playSuccessSound();

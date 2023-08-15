@@ -1,3 +1,8 @@
+// Terrain
+#define WORLD_SCALE 125
+#define TEXTURE_SCALE 20
+#define FLOODING_FACTOR 0.15
+
 // Renderer
 #define RENDERING_SCREEN -1
 #define LANDING_SCREEN 0
@@ -22,6 +27,7 @@
 #define VEGETATION 7
 #define SKETCH 8
 
+#define VEGETATION_DENSITY 30
 #define BUSH_SIZE 500
 
 #define LEFT_SKETCH_BORDER 0.063
@@ -29,20 +35,17 @@
 #define TOP_SKETCH_BORDER 0.13
 #define BOTTOM_SKETCH_BORDER 0.87
 
+#define Y_OFFSET 600
+
 // Camera
 #define LOS_DISTANCE 2
-
-// Terrain
-#define WORLD_SCALE 125
-#define TEXTURE_SCALE 20
-#define FLOODING_FACTOR 0.35
-
 #define CULLING_ANGLE 45
 
 // Sound manager
 #define MUSIC 1
 #define UI 2
-#define EFFECTS 3
+#define WATER_EFFECT 3
+#define WIND_EFFECT 4
 
 #define MENU_SOUND 0
 #define WORLD_SOUND 1
@@ -51,3 +54,4 @@
 #define RESET_SOUND 4
 #define SUCCESS_SOUND 5
 #define WATER_SOUND 6
+#define WIND_SOUND 7

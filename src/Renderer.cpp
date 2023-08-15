@@ -361,7 +361,7 @@ void Renderer::initializeVegetation()
         for (int j = 0; j < dim; j++)
         {
             // With probability 0.05 add 2 crossing vertical quads at the current location
-            if (rand() % 50 == 0)
+            if (rand() % VEGETATION_DENSITY == 0)
             {
                 if (map[i * dim + j].y < this->terrain->getBounds()->max_y / 3)
                 {
@@ -653,7 +653,6 @@ void Renderer::initializeSkydome()
 {
     // Load skydome texture image
     cv::Mat day_texture = cv::imread("./assets/textures/day.jpg");
-
     // Check if the image was loaded successfully
     if (day_texture.empty())
     {
@@ -661,23 +660,20 @@ void Renderer::initializeSkydome()
         std::cerr << "Failed to load skydome texture image." << std::endl;
         return;
     }
-
     // Add alpha channel to day_texture in place
     cv::cvtColor(day_texture, day_texture, cv::COLOR_BGR2BGRA);
-
+    
     // Load night texture image
-    instance->night_texture = cv::imread("./assets/textures/night.jpg");
-
+    cv::Mat night_texture = cv::imread("./assets/textures/night.jpg");
     // Check if the image was loaded successfully
-    if (instance->night_texture.empty())
+    if (night_texture.empty())
     {
         // Handle error
         std::cerr << "Failed to load night texture image." << std::endl;
         return;
     }
-
     // Add alpha channel to night_texture in place
-    cv::cvtColor(instance->night_texture, instance->night_texture, cv::COLOR_BGR2BGRA);
+    cv::cvtColor(night_texture, night_texture, cv::COLOR_BGR2BGRA);
 
     // Generate and bind a texture object
     glGenTextures(1, &objects[SKYDOME].texture);
@@ -703,7 +699,7 @@ void Renderer::initializeSkydome()
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     
     // Upload the night texture image data
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, instance->night_texture.cols, instance->night_texture.rows, 0, GL_BGRA, GL_UNSIGNED_BYTE, instance->night_texture.data);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, night_texture.cols, night_texture.rows, 0, GL_BGRA, GL_UNSIGNED_BYTE, night_texture.data);
 
     // Assimp importer
     Assimp::Importer importer;
@@ -987,45 +983,10 @@ void Renderer::takeSnapshot()
 
 void Renderer::cycleDayNight()
 {
-    // Cycle the day/night cycle using the time variabl which sets the rotation for the orbit and the alpha value for the night texture
+    // Cycle the day/night cycle using the time variable which sets the rotation for the orbit and the alpha value for the night texture
     this->time += 0.02f;
     if (this->time > 24.f)
         this->time -= 24.0f;
-    
-    // Calculate the alpha value for the night texture
-    float normalized_time = static_cast<float>(this->time) / 24.0f;
-    uchar alpha = 0;
-    
-    // If sunrise
-    if (normalized_time >= 0.25f && normalized_time < 0.33f)
-    {
-        alpha = static_cast<uchar>((1.0f - ((normalized_time - 0.25f) / 0.08f)) * 255);
-    }
-    // If day
-    else if (normalized_time >= 0.33f && normalized_time < 0.75f)
-    {
-        alpha = 0;
-    }
-    // If sunset
-    else if (normalized_time >= 0.75f && normalized_time < 0.83f)
-    {
-        alpha = static_cast<uchar>(((normalized_time - 0.75f) / 0.08f) * 255);
-    }
-    // If night
-    else
-    {
-        alpha = 255;
-    }
-    
-    // Set the alpha value for the night texture such that it is transparent during the day and opaque during the night
-    for (int y = 0; y < instance->night_texture.rows; ++y)
-    {
-        cv::Vec4b *pixelRow = instance->night_texture.ptr<cv::Vec4b>(y);
-        for (int x = 0; x < instance->night_texture.cols; ++x)
-        {
-            pixelRow[x][3] = alpha;
-        }
-    }
 }
 
 void Renderer::sketch(float x, float y)
@@ -1219,11 +1180,11 @@ void Renderer::drawWater()
     
     // Bind the vertex buffer object
     glBindBuffer(GL_ARRAY_BUFFER, instance->objects[WATER].vbo);
-    // Generate Perlin noise values based on vertex positions and time
+    // Perlin noise parameters for macro waves
     vector<float> vertices = instance->objects[WATER].vertices;
     float macro_amplitude = 500.0f; // Adjust the amplitude to control the wave height
     float macro_frequency = 0.0005f; // Adjust the frequency to control the wave speed
-    // Add micro waves using sine and cosine functions
+    // Micro wave parameters for sin and cos
     float micro_amplitude = 25.0f; // Adjust the amplitude of micro waves
     float micro_frequency_x = 0.01f; // Adjust the frequency of micro waves in X direction
     float micro_frequency_z = 0.01f; // Adjust the frequency of micro waves in Z direction
@@ -1232,15 +1193,16 @@ void Renderer::drawWater()
     {
         float x = instance->objects[WATER].vertices[i];
         float z = instance->objects[WATER].vertices[i + 2];
-        float macro_wave = macro_amplitude * instance->perlin_noise.noise3D_01(x * macro_frequency, z * macro_frequency, time*2);
-        float micro_wave_x = micro_amplitude * sin(x * micro_frequency_x + time * 2.0f);
-        float micro_wave_z = micro_amplitude * cos(z * micro_frequency_z + time * 2.0f);
+        float macro_wave = macro_amplitude * instance->perlin_noise.noise3D_01(x * macro_frequency, z * macro_frequency, time);
+        float micro_wave_x = micro_amplitude * sin(x * micro_frequency_x + time);
+        float micro_wave_z = micro_amplitude * cos(z * micro_frequency_z + time);
 
         // Combine perlin noise and micro waves
         vertices[i + 1] += macro_wave + micro_wave_x + micro_wave_z;
     }
-    time += 0.01f;
     glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_DYNAMIC_DRAW);
+    
+    time += 0.02f;
     
     // Bind the normal buffer object
     glBindBuffer(GL_ARRAY_BUFFER, instance->objects[WATER].nbo);
@@ -1280,7 +1242,7 @@ void Renderer::drawWater()
         // Calculate the normal of the triangle
         Vec3<float> normal = crossProduct(u1, u2);
 
-        // // Add the normal to the normals array
+        // Add the normal to the normals array
         normals[i1 * 3] += normal.x;
         normals[i1 * 3 + 1] += normal.y;
         normals[i1 * 3 + 2] += normal.z;
@@ -1307,36 +1269,55 @@ void Renderer::drawWater()
     glStencilFunc(GL_ALWAYS, 1, 1); // The stencil test always passes (the reference value and mask are both 1).
     glStencilOp(GL_REPLACE, GL_REPLACE, GL_REPLACE); // In all cases replace the stencil tag
     
-    glEnable(GL_PRIMITIVE_RESTART);                                                                 // Enable primitive restart
-    glDrawElements(GL_TRIANGLE_STRIP, instance->objects[WATER].indices.size(), GL_UNSIGNED_INT, 0); // Draw the triangles
+    glEnable(GL_PRIMITIVE_RESTART);                                                       
+    glDrawElements(GL_TRIANGLE_STRIP, instance->objects[WATER].indices.size(), GL_UNSIGNED_INT, 0);
     glDisable(GL_PRIMITIVE_RESTART);
     
     // Enable writing of the frame and depth buffers - actually drawing now begins.
     glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-    glDepthMask(GL_TRUE);
-    glEnable(GL_DEPTH_TEST);
     
     glStencilFunc(GL_EQUAL, 1, 1); // The stencil test passes only if the corresponding stencil buffer tag is 1.
     glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP); // The stencil buffer itself is not updated.	
-
+    
     glPushMatrix();
+        glDisable(GL_LIGHTING);
         glScalef(1.0, -1.0, 1.0);
-        
-        // // Disable depth testing
-        glDisable(GL_DEPTH_TEST);
-        
         // Bind the vertex array object for the skydome
         glBindVertexArray(instance->objects[SKYDOME].vao);
         
         glEnableClientState(GL_VERTEX_ARRAY);
         glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-        
         // Draw the skydome with blending enabled
         glBindTexture(GL_TEXTURE_2D, instance->objects[SKYDOME].texture);
         glDrawElements(GL_TRIANGLES, instance->objects[SKYDOME].indices.size(), GL_UNSIGNED_INT, 0);
         
+        // Calculate the alpha value for the night texture
+        float normalized_time = static_cast<float>(instance->time) / 24.0f;
+        float alpha = 0;
+        
+        // If sunrise
+        if (normalized_time >= 0.25f && normalized_time < 0.33f)
+        {
+            alpha = static_cast<float>((1.0f - ((normalized_time - 0.25f) / 0.08f)));
+        }
+        // If day
+        else if (normalized_time >= 0.33f && normalized_time < 0.75f)
+        {
+            alpha = 0;
+        }
+        // If sunset
+        else if (normalized_time >= 0.75f && normalized_time < 0.83f)
+        {
+            alpha = static_cast<float>(((normalized_time - 0.75f) / 0.08f));
+        }
+        // If night
+        else
+        {
+            alpha = 1;
+        }
+        glColor4f(1.0, 1.0, 1.0, alpha); 
+        // Draw the skydome with blending enabled
         glBindTexture(GL_TEXTURE_2D, instance->objects[SKYDOME].blend_texture);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, instance->night_texture.cols, instance->night_texture.rows, 0, GL_BGRA, GL_UNSIGNED_BYTE, instance->night_texture.data);
         glDrawElements(GL_TRIANGLES, instance->objects[SKYDOME].indices.size(), GL_UNSIGNED_INT, 0);
         
         glDisableClientState(GL_VERTEX_ARRAY);
@@ -1345,13 +1326,13 @@ void Renderer::drawWater()
         // Unbind the vertex array object and texture
         glBindVertexArray(0);
         glBindTexture(GL_TEXTURE_2D, 0);
-        
-        // Re-enable depth testing
-        glEnable(GL_DEPTH_TEST);
-
         instance -> drawOrbit();
+        glEnable(GL_LIGHTING);
     glPopMatrix();
-
+    
+    glDepthMask(GL_TRUE);
+    glEnable(GL_DEPTH_TEST);
+    
     glPushMatrix();
         // Change front face to clockwise
         glFrontFace(GL_CW);
@@ -1372,7 +1353,6 @@ void Renderer::drawWater()
     
     // Bind the water texture
     glBindTexture(GL_TEXTURE_2D, instance->objects[WATER].texture);
-    
     // Bind the water VAO
     glBindVertexArray(instance->objects[WATER].vao);
     
@@ -1439,6 +1419,7 @@ void Renderer::drawVegetation()
         
         // Unbind the vertex array object and texture
         glBindVertexArray(0);
+        glBindTexture(GL_TEXTURE_2D, 0);
     
     glPopMatrix();
     
@@ -1506,7 +1487,7 @@ void Renderer::drawOrbit()
 
 void Renderer::drawSkydome()
 {
-    // // Enable blending
+    // Enable blending
     glEnable(GL_BLEND);
     
     // Disable depth testing
@@ -1523,13 +1504,39 @@ void Renderer::drawSkydome()
     glBindTexture(GL_TEXTURE_2D, instance->objects[SKYDOME].texture);
     glDrawElements(GL_TRIANGLES, instance->objects[SKYDOME].indices.size(), GL_UNSIGNED_INT, 0);
     
+    // Calculate the alpha value for the night texture
+    float normalized_time = static_cast<float>(instance->time) / 24.0f;
+    float alpha = 0;
+    
+    // If sunrise
+    if (normalized_time >= 0.25f && normalized_time < 0.33f)
+    {
+        alpha = static_cast<float>((1.0f - ((normalized_time - 0.25f) / 0.08f)));
+    }
+    // If day
+    else if (normalized_time >= 0.33f && normalized_time < 0.75f)
+    {
+        alpha = 0;
+    }
+    // If sunset
+    else if (normalized_time >= 0.75f && normalized_time < 0.83f)
+    {
+        alpha = static_cast<float>(((normalized_time - 0.75f) / 0.08f));
+    }
+    // If night
+    else
+    {
+        alpha = 1;
+    }
+    glColor4f(1.0, 1.0, 1.0, alpha);
+    
     glBindTexture(GL_TEXTURE_2D, instance->objects[SKYDOME].blend_texture);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, instance->night_texture.cols, instance->night_texture.rows, 0, GL_BGRA, GL_UNSIGNED_BYTE, instance->night_texture.data);
     glDrawElements(GL_TRIANGLES, instance->objects[SKYDOME].indices.size(), GL_UNSIGNED_INT, 0);
     
     glDisableClientState(GL_VERTEX_ARRAY);
     glDisableClientState(GL_TEXTURE_COORD_ARRAY);
     
+    glColor4f(1.0, 1.0, 1.0, 1.0);
     // Unbind the vertex array object and texture
     glBindVertexArray(0);
     glBindTexture(GL_TEXTURE_2D, 0);
@@ -1801,17 +1808,17 @@ void Renderer::renderLight()
         light_position[0] = 0;
         light_position[2] = 0;
         light_position[3] = 1;
-
+        
         GLfloat spot_direction[3] = {0.0f, -1.0f, 0.0f};
         glLightfv(GL_LIGHT0, GL_SPOT_DIRECTION, spot_direction);
         
-        GLfloat cutoff_angle = 90.0f;
+        GLfloat cutoff_angle = 75.0f;
         glLightf(GL_LIGHT0, GL_SPOT_CUTOFF, cutoff_angle);
         
         GLfloat exponent_value = 1.f;
         glLightf(GL_LIGHT0, GL_SPOT_EXPONENT, exponent_value);
         
-        // If daytime, use the diffuse sunlight
+        // If daytime, use diffuse sunlight
         if (instance->time > 6 && instance->time < 18)
         {
             float light[] = {1.0, 0.9, 0.8, 1.0};
@@ -1819,7 +1826,7 @@ void Renderer::renderLight()
             glLightfv(GL_LIGHT0, GL_DIFFUSE, light);
             light_position[1] = diffuse_light_y;
         }
-        // If nighttime, use the diffuse moonlight
+        // If nighttime, use diffuse moonlight
         else
         {
             float light[] = {0.25, 0.5, 0.75, 1.0};
@@ -1853,14 +1860,13 @@ void Renderer::draw()
     case RENDERING_SCREEN:
         instance->drawSkydome();
         instance->drawOrbit();
-        instance->drawTime();
         glEnable(GL_LIGHTING);
         instance->drawWater();
         instance->drawMesh();
-        
         instance->drawVegetation();
         instance->renderLight();
         glDisable(GL_LIGHTING);
+        instance->drawTime();
         break;
     case LOADING_SCREEN:
         instance->drawCanvas();

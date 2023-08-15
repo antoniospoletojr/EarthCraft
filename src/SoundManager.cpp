@@ -33,7 +33,7 @@ SoundManager::SoundManager()
 	printf(COLOR_CYAN "Opened \"%s\"\n" COLOR_RESET, device_name);
     
 	// Initialize sources
-	this->sources.resize(3);
+	this->sources.resize(4);
 	
 	alGenSources(1, &sources[MUSIC]);
 	alSourcef(sources[MUSIC], AL_PITCH, 1.f);
@@ -41,6 +41,7 @@ SoundManager::SoundManager()
 	alSource3f(sources[MUSIC], AL_POSITION, 0.f, 0.f, 0.f);
 	alSource3f(sources[MUSIC], AL_VELOCITY, 0.f, 0.f, 0.f);
 	alSourcei(sources[MUSIC], AL_LOOPING, true);
+	alSourcei(sources[MUSIC], AL_SOURCE_RELATIVE, AL_TRUE);
 	
 	alGenSources(1, &sources[UI]);
 	alSourcef(sources[UI], AL_PITCH, 1.f);
@@ -48,15 +49,24 @@ SoundManager::SoundManager()
 	alSource3f(sources[UI], AL_POSITION, 0.f, 0.f, 0.f);
 	alSource3f(sources[UI], AL_VELOCITY, 0.f, 0.f, 0.f);
 	alSourcei(sources[UI], AL_LOOPING, false);
-
-	alGenSources(1, &sources[EFFECTS]);
-	alSourcef(sources[EFFECTS], AL_PITCH, 1.f);
-	alSourcef(sources[EFFECTS], AL_GAIN, 1.f);
-	alSource3f(sources[EFFECTS], AL_POSITION, 0.f, 0.f, 0.f);
-	alSource3f(sources[EFFECTS], AL_VELOCITY, 0.f, 0.f, 0.f);
-	alSourcei(sources[EFFECTS], AL_LOOPING, true);
-	alSourcef(sources[EFFECTS], AL_ROLLOFF_FACTOR, 3.f);
-	alSourcef(sources[EFFECTS], AL_REFERENCE_DISTANCE, 1000.f);
+	
+	alGenSources(1, &sources[WATER_EFFECT]);
+	alSourcef(sources[WATER_EFFECT], AL_PITCH, 1.f);
+	alSourcef(sources[WATER_EFFECT], AL_GAIN, 1.f);
+	alSource3f(sources[WATER_EFFECT], AL_POSITION, 0.f, 0.f, 0.f);
+	alSource3f(sources[WATER_EFFECT], AL_VELOCITY, 0.f, 0.f, 0.f);
+	alSourcei(sources[WATER_EFFECT], AL_LOOPING, true);
+	alSourcef(sources[WATER_EFFECT], AL_ROLLOFF_FACTOR, 2.5f);
+	alSourcef(sources[WATER_EFFECT], AL_REFERENCE_DISTANCE, 2000.f);
+	
+	alGenSources(1, &sources[WIND_EFFECT]);
+	alSourcef(sources[WIND_EFFECT], AL_PITCH, 1.f);
+	alSourcef(sources[WIND_EFFECT], AL_GAIN, 1.f);
+	alSource3f(sources[WIND_EFFECT], AL_POSITION, 0.f, 0.f, 0.f);
+	alSource3f(sources[WIND_EFFECT], AL_VELOCITY, 0.f, 0.f, 0.f);
+	alSourcei(sources[WIND_EFFECT], AL_LOOPING, true);
+	alSourcef(sources[WIND_EFFECT], AL_ROLLOFF_FACTOR, 4.f);
+	alSourcef(sources[WIND_EFFECT], AL_REFERENCE_DISTANCE, 4000.f);
     
     // Initialize buffers
 	loadSound("./assets/sounds/Menu.wav");
@@ -66,6 +76,7 @@ SoundManager::SoundManager()
 	loadSound("./assets/sounds/Reset.wav");
 	loadSound("./assets/sounds/Success.wav");
 	loadSound("./assets/sounds/Water.wav");
+	loadSound("./assets/sounds/Wind.wav");
 	
 	// Set listener position (x, y, z)
 	ALfloat listener_position[] = { 0.0f, 0.0f, 0.0f };
@@ -93,6 +104,8 @@ SoundManager::~SoundManager()
 	
 	alDeleteSources(1, &sources[MUSIC]);
 	alDeleteSources(1, &sources[UI]);
+	alDeleteSources(1, &sources[WATER_EFFECT]);
+	alDeleteSources(1, &sources[WIND_EFFECT]);
 }
 
 void SoundManager::loadSound(const char* filename)
@@ -191,7 +204,8 @@ void SoundManager::playSuccessSound()
 
 void SoundManager::playResetSound()
 {
-	alSourceStop(sources[EFFECTS]);
+	alSourceStop(sources[WATER_EFFECT]);
+	alSourceStop(sources[WIND_EFFECT]);
 	alSourceStop(sources[UI]);
 	alSourcei(sources[UI], AL_BUFFER, (ALint)buffers[RESET_SOUND]);
 	alSourcePlay(sources[UI]); 
@@ -210,6 +224,7 @@ void SoundManager::playBackgroundMusic()
 		alSourceStop(sources[UI]);
 		alSourcei(sources[UI], AL_BUFFER, (ALint)buffers[POP_SOUND]);
 		alSourcePlay(sources[UI]);
+
         main_theme = false;
     }
     else
@@ -218,15 +233,26 @@ void SoundManager::playBackgroundMusic()
 		alSourcei(sources[MUSIC], AL_BUFFER, (ALint)buffers[WORLD_SOUND]);
 		alSourcePlay(sources[MUSIC]);
 		
-		alSourceStop(sources[EFFECTS]);
-		alSourcei(sources[EFFECTS], AL_BUFFER, (ALint)buffers[WATER_SOUND]);
-		alSourcePlay(sources[EFFECTS]);
+		alSourceStop(sources[WATER_EFFECT]);
+		alSourcei(sources[WATER_EFFECT], AL_BUFFER, (ALint)buffers[WATER_SOUND]);
+		alSourcePlay(sources[WATER_EFFECT]);
+
+		alSourceStop(sources[WIND_EFFECT]);
+		alSourcei(sources[WIND_EFFECT], AL_BUFFER, (ALint)buffers[WIND_SOUND]);
+		alSourcePlay(sources[WIND_EFFECT]);
+
         main_theme = true;
     }
 }
 
 void SoundManager::updateListener(float distance)
 {
-	// Set listener position (x, y, z)
-	alSource3f(sources[EFFECTS], AL_POSITION, 0.f, distance, 0.f);
+	// Update listener position
+	alListener3f(AL_POSITION, 0.f, distance, 0.f);
+}
+
+void SoundManager::setWindAltitude(float altitude)
+{
+	printf("Altitude: %f\n", altitude);
+	alSource3f(sources[WIND_EFFECT], AL_POSITION, 0.f, altitude, 0.f);
 }
