@@ -253,6 +253,5 @@ void SoundManager::updateListener(float distance)
 
 void SoundManager::setWindAltitude(float altitude)
 {
-	printf("Altitude: %f\n", altitude);
 	alSource3f(sources[WIND_EFFECT], AL_POSITION, 0.f, altitude, 0.f);
 }

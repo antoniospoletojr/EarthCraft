@@ -87,69 +87,6 @@ void Terrain::loadHeightmap()
     }
 }
 
-// void bfs(cv::Mat &image, int row, int col, int label, cv::Mat &labeled_image)
-// {
-//     std::queue<std::pair<int, int>> pixel_queue;
-//     pixel_queue.push(std::make_pair(row, col));
-
-//     while (!pixel_queue.empty())
-//     {
-//         auto current_pixel = pixel_queue.front();
-//         pixel_queue.pop();
-
-//         int r = current_pixel.first;
-//         int c = current_pixel.second;
-        
-//         if (r < 0 || r >= image.rows || c < 0 || c >= image.cols || labeled_image.at<int>(r, c) != 0)
-//             continue;
-        
-//         labeled_image.at<int>(r, c) = label;
-//         pixel_queue.push(std::make_pair(r - 1, c));
-//         pixel_queue.push(std::make_pair(r + 1, c));
-//         pixel_queue.push(std::make_pair(r, c - 1));
-//         pixel_queue.push(std::make_pair(r, c + 1));
-//     }
-// }
-
-// // Function to find connected regions in a grayscale image using BFS
-// cv::Mat findConnectedRegions(const cv::Mat &image)
-// {
-//     cv::Mat labeled_image(image.size(), CV_32S, cv::Scalar(0));
-//     int label = 1;
-
-//     for (int row = 0; row < image.rows; row++)
-//     {
-//         for (int col = 0; col < image.cols; col++)
-//         {
-//             if (labeled_image.at<int>(row, col) == 0)
-//             {
-//                 bfs(image, row, col, label, labeled_image);
-//                 label++;
-//             }
-//         }
-//     }
-
-//     return labeled_image;
-// }
-
-// // Function to suppress adjacent regions based on pixel values
-// void suppressAdjacentRegions(cv::Mat &image, const std::vector<std::vector<cv::Point>> &contours)
-// {
-//     cv::Mat mask(image.size(), CV_8UC1, cv::Scalar(0));
-    
-//     // Create a mask for each contour
-//     for (size_t i = 0; i < contours.size(); i++)
-//     {
-//         cv::drawContours(mask, contours, static_cast<int>(i), cv::Scalar(255), -1);
-//     }
-
-//     // Suppress regions adjacent to regions with lower pixel values
-//     cv::Mat suppressedImage;
-//     cv::max(image, suppressedImage, mask);
-    
-//     image = suppressedImage;
-// }
-
 void Terrain::loadWatermap()
 {
     // Calcualte the water level
@@ -178,10 +115,6 @@ void Terrain::loadWatermap()
     
     this->watermap = new Vec3<float>[this->dim * this->dim];
     
-    // Fill the watermap using water accumulation algorith,
-    cv::Mat image = cv::imread("./assets/sketches/heightmap.png", cv::IMREAD_GRAYSCALE);
-    cv::GaussianBlur(image, image, cv::Size(5, 5), 0); // Adjust the kernel size (5, 5) as needed
-
     // Fill in the height map
     for (int i = 0; i < this->dim; i++)
     {
@@ -345,6 +278,6 @@ float Terrain::distanceFromWater(Vec3<float> position)
     int j = ((static_cast<int>(std::floor(position.x / this->world_scale + this->dim / 2)) % this->dim) + this->dim) % this->dim;
     
     // Get the height of the terrain at the i,j coordinates
-    float distance = abs(position.y - this->watermap[i * this->dim + j].y);
+    float distance = position.y - this->watermap[i * this->dim + j].y;
     return distance;
 }

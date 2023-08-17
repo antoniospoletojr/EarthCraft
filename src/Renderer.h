@@ -30,8 +30,7 @@ typedef struct Object
     GLuint ibo;
     GLuint cbo;
     GLuint nbo;
-    GLuint texture;
-    GLuint blend_texture;
+    GLuint texture[2];
     
     // Buffers
     std::vector<GLfloat> vertices;

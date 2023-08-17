@@ -77,7 +77,6 @@ void GlutFramework::initialize(int argc, char** argv)
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glEnable(GL_STENCIL_TEST);
     glClearStencil(0); // Set clearing value for stencil buffer.
-    
 }
 
 // OpenGL window reshape routine.

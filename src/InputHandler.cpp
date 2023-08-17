@@ -83,10 +83,10 @@ void InputHandler::handleKeyboard()
             camera->rotateDown();
         
         // Check water distance for sound purposes
-        float distance = terrain->distanceFromWater(camera->getPosition());
+        float distance_from_water = terrain->distanceFromWater(camera->getPosition());
         
         // Update the sound manager listener position
-        sound_manager->updateListener(distance);
+        sound_manager->updateListener(distance_from_water);
     }
      
      // Exit the program if the Esc key is pressed.

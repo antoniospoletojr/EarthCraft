@@ -61,7 +61,7 @@ void Renderer::initialize(Camera *camera)
 
     // Allocate space for 8 objects (Mesh, Splashscreen, Canvas, Skydome, Sun, Moon, Water, Vegetation and the 4 sketches)
     objects.resize(12);
-
+    
     // Initialize non-terrain-related objects
     this->initializeSplashscreen();
     this->initializeCanvas();
@@ -72,7 +72,7 @@ void Renderer::initialize(Camera *camera)
 
     // Set the glut display callback
     glutDisplayFunc(Renderer::draw);
-
+    
     const siv::PerlinNoise::seed_type seed = 12345;
     this->perlin_noise = siv::PerlinNoise(seed);
 }
@@ -89,8 +89,8 @@ void Renderer::initializeMesh()
     float world_dim = this->terrain->getWorldDim();
     
     // Generate and bind a texture object
-    glGenTextures(1, &objects[MESH].texture);
-    glBindTexture(GL_TEXTURE_2D, objects[MESH].texture);
+    glGenTextures(1, &objects[MESH].texture[0]);
+    glBindTexture(GL_TEXTURE_2D, objects[MESH].texture[0]);
     
     // Set texture parameters
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -288,8 +288,8 @@ void Renderer::initializeWater()
     }
     
     // Generate and bind a texture object
-    glGenTextures(1, &objects[WATER].texture);
-    glBindTexture(GL_TEXTURE_2D, objects[WATER].texture);
+    glGenTextures(1, &objects[WATER].texture[0]);
+    glBindTexture(GL_TEXTURE_2D, objects[WATER].texture[0]);
 
     // Set texture parameters
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -350,6 +350,7 @@ void Renderer::initializeVegetation()
 {
     // Retrieve the map
     Vec3<float> *map = this->terrain->getHeightmap();
+    int water_level = this->terrain->getWaterLevel();
 
     int dim = this->terrain->getDim();
     
@@ -360,51 +361,71 @@ void Renderer::initializeVegetation()
     {
         for (int j = 0; j < dim; j++)
         {
-            // With probability 0.05 add 2 crossing vertical quads at the current location
-            if (rand() % VEGETATION_DENSITY == 0)
+            if (rand() % VEGETATION_SPARSITY == 0)
             {
-                if (map[i * dim + j].y < this->terrain->getBounds()->max_y / 3)
+                if (map[i*dim+j].y > water_level + WAVE_MACRO_AMPLITUDE)
                 {
                     objects[VEGETATION].vertices.push_back(map[i * dim + j].x + BUSH_SIZE);
                     objects[VEGETATION].vertices.push_back(map[i * dim + j].y);
                     objects[VEGETATION].vertices.push_back(map[i * dim + j].z);
-
+                    
                     objects[VEGETATION].vertices.push_back(map[i * dim + j].x + BUSH_SIZE);
                     objects[VEGETATION].vertices.push_back(map[i * dim + j].y + BUSH_SIZE);
                     objects[VEGETATION].vertices.push_back(map[i * dim + j].z);
-
+                    
                     objects[VEGETATION].vertices.push_back(map[i * dim + j].x - BUSH_SIZE);
                     objects[VEGETATION].vertices.push_back(map[i * dim + j].y + BUSH_SIZE);
                     objects[VEGETATION].vertices.push_back(map[i * dim + j].z);
-
+                    
                     objects[VEGETATION].vertices.push_back(map[i * dim + j].x - BUSH_SIZE);
                     objects[VEGETATION].vertices.push_back(map[i * dim + j].y);
                     objects[VEGETATION].vertices.push_back(map[i * dim + j].z);
-                    
-                    objects[VEGETATION].textures.push_back(1.0f);
-                    objects[VEGETATION].textures.push_back(1.0f);
-                    
-                    objects[VEGETATION].textures.push_back(1.0f);
-                    objects[VEGETATION].textures.push_back(0.0f);
-                    
-                    objects[VEGETATION].textures.push_back(0.0f);
-                    objects[VEGETATION].textures.push_back(0.0f);
-                    
-                    objects[VEGETATION].textures.push_back(0.0f);
-                    objects[VEGETATION].textures.push_back(1.0f);
-                }    
+
+                    if (map[i * dim + j].y < this->terrain->getBounds()->max_y / 3)
+                    {
+                        
+                        objects[VEGETATION].textures.push_back(0.5f);
+                        objects[VEGETATION].textures.push_back(1.0f);
+                        
+                        objects[VEGETATION].textures.push_back(0.5f);
+                        objects[VEGETATION].textures.push_back(0.0f);
+                        
+                        objects[VEGETATION].textures.push_back(0.0f);
+                        objects[VEGETATION].textures.push_back(0.0f);
+                        
+                        objects[VEGETATION].textures.push_back(0.0f);
+                        objects[VEGETATION].textures.push_back(1.0f);
+                    }
+                    else if (map[i * dim + j].y < this->terrain->getBounds()->max_y * 3 / 4)
+                    {   
+                        objects[VEGETATION].textures.push_back(1.0f);
+                        objects[VEGETATION].textures.push_back(1.0f);
+                        
+                        objects[VEGETATION].textures.push_back(1.0f);
+                        objects[VEGETATION].textures.push_back(0.0f);
+                        
+                        objects[VEGETATION].textures.push_back(0.5f);
+                        objects[VEGETATION].textures.push_back(0.0f);
+                        
+                        objects[VEGETATION].textures.push_back(0.5f);
+                        objects[VEGETATION].textures.push_back(1.0f);
+                    }
+
+
+                }
             }
         }
     }
     
     // Generate and bind a texture object
-    glGenTextures(1, &objects[VEGETATION].texture);
-    glBindTexture(GL_TEXTURE_2D, objects[VEGETATION].texture);
+    glGenTextures(1, &objects[VEGETATION].texture[0]);
+    glBindTexture(GL_TEXTURE_2D, objects[VEGETATION].texture[0]);
     
     // Set texture parameters
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     
     // Load grass texture in opencv using 4 channels
     cv::Mat grass_texture = cv::imread("./assets/textures/grass.png", cv::IMREAD_UNCHANGED);
@@ -416,11 +437,11 @@ void Renderer::initializeVegetation()
     glGenVertexArrays(1, &objects[VEGETATION].vao);
     // Bind the vertex array object for the mesh
     glBindVertexArray(objects[VEGETATION].vao);
-
+    
     // Generate the buffer objects
     glGenBuffers(1, &objects[VEGETATION].vbo);
     glGenBuffers(1, &objects[VEGETATION].tbo);
-
+    
     // Bind and fill the vertex buffer object
     glBindBuffer(GL_ARRAY_BUFFER, objects[VEGETATION].vbo);
     glBufferData(GL_ARRAY_BUFFER, objects[VEGETATION].vertices.size() * sizeof(float), objects[VEGETATION].vertices.data(), GL_DYNAMIC_DRAW);
@@ -428,7 +449,7 @@ void Renderer::initializeVegetation()
 
     // Bind and fill the texture coordinate buffer object
     glBindBuffer(GL_ARRAY_BUFFER, objects[VEGETATION].tbo);
-    glBufferData(GL_ARRAY_BUFFER, objects[VEGETATION].textures.size() * sizeof(float), objects[VEGETATION].textures.data(), GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, objects[VEGETATION].textures.size() * sizeof(float), objects[VEGETATION].textures.data(), GL_DYNAMIC_DRAW);
     glTexCoordPointer(2, GL_FLOAT, 0, 0);
 
     // Unbind everything
@@ -457,8 +478,8 @@ void Renderer::initializeOrbit(int orbit_height)
     }
 
     // Generate and bind a texture object
-    glGenTextures(1, &objects[SUN].texture);
-    glBindTexture(GL_TEXTURE_2D, objects[SUN].texture);
+    glGenTextures(1, &objects[SUN].texture[0]);
+    glBindTexture(GL_TEXTURE_2D, objects[SUN].texture[0]);
 
     // Set texture parameters
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -563,8 +584,8 @@ void Renderer::initializeOrbit(int orbit_height)
     }
 
     // Generate and bind a texture object
-    glGenTextures(1, &objects[MOON].texture);
-    glBindTexture(GL_TEXTURE_2D, objects[MOON].texture);
+    glGenTextures(1, &objects[MOON].texture[0]);
+    glBindTexture(GL_TEXTURE_2D, objects[MOON].texture[0]);
 
     // Set texture parameters
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -676,8 +697,8 @@ void Renderer::initializeSkydome()
     cv::cvtColor(night_texture, night_texture, cv::COLOR_BGR2BGRA);
 
     // Generate and bind a texture object
-    glGenTextures(1, &objects[SKYDOME].texture);
-    glBindTexture(GL_TEXTURE_2D, objects[SKYDOME].texture);
+    glGenTextures(1, &objects[SKYDOME].texture[0]);
+    glBindTexture(GL_TEXTURE_2D, objects[SKYDOME].texture[0]);
     
     // Set texture parameters
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -689,8 +710,8 @@ void Renderer::initializeSkydome()
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, day_texture.cols, day_texture.rows, 0, GL_BGRA, GL_UNSIGNED_BYTE, day_texture.data);
 
     // Generate and bind a texture object for the night texture
-    glGenTextures(1, &objects[SKYDOME].blend_texture);
-    glBindTexture(GL_TEXTURE_2D, objects[SKYDOME].blend_texture);
+    glGenTextures(1, &objects[SKYDOME].texture[1]);
+    glBindTexture(GL_TEXTURE_2D, objects[SKYDOME].texture[1]);
     
     // Set texture parameters for the night texture (similar to day texture parameters)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -837,7 +858,7 @@ void Renderer::initializeSplashscreen()
     glDisableClientState(GL_COLOR_ARRAY);
     glDisableClientState(GL_TEXTURE_COORD_ARRAY);
 
-    glGenTextures(1, &objects[SPLASHSCREEN].texture);
+    glGenTextures(1, &objects[SPLASHSCREEN].texture[0]);
 }
 
 void Renderer::initializeCanvas()
@@ -898,7 +919,7 @@ void Renderer::initializeCanvas()
     glDisableClientState(GL_COLOR_ARRAY);
     glDisableClientState(GL_TEXTURE_COORD_ARRAY);
 
-    glGenTextures(1, &objects[CANVAS].texture);
+    glGenTextures(1, &objects[CANVAS].texture[0]);
 }
 
 void Renderer::takeSnapshot()
@@ -1104,7 +1125,7 @@ void Renderer::timerCallback(int value)
 void Renderer::drawMesh()
 {
     // Bind the terrain texture
-    glBindTexture(GL_TEXTURE_2D, instance->objects[MESH].texture);
+    glBindTexture(GL_TEXTURE_2D, instance->objects[MESH].texture[0]);
     
     // Draw the terrain
     glBindVertexArray(instance->objects[MESH].vao);
@@ -1158,7 +1179,7 @@ void Renderer::drawWater()
     glEnable(GL_BLEND);
     
     // Bind the water texture
-    glBindTexture(GL_TEXTURE_2D, instance->objects[WATER].texture);
+    glBindTexture(GL_TEXTURE_2D, instance->objects[WATER].texture[0]);
     
     // Bind the water VAO
     glBindVertexArray(instance->objects[WATER].vao);
@@ -1182,10 +1203,10 @@ void Renderer::drawWater()
     glBindBuffer(GL_ARRAY_BUFFER, instance->objects[WATER].vbo);
     // Perlin noise parameters for macro waves
     vector<float> vertices = instance->objects[WATER].vertices;
-    float macro_amplitude = 500.0f; // Adjust the amplitude to control the wave height
+    float macro_amplitude = WAVE_MACRO_AMPLITUDE; // Adjust the amplitude to control the wave height
     float macro_frequency = 0.0005f; // Adjust the frequency to control the wave speed
     // Micro wave parameters for sin and cos
-    float micro_amplitude = 25.0f; // Adjust the amplitude of micro waves
+    float micro_amplitude = WAVE_MICRO_AMPLITUDE; // Adjust the amplitude of micro waves
     float micro_frequency_x = 0.01f; // Adjust the frequency of micro waves in X direction
     float micro_frequency_z = 0.01f; // Adjust the frequency of micro waves in Z direction
 
@@ -1288,7 +1309,7 @@ void Renderer::drawWater()
         glEnableClientState(GL_VERTEX_ARRAY);
         glEnableClientState(GL_TEXTURE_COORD_ARRAY);
         // Draw the skydome with blending enabled
-        glBindTexture(GL_TEXTURE_2D, instance->objects[SKYDOME].texture);
+        glBindTexture(GL_TEXTURE_2D, instance->objects[SKYDOME].texture[0]);
         glDrawElements(GL_TRIANGLES, instance->objects[SKYDOME].indices.size(), GL_UNSIGNED_INT, 0);
         
         // Calculate the alpha value for the night texture
@@ -1317,7 +1338,7 @@ void Renderer::drawWater()
         }
         glColor4f(1.0, 1.0, 1.0, alpha); 
         // Draw the skydome with blending enabled
-        glBindTexture(GL_TEXTURE_2D, instance->objects[SKYDOME].blend_texture);
+        glBindTexture(GL_TEXTURE_2D, instance->objects[SKYDOME].texture[1]);
         glDrawElements(GL_TRIANGLES, instance->objects[SKYDOME].indices.size(), GL_UNSIGNED_INT, 0);
         
         glDisableClientState(GL_VERTEX_ARRAY);
@@ -1352,7 +1373,7 @@ void Renderer::drawWater()
     glDisable(GL_STENCIL_TEST); // Disable the stencil test
     
     // Bind the water texture
-    glBindTexture(GL_TEXTURE_2D, instance->objects[WATER].texture);
+    glBindTexture(GL_TEXTURE_2D, instance->objects[WATER].texture[0]);
     // Bind the water VAO
     glBindVertexArray(instance->objects[WATER].vao);
     
@@ -1373,59 +1394,70 @@ void Renderer::drawWater()
 
 void Renderer::drawVegetation()
 {
+    static float time = 0;
     // Enable blending
     glEnable(GL_BLEND);
-
-    glPushMatrix();
-        // Bind the vegetation texture
-        glBindTexture(GL_TEXTURE_2D, instance->objects[VEGETATION].texture);
-        
-        // Bind the vegetation VAO
-        glBindVertexArray(instance->objects[VEGETATION].vao);
-        
-        // Enable two vertex arrays: coordinates and texture coordinates.
-        glEnableClientState(GL_VERTEX_ARRAY);
-        glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-        
-        vector<float> vertices = instance->objects[VEGETATION].vertices;
-        
-        // Update the vertices such that the vegetation is always facing the camera
-        Vec3<float> direction = instance->camera->getDirection();
-        float radians = atan2(direction.z, direction.x);
-        float degrees = abs(fmod(radians * (180.0f / M_PI) + 270.0f, 360.0f) - 180.0f) / 180.0f;
-        
-        for (unsigned int i = 0; i < instance->objects[VEGETATION].vertices.size(); i += 12)
-        {
-            vertices[i] -= degrees * BUSH_SIZE * 2;               // x1
-            vertices[i + 2] += direction.x * BUSH_SIZE; // z1
-            vertices[i + 3] -= degrees * BUSH_SIZE * 2;     // x2
-            vertices[i + 5] += direction.x * BUSH_SIZE; // z2
-
-            vertices[i + 6] += degrees * BUSH_SIZE * 2;     // x3
-            vertices[i + 8] -= direction.x * BUSH_SIZE; // z3
-            vertices[i + 9] += degrees * BUSH_SIZE * 2;     // x4
-            vertices[i + 11] -= direction.x * BUSH_SIZE; // z4
-        }
-        
-        // Bind the VBO and modify the vertices such that the vegetation is always facing the camera
-        glBindBuffer(GL_ARRAY_BUFFER, instance->objects[VEGETATION].vbo);
-        glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_DYNAMIC_DRAW);
-        
-        // Draw quads with glDrawArrays
-        glDrawArrays(GL_QUADS, 0, vertices.size() / 3);
-
-        glDisableClientState(GL_VERTEX_ARRAY);
-        glDisableClientState(GL_TEXTURE_COORD_ARRAY);
-        
-        // Unbind the vertex array object and texture
-        glBindVertexArray(0);
-        glBindTexture(GL_TEXTURE_2D, 0);
     
-    glPopMatrix();
+    // Bind the vegetation texture
+    glBindTexture(GL_TEXTURE_2D, instance->objects[VEGETATION].texture[0]);
+    
+    // Bind the vegetation VAO
+    glBindVertexArray(instance->objects[VEGETATION].vao);
+    
+    // Enable two vertex arrays: coordinates and texture coordinates.
+    glEnableClientState(GL_VERTEX_ARRAY);
+    glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+    
+    vector<float> vertices = instance->objects[VEGETATION].vertices;
+    
+    // Update the vertices such that the vegetation is always facing the camera
+    Vec3<float> direction = instance->camera->getDirection();
+    float radians = atan2(direction.z, direction.x);
+    float degrees = abs(fmod(radians * (180.0f / M_PI) + 270.0f, 360.0f) - 180.0f) / 180.0f;
+    
+    for (unsigned int i = 0; i < instance->objects[VEGETATION].vertices.size(); i += 12)
+    {
+        vertices[i] -= degrees * BUSH_SIZE * 2;                 // x1
+        vertices[i + 2] += direction.x * BUSH_SIZE;             // z1
+        vertices[i + 3] -= degrees * BUSH_SIZE * 2;             // x2
+        vertices[i + 5] += direction.x * BUSH_SIZE;             // z2
+        
+        vertices[i + 6] += degrees * BUSH_SIZE * 2;             // x3
+        vertices[i + 8] -= direction.x * BUSH_SIZE;             // z3
+        vertices[i + 9] += degrees * BUSH_SIZE * 2;             // x4
+        vertices[i + 11] -= direction.x * BUSH_SIZE;            // z4
+    }
+    
+    // Bind the VBO and modify the vertices such that the vegetation is always facing the camera
+    glBindBuffer(GL_ARRAY_BUFFER, instance->objects[VEGETATION].vbo);
+    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_DYNAMIC_DRAW);
+    
+    vector<float> textures = instance->objects[VEGETATION].textures;
+    // Cycle over each texture quad
+    for (unsigned int i = 0; i < instance->objects[VEGETATION].textures.size(); i += 8)
+    {
+        textures[i + 2] += 0.05f * sin(time);
+        textures[i + 4] += 0.05f * sin(time);
+    }
+    
+    time+=0.04f;
+    
+    //Bind the TBO and modify the texture coordinates
+    glBindBuffer(GL_ARRAY_BUFFER, instance->objects[VEGETATION].tbo);
+    glBufferData(GL_ARRAY_BUFFER, textures.size() * sizeof(float), textures.data(), GL_DYNAMIC_DRAW);
+    
+    // Draw quads with glDrawArrays
+    glDrawArrays(GL_QUADS, 0, vertices.size() / 3);
+    
+    glDisableClientState(GL_VERTEX_ARRAY);
+    glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+    
+    // Unbind the vertex array object and texture
+    glBindVertexArray(0);
+    glBindTexture(GL_TEXTURE_2D, 0);
     
     glDisable(GL_BLEND);
 }
-
 
 void Renderer::drawOrbit()
 {  
@@ -1438,7 +1470,7 @@ void Renderer::drawOrbit()
         glRotatef(angle, 0, 0, 1);
         
         // Bind the sun texture
-        glBindTexture(GL_TEXTURE_2D, instance->objects[SUN].texture);
+        glBindTexture(GL_TEXTURE_2D, instance->objects[SUN].texture[0]);
         
         // Draw the sun
         glBindVertexArray(instance->objects[SUN].vao);
@@ -1464,7 +1496,7 @@ void Renderer::drawOrbit()
         glRotatef(angle, 0, 0, 1);
 
         // Bind the sun texture
-        glBindTexture(GL_TEXTURE_2D, instance->objects[MOON].texture);
+        glBindTexture(GL_TEXTURE_2D, instance->objects[MOON].texture[0]);
         
         // Draw the sun
         glBindVertexArray(instance->objects[MOON].vao);
@@ -1501,7 +1533,7 @@ void Renderer::drawSkydome()
     glEnableClientState(GL_TEXTURE_COORD_ARRAY);
     
     // Draw the skydome with blending enabled
-    glBindTexture(GL_TEXTURE_2D, instance->objects[SKYDOME].texture);
+    glBindTexture(GL_TEXTURE_2D, instance->objects[SKYDOME].texture[0]);
     glDrawElements(GL_TRIANGLES, instance->objects[SKYDOME].indices.size(), GL_UNSIGNED_INT, 0);
     
     // Calculate the alpha value for the night texture
@@ -1530,7 +1562,7 @@ void Renderer::drawSkydome()
     }
     glColor4f(1.0, 1.0, 1.0, alpha);
     
-    glBindTexture(GL_TEXTURE_2D, instance->objects[SKYDOME].blend_texture);
+    glBindTexture(GL_TEXTURE_2D, instance->objects[SKYDOME].texture[1]);
     glDrawElements(GL_TRIANGLES, instance->objects[SKYDOME].indices.size(), GL_UNSIGNED_INT, 0);
     
     glDisableClientState(GL_VERTEX_ARRAY);
@@ -1562,7 +1594,7 @@ void Renderer::drawSplashscreen()
         glOrtho(0, width, 0, height, -1, 1);
 
         // Update texture data
-        glBindTexture(GL_TEXTURE_2D, instance->objects[SPLASHSCREEN].texture);
+        glBindTexture(GL_TEXTURE_2D, instance->objects[SPLASHSCREEN].texture[0]);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, instance->menu_frame.cols, instance->menu_frame.rows, 0, GL_BGR, GL_UNSIGNED_BYTE, instance->menu_frame.data);
@@ -1615,7 +1647,7 @@ void Renderer::drawCanvas()
         glOrtho(0, width, 0, height, -1, 1);
 
         // Update texture dataz
-        glBindTexture(GL_TEXTURE_2D, instance->objects[CANVAS].texture);
+        glBindTexture(GL_TEXTURE_2D, instance->objects[CANVAS].texture[0]);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, instance->menu_frame.cols, instance->menu_frame.rows, 0, GL_BGR, GL_UNSIGNED_BYTE, instance->menu_frame.data);
@@ -1851,7 +1883,7 @@ void Renderer::draw()
     // Update the camera based on the inputs
     instance->camera->update();
     
-    // Switch on the current menu page ---------MAYBE USELESS!!!!!
+    // Switch on the current menu page
     switch (instance->current_menu_page)
     {
     case LANDING_SCREEN:
