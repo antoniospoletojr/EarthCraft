@@ -7,47 +7,58 @@
 #include "stdio.h"
 #include "Vec.hpp"
 #include "Constants.h"
+#include "Object.h"
+#include "Terrain.h"
+
+
+class QuadNode
+{
+    // The bounds of the node's square
+    float x, z, width, depth;
+    
+    // Child nodes
+    QuadNode *NW_child;
+    QuadNode *NE_child;
+    QuadNode *SW_child;
+    QuadNode *SE_child;
+    
+    // Objects contained in the node
+    Object object;
+    
+    QuadNode(Terrain *terrain, float x, float z, float width, float depth);
+    
+    ~QuadNode();
+
+    void draw();
+
+    friend class QuadTree;
+};
 
 class QuadTree
 {
 private:
-    struct Node
-    {
-        // The bounds of the node's square
-        float min_x, max_x, min_z, max_z;
-        
-        // Indices contained within the node
-        std::vector<GLuint> indices;
-
-        // Child nodes
-        std::array<Node *, 4> children;
-        
-        Node(float min_x, float max_x, float min_z, float max_z);
-
-        ~Node();
-    };
+    QuadNode *root;
     
-    std::vector<GLuint> visible_indices;
-    Node *root;
 
 public:
-    static const GLuint MaxIndicesPerNode = 8;
-
-    QuadTree(float min_x, float max_x, float min_z, float max_z);
+    
+    QuadTree();
 
     ~QuadTree();
 
-    void build(const std::vector<GLuint> &indices);
+    void initialize(Terrain *terrain);
+
+    void draw();
     
-    void clear();
+    // void clear();
     
-    void insert(GLuint index, Node *node);
+    // void insert(GLuint index, Node *node);
     
-    void subdivide(Node *node);
+    // void subdivide(Node *node);
     
-    bool isIndexInBounds(GLuint index, Node *node) const;
+    // bool isIndexInBounds(GLuint index, Node *node) const;
     
-    std::vector<GLuint> *frustumCull(Vec3<float> position, Vec3<float> direction);
+    // std::vector<GLuint> *frustumCull(Vec3<float> position, Vec3<float> direction);
 
 };
 

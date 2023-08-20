@@ -34,7 +34,7 @@ Renderer::~Renderer()
     glDeleteVertexArrays(1, &objects[MOON].vao);
     glDeleteVertexArrays(1, &objects[SPLASHSCREEN].vao);
     glDeleteVertexArrays(1, &objects[CANVAS].vao);
-
+    
     // Deallocate opencv objects
     menu_clips[LANDING_SCREEN].release();
     menu_clips[RIDGES_SCREEN].release();
@@ -58,7 +58,7 @@ void Renderer::initialize(Camera *camera)
 {
     // Set the camera
     this->camera = camera;
-
+    
     // Allocate space for 8 objects (Mesh, Splashscreen, Canvas, Skydome, Sun, Moon, Water, Vegetation and the 4 sketches)
     objects.resize(12);
     
@@ -69,7 +69,7 @@ void Renderer::initialize(Camera *camera)
     
     // Set the glut timer callback for the sun animaton
     glutTimerFunc(100, Renderer::timerCallback, 0);
-
+    
     // Set the glut display callback
     glutDisplayFunc(Renderer::draw);
     
@@ -100,12 +100,14 @@ void Renderer::initializeMesh()
     
     // Upload the texture image data
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, mesh_texture.cols, mesh_texture.rows, 0, GL_BGR, GL_UNSIGNED_BYTE, mesh_texture.data);
+    
+    quadtree.initialize(this->terrain);
 
     // Generate the vertex array object for the mesh
     glGenVertexArrays(1, &objects[MESH].vao);
     // Bind the vertex array object for the mesh
     glBindVertexArray(objects[MESH].vao);
-
+    
     // Generate the buffer objects
     glGenBuffers(1, &objects[MESH].vbo);
     glGenBuffers(1, &objects[MESH].tbo);
@@ -118,7 +120,7 @@ void Renderer::initializeMesh()
     objects[MESH].textures.clear();
     objects[MESH].normals.clear();
     
-    // Generate vertices, textures and nomals vakues for the mesh
+    // Generate vertices, textures and nomals values for the mesh
     for (int i = 0; i < dim; i++)
     {
         for (int j = 0; j < dim; j++)
@@ -151,11 +153,6 @@ void Renderer::initializeMesh()
         objects[MESH].indices.push_back(0xFFFFFFFFu);
     }
     
-    // Determine indices matrix sizes, useful for later calculations
-    int indices_rows = dim - 1;
-    int indices_columns = objects[MESH].indices.size() / indices_rows;
-    // Indices is, without considering mesh replication, 449(rows)x902(columns)
-
     // Calculate normals
     for (int i = 0; i < objects[MESH].indices.size()-3; i += 2)
     {    
@@ -204,17 +201,6 @@ void Renderer::initializeMesh()
         objects[MESH].normals[i3 * 3 + 2] += normal.z;
     }
     
-    
-    // printf("Mesh vertices: %lu\n", objects[MESH].vertices.size()/3);
-    // printf("Mesh normals: %lu\n", objects[MESH].normals.size()/3);
-    // printf("Mesh textures: %lu\n", objects[MESH].textures.size()/2);
-    // printf("Mesh indices: %lu\n", objects[MESH].indices.size()); // 404998
-    // printf("Mesh indices rows: %d\n", indices_rows); // 449
-    // printf("Mesh indices columns: %d\n", indices_columns); // 902
-    
-    instance->quadtree = new QuadTree(0, indices_columns, 0, indices_rows);
-    instance->quadtree->build(objects[MESH].indices);
-            
     // Use maximum unsigned int as restart index
     glEnable(GL_PRIMITIVE_RESTART);
     glPrimitiveRestartIndex(0xFFFFFFFFu);
@@ -237,6 +223,7 @@ void Renderer::initializeMesh()
     // Bind and fill indices buffer.
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, objects[MESH].ibo);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, objects[MESH].indices.size() * sizeof(GLuint), objects[MESH].indices.data(), GL_STATIC_DRAW);
+    
     
     // Unbind everything
     glBindVertexArray(0);
@@ -265,13 +252,13 @@ void Renderer::initializeWater()
             
             objects[WATER].textures.push_back((float)i / dim * 100);
             objects[WATER].textures.push_back((float)j / dim * 100);
-
+            
             objects[WATER].normals.push_back(0.0f);
             objects[WATER].normals.push_back(0.0f);
             objects[WATER].normals.push_back(0.0f);
         }
     }
-
+    
     // Generate indices for triangle strips
     for (int z = 0; z < dim - 1; z++) // 449
     {
@@ -290,7 +277,7 @@ void Renderer::initializeWater()
     // Generate and bind a texture object
     glGenTextures(1, &objects[WATER].texture[0]);
     glBindTexture(GL_TEXTURE_2D, objects[WATER].texture[0]);
-
+    
     // Set texture parameters
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
@@ -1147,20 +1134,16 @@ void Renderer::drawMesh()
         glMaterialfv(GL_FRONT, GL_DIFFUSE, diffuse_material);
     }
 
-    // FRUSTUM CULLING
     Vec3<float> position = instance->camera->getPosition();
     Vec3<float> direction = instance->camera->getDirection();
-    vector<GLuint> *indices = instance->quadtree->frustumCull(position, direction);
     
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, instance->objects[MESH].ibo);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices->size() * sizeof(unsigned int), indices->data(), GL_DYNAMIC_DRAW);
     
     float ambient_light = (1 - std::abs(static_cast<float>(instance->time) / 24.f - 0.5f))*0.3f;
     GLfloat ambient_material[] = {ambient_light, ambient_light, ambient_light, 1.0f};
     glMaterialfv(GL_FRONT, GL_AMBIENT, ambient_material);
     
     glEnable(GL_PRIMITIVE_RESTART);                                                                 // Enable primitive restart
-    glDrawElements(GL_TRIANGLE_STRIP, indices->size(), GL_UNSIGNED_INT, 0);      // Draw the triangles
+    glDrawElements(GL_TRIANGLE_STRIP, instance->objects[MESH].indices.size(), GL_UNSIGNED_INT, 0);      // Draw the triangles
     glDisable(GL_PRIMITIVE_RESTART);
     
     glDisableClientState(GL_VERTEX_ARRAY);
@@ -1894,7 +1877,8 @@ void Renderer::draw()
         instance->drawOrbit();
         glEnable(GL_LIGHTING);
         instance->drawWater();
-        instance->drawMesh();
+        //instance->drawMesh();
+        instance->quadtree.draw();
         instance->drawVegetation();
         instance->renderLight();
         glDisable(GL_LIGHTING);

@@ -15,30 +15,13 @@
 #include "random"
 
 #include "Camera.h"
+#include "Object.h"
 #include "QuadTree.h"
 #include "Terrain.h"
 #include "Constants.h"
 #include "Vec.hpp"
 #include "PerlinNoise.hpp"
 
-typedef struct Object
-{
-    // Buffer object descriptors
-    GLuint vao;
-    GLuint vbo;
-    GLuint tbo;
-    GLuint ibo;
-    GLuint cbo;
-    GLuint nbo;
-    GLuint texture[2];
-    
-    // Buffers
-    std::vector<GLfloat> vertices;
-    std::vector<GLfloat> colors;
-    std::vector<GLfloat> normals;
-    std::vector<GLfloat> textures;
-    std::vector<GLuint> indices;
-} Object;
 
 class Renderer
 {
@@ -61,7 +44,7 @@ private:
     static Renderer *instance;
     Camera *camera;
     Terrain *terrain;
-    QuadTree *quadtree;
+    QuadTree quadtree;
     
     std::vector<Object> objects;
     

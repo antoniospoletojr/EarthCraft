@@ -1,7 +1,7 @@
 // Terrain
-#define WORLD_SCALE 150
+#define WORLD_SCALE 125
 #define TEXTURE_SCALE 1
-#define FLOODING_FACTOR 0.15
+#define FLOODING_FACTOR 0.25
 
 // Renderer
 #define RENDERING_SCREEN -1
@@ -26,6 +26,8 @@
 #define WATER 6
 #define VEGETATION 7
 #define SKETCH 8
+
+#define NUM_CHUNKS 4
 
 #define VEGETATION_SPARSITY 50
 #define BUSH_SIZE 500
