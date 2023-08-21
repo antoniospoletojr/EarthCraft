@@ -17,12 +17,13 @@ InputHandler::~InputHandler()
     InputHandler::instance = nullptr;
 }
 
-void InputHandler::initialize(Camera *camera, Renderer *renderer, SoundManager *sound_manager)
+void InputHandler::initialize(Camera *camera, Renderer *renderer, SoundManager *sound_manager, QuadTree *quadtree)
 {
     this->camera = camera;
     this->renderer = renderer;
     this->inference = new Inference();
     this->sound_manager = sound_manager;
+    this->quadtree = quadtree;
 
     glutKeyboardFunc(InputHandler::handleRegularKeyPress);
     glutKeyboardUpFunc(InputHandler::handleRegularKeyRelease);
@@ -82,8 +83,14 @@ void InputHandler::handleKeyboard()
         if (special_keys[GLUT_KEY_DOWN])
             camera->rotateDown();
         
+        // If + or - is pressed then increase or decrease the speed of the camera
+        if (keys['+'])
+            camera->increaseSpeed();
+        if (keys['-'])
+            camera->decreaseSpeed();
+        
         // Check water distance for sound purposes
-        float distance_from_water = terrain->distanceFromWater(camera->getPosition());
+        float distance_from_water = terrain->distanceFromWater(camera->getPosition3D());
         
         // Update the sound manager listener position
         sound_manager->updateListener(distance_from_water);
@@ -174,7 +181,7 @@ void InputHandler::handleKeyboard()
                 instance->camera->setTerrain(instance->terrain);
                 instance->renderer->setTerrain(instance->terrain);
                 // Initialize the mesh
-                instance->renderer->initializeMesh();
+                instance->quadtree->initialize(instance->terrain);
                 // Initialize the water
                 instance->renderer->initializeWater();
                 // Initialize the orbit

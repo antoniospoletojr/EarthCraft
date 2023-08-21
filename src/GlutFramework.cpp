@@ -56,20 +56,6 @@ void GlutFramework::initialize(int argc, char** argv)
     // Light properties.
     glLightfv(GL_LIGHT1, GL_AMBIENT, ambient_light);
     
-    //glLightModeli(GL_LIGHT_MODEL_LOCAL_VIEWER, GL_TRUE);
-    //glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, GL_TRUE);
-        
-    // Set the cutoff angle to a larger value for wider light rays
-    
-    
-    // float constantAttenuation = 1.0f;
-    // float linearAttenuation = 1.0f;
-    // float quadraticAttenuation = 1.0f;
-    
-    // glLightf(GL_LIGHT0, GL_CONSTANT_ATTENUATION, constantAttenuation);
-    // glLightf(GL_LIGHT0, GL_LINEAR_ATTENUATION, linearAttenuation);
-    // glLightf(GL_LIGHT0, GL_QUADRATIC_ATTENUATION, quadraticAttenuation);
-
     // Enable automatic normalization of surface normals to unit length
     glEnable(GL_NORMALIZE);
     

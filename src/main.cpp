@@ -15,6 +15,7 @@ InputHandler input_handler;
 GlutFramework glut_framework;
 SoundManager sound_manager;
 Renderer renderer;
+QuadTree quadtree;
 
 // Main routine.
 int main(int argc, char **argv)
@@ -22,12 +23,12 @@ int main(int argc, char **argv)
     
     // Initialize the framework
     glut_framework.initialize(argc, argv);
-
+    
     // Initialize the inputs
-    input_handler.initialize(&camera, &renderer, &sound_manager);
+    input_handler.initialize(&camera, &renderer, &sound_manager, &quadtree);
     
     // Initialize the mesh
-    renderer.initialize(&camera);
+    renderer.initialize(&camera, &quadtree);
     
     // Run the framework
     glut_framework.run();

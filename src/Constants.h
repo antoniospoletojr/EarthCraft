@@ -1,7 +1,7 @@
 // Terrain
-#define WORLD_SCALE 125
-#define TEXTURE_SCALE 1
-#define FLOODING_FACTOR 0.25
+#define WORLD_SCALE 150
+#define TEXTURE_SCALE 20
+#define FLOODING_FACTOR 0.20
 
 // Renderer
 #define RENDERING_SCREEN -1
@@ -17,17 +17,14 @@
 #define RIVERS 2
 #define BASINS 3
 
-#define MESH 0
-#define SPLASHSCREEN 1
-#define CANVAS 2 
-#define SKYDOME 3
-#define SUN 4
-#define MOON 5
-#define WATER 6
-#define VEGETATION 7
-#define SKETCH 8
-
-#define NUM_CHUNKS 4
+#define SPLASHSCREEN 0
+#define CANVAS 1
+#define SKYDOME 2
+#define SUN 3
+#define MOON 4
+#define WATER 5
+#define VEGETATION 6
+#define SKETCH 7
 
 #define VEGETATION_SPARSITY 50
 #define BUSH_SIZE 500
@@ -40,6 +37,10 @@
 #define BOTTOM_SKETCH_BORDER 0.87
 
 #define Y_OFFSET 600
+
+// QuadTree
+#define CHUNK_SIZE 25
+#define FOV_ANGLE 90
 
 // Camera
 #define LOS_DISTANCE 2

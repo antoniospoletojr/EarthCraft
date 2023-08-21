@@ -8,7 +8,7 @@ Camera::Camera()
     this->position.z = 0;
     this->alfa = 0.0f;
     this->beta = 0.0f;
-    this->movement_speed = 4.0f * 10;
+    this->movement_speed = 40.0f;
     this->rotation_speed = 1.5f;
 }
 
@@ -166,6 +166,16 @@ void Camera::rotateUpDown(GLdouble delta)
     beta -= delta*(M_PI / 180.0);
 }
 
+void Camera::increaseSpeed()
+{
+    this->movement_speed += 10;
+}
+
+void Camera::decreaseSpeed()
+{
+    this->movement_speed -= 10;
+}
+
 // Update the camera
 void Camera::update()
 {
@@ -185,19 +195,35 @@ void Camera::update()
     gluLookAt(eye_x, eye_y, eye_z, center_x, center_y, center_z, up_x, up_y, up_z);
 }
 
-Vec3<float> Camera::getDirection()
+Vec3<float> Camera::getDirection3D()
 {
     Vec3<float> eye = (Vec3<float>(position.x - sin(alfa), position.y, position.z - cos(alfa)));
     Vec3<float> center = (Vec3<float>(position.x - LOS_DISTANCE * sin(alfa), position.y + beta, position.z - LOS_DISTANCE * cos(alfa)));
-    Vec3<float> difference = normalize(subtract(center, eye));
+    Vec3<float> difference = subtract(center, eye);
     
     return difference;
 }
 
-Vec3<float> Camera::getPosition()
+Vec2<float> Camera::getDirection2D()
 {
+    Vec2<float> eye = (Vec2<float>(position.x - sin(alfa), position.z - cos(alfa)));
+    Vec2<float> center = (Vec2<float>(position.x - LOS_DISTANCE * sin(alfa), position.z - LOS_DISTANCE * cos(alfa)));
+    Vec2<float> difference = subtract(center, eye);
     
+    return difference;
+}
+
+Vec3<float> Camera::getPosition3D()
+{
     Vec3<float> coordinates = (Vec3<float>(position.x - sin(alfa), position.y, position.z - cos(alfa)));
+    
+    return coordinates;
+}
+
+Vec2<float> Camera::getPosition2D()
+{
+    Vec2<float> coordinates = (Vec2<float>(position.x - sin(alfa), position.z - cos(alfa)));
+    
     return coordinates;
 }
 

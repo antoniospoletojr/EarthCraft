@@ -266,7 +266,7 @@ bool Terrain::checkCollision(Vec3<float> position)
 
     // Check if the height of the terrain is greater than the height of the object (add an offset for visual purposes)
     if (height > position.y-50)
-        return false;
+        return true;
     
     return false;
 }

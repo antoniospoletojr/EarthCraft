@@ -30,11 +30,10 @@ public:
     Renderer();
     ~Renderer();
 
-    void initialize(Camera *camera);
+    void initialize(Camera *camera, QuadTree *quadtree);
     void sketch(float x, float y);
     void resetSketches();
     void takeSnapshot();
-    void initializeMesh();
     void initializeWater();
     void initializeOrbit(int orbit_height);
     void initializeVegetation();
@@ -44,7 +43,7 @@ private:
     static Renderer *instance;
     Camera *camera;
     Terrain *terrain;
-    QuadTree quadtree;
+    QuadTree *quadtree;
     
     std::vector<Object> objects;
     
@@ -61,7 +60,7 @@ private:
     
     void cycleDayNight();
     
-    static void drawMesh();
+    static void drawTerrain();
     static void drawOrbit();
     static void drawSkydome();
     static void drawSplashscreen();

@@ -29,11 +29,13 @@ Renderer::~Renderer()
     objects.clear();
     
     // Delete the vertex array objects
-    glDeleteVertexArrays(1, &objects[MESH].vao);
     glDeleteVertexArrays(1, &objects[SUN].vao);
     glDeleteVertexArrays(1, &objects[MOON].vao);
     glDeleteVertexArrays(1, &objects[SPLASHSCREEN].vao);
     glDeleteVertexArrays(1, &objects[CANVAS].vao);
+    glDeleteVertexArrays(1, &objects[SKYDOME].vao);
+    glDeleteVertexArrays(1, &objects[WATER].vao);
+    glDeleteVertexArrays(1, &objects[VEGETATION].vao);
     
     // Deallocate opencv objects
     menu_clips[LANDING_SCREEN].release();
@@ -54,13 +56,16 @@ void Renderer::setTerrain(Terrain *terrain)
     this->terrain->getInfo();
 }
 
-void Renderer::initialize(Camera *camera)
+void Renderer::initialize(Camera *camera, QuadTree *quadtree)
 {
     // Set the camera
     this->camera = camera;
+
+    // Set the quadtree object
+    this->quadtree = quadtree;
     
-    // Allocate space for 8 objects (Mesh, Splashscreen, Canvas, Skydome, Sun, Moon, Water, Vegetation and the 4 sketches)
-    objects.resize(12);
+    // Allocate space for 8 objects (Splashscreen, Canvas, Skydome, Sun, Moon, Water, Vegetation and the 4 sketches)
+    objects.resize(11);
     
     // Initialize non-terrain-related objects
     this->initializeSplashscreen();
@@ -75,158 +80,6 @@ void Renderer::initialize(Camera *camera)
     
     const siv::PerlinNoise::seed_type seed = 12345;
     this->perlin_noise = siv::PerlinNoise(seed);
-}
-
-void Renderer::initializeMesh()
-{    
-    // Retrieve the map
-    Vec3<float> *map = this->terrain->getHeightmap();
-    // Load the mesh texture image
-    cv::Mat mesh_texture = this->terrain->getTexture();
-    // Get the dimension of the map, useful for allocations
-    int dim = this->terrain->getDim();
-    // Get the world dimension of the map, useful for texture mapping
-    float world_dim = this->terrain->getWorldDim();
-    
-    // Generate and bind a texture object
-    glGenTextures(1, &objects[MESH].texture[0]);
-    glBindTexture(GL_TEXTURE_2D, objects[MESH].texture[0]);
-    
-    // Set texture parameters
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    
-    // Upload the texture image data
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, mesh_texture.cols, mesh_texture.rows, 0, GL_BGR, GL_UNSIGNED_BYTE, mesh_texture.data);
-    
-    quadtree.initialize(this->terrain);
-
-    // Generate the vertex array object for the mesh
-    glGenVertexArrays(1, &objects[MESH].vao);
-    // Bind the vertex array object for the mesh
-    glBindVertexArray(objects[MESH].vao);
-    
-    // Generate the buffer objects
-    glGenBuffers(1, &objects[MESH].vbo);
-    glGenBuffers(1, &objects[MESH].tbo);
-    glGenBuffers(1, &objects[MESH].ibo);
-    glGenBuffers(1, &objects[MESH].nbo);
-    
-    // Reset mesh arrays if they are not empty
-    objects[MESH].vertices.clear();
-    objects[MESH].indices.clear();
-    objects[MESH].textures.clear();
-    objects[MESH].normals.clear();
-    
-    // Generate vertices, textures and nomals values for the mesh
-    for (int i = 0; i < dim; i++)
-    {
-        for (int j = 0; j < dim; j++)
-        {
-            objects[MESH].vertices.push_back(map[i * dim + j].x);
-            objects[MESH].vertices.push_back(map[i * dim + j].y);
-            objects[MESH].vertices.push_back(map[i * dim + j].z);
-            
-            objects[MESH].textures.push_back((float)i / dim);
-            objects[MESH].textures.push_back((float)j / dim);
-
-            objects[MESH].normals.push_back(0.0f);
-            objects[MESH].normals.push_back(0.0f);
-            objects[MESH].normals.push_back(0.0f);
-        }
-    }
-    
-    // Generate indices for triangle strips
-    for (int z = 0; z < dim - 1; z++)               // 449
-    {
-        // Start a new strip
-        objects[MESH].indices.push_back(z * dim);
-        for (int x = 0; x < dim; x++)               // 902
-        {
-            // Add vertices to strip
-            objects[MESH].indices.push_back((z + 1) * dim + x);
-            objects[MESH].indices.push_back(z * dim + x);
-        }
-        // Use primitive restart to start a new strip
-        objects[MESH].indices.push_back(0xFFFFFFFFu);
-    }
-    
-    // Calculate normals
-    for (int i = 0; i < objects[MESH].indices.size()-3; i += 2)
-    {    
-        if (objects[MESH].indices[i+1] == 0xFFFFFFFFu)
-            continue;
-        
-        // Get the indices of the triangle
-        int i1 = objects[MESH].indices[i];
-        int i2 = objects[MESH].indices[i + 1];
-        int i3 = objects[MESH].indices[i + 2];
-        
-        // Get the vertices of the triangle into Vec3 objects
-        Vec3<float> v1;
-        v1.x = objects[MESH].vertices[i1 * 3];
-        v1.y = objects[MESH].vertices[i1 * 3 + 1];
-        v1.z = objects[MESH].vertices[i1 * 3 + 2];
-        
-        Vec3<float> v2;
-        v2.x = objects[MESH].vertices[i2 * 3];
-        v2.y = objects[MESH].vertices[i2 * 3 + 1];
-        v2.z = objects[MESH].vertices[i2 * 3 + 2];
-        
-        Vec3<float> v3;
-        v3.x = objects[MESH].vertices[i3 * 3];
-        v3.y = objects[MESH].vertices[i3 * 3 + 1];
-        v3.z = objects[MESH].vertices[i3 * 3 + 2];
-        
-        // Get the vertices of the triangle
-        Vec3<float> u1 = subtract(v2, v1);
-        Vec3<float> u2 = subtract(v3, v1);
-        
-        // Calculate the normal of the triangle
-        Vec3<float> normal = crossProduct(u1, u2);
-        
-        // // Add the normal to the normals array
-        objects[MESH].normals[i1 * 3] += normal.x;
-        objects[MESH].normals[i1 * 3 + 1] += normal.y;
-        objects[MESH].normals[i1 * 3 + 2] += normal.z;
-        
-        objects[MESH].normals[i2 * 3] += normal.x;
-        objects[MESH].normals[i2 * 3 + 1] += normal.y;
-        objects[MESH].normals[i2 * 3 + 2] += normal.z;
-        
-        objects[MESH].normals[i3 * 3] += normal.x;
-        objects[MESH].normals[i3 * 3 + 1] += normal.y;
-        objects[MESH].normals[i3 * 3 + 2] += normal.z;
-    }
-    
-    // Use maximum unsigned int as restart index
-    glEnable(GL_PRIMITIVE_RESTART);
-    glPrimitiveRestartIndex(0xFFFFFFFFu);
-    
-    // Bind and fill the vertex buffer object
-    glBindBuffer(GL_ARRAY_BUFFER, objects[MESH].vbo);
-    glBufferData(GL_ARRAY_BUFFER, objects[MESH].vertices.size() * sizeof(float), objects[MESH].vertices.data(), GL_STATIC_DRAW);
-    glVertexPointer(3, GL_FLOAT, 0, 0);
-    
-    // Bind and fill the texture coordinate buffer object
-    glBindBuffer(GL_ARRAY_BUFFER, objects[MESH].tbo);
-    glBufferData(GL_ARRAY_BUFFER, objects[MESH].textures.size() * sizeof(float), objects[MESH].textures.data(), GL_STATIC_DRAW);
-    glTexCoordPointer(2, GL_FLOAT, 0, 0);
-    
-    // Bind and fill the normals buffer object
-    glBindBuffer(GL_ARRAY_BUFFER, objects[MESH].nbo);
-    glBufferData(GL_ARRAY_BUFFER, objects[MESH].normals.size() * sizeof(float), objects[MESH].normals.data(), GL_STATIC_DRAW);
-    glNormalPointer(GL_FLOAT, 0, 0);
-    
-    // Bind and fill indices buffer.
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, objects[MESH].ibo);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, objects[MESH].indices.size() * sizeof(GLuint), objects[MESH].indices.data(), GL_STATIC_DRAW);
-    
-    
-    // Unbind everything
-    glBindVertexArray(0);
 }
 
 void Renderer::initializeWater()
@@ -324,10 +177,10 @@ void Renderer::initializeWater()
     glBindBuffer(GL_ARRAY_BUFFER, objects[WATER].nbo);
     glBufferData(GL_ARRAY_BUFFER, objects[WATER].normals.size() * sizeof(float), objects[WATER].normals.data(), GL_DYNAMIC_DRAW);
     glNormalPointer(GL_FLOAT, 0, 0);
-
+    
     // Bind and fill indices buffer.
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, objects[MESH].ibo);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, objects[MESH].indices.size() * sizeof(GLuint), objects[MESH].indices.data(), GL_STATIC_DRAW);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, objects[WATER].ibo);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, objects[WATER].indices.size() * sizeof(GLuint), objects[WATER].indices.data(), GL_STATIC_DRAW);
 
     // Unbind everything
     glBindVertexArray(0);
@@ -350,7 +203,7 @@ void Renderer::initializeVegetation()
         {
             if (rand() % VEGETATION_SPARSITY == 0)
             {
-                if (map[i*dim+j].y > water_level + WAVE_MACRO_AMPLITUDE)
+                if (map[i * dim + j].y > water_level + WAVE_MACRO_AMPLITUDE)
                 {
                     objects[VEGETATION].vertices.push_back(map[i * dim + j].x + BUSH_SIZE);
                     objects[VEGETATION].vertices.push_back(map[i * dim + j].y);
@@ -367,10 +220,9 @@ void Renderer::initializeVegetation()
                     objects[VEGETATION].vertices.push_back(map[i * dim + j].x - BUSH_SIZE);
                     objects[VEGETATION].vertices.push_back(map[i * dim + j].y);
                     objects[VEGETATION].vertices.push_back(map[i * dim + j].z);
-
-                    if (map[i * dim + j].y < this->terrain->getBounds()->max_y / 3)
+                    
+                    if (map[i * dim + j].y < this->terrain->getBounds()->max_y * 0.4)
                     {
-                        
                         objects[VEGETATION].textures.push_back(0.5f);
                         objects[VEGETATION].textures.push_back(1.0f);
                         
@@ -383,7 +235,7 @@ void Renderer::initializeVegetation()
                         objects[VEGETATION].textures.push_back(0.0f);
                         objects[VEGETATION].textures.push_back(1.0f);
                     }
-                    else if (map[i * dim + j].y < this->terrain->getBounds()->max_y * 3 / 4)
+                    else
                     {   
                         objects[VEGETATION].textures.push_back(1.0f);
                         objects[VEGETATION].textures.push_back(1.0f);
@@ -397,8 +249,6 @@ void Renderer::initializeVegetation()
                         objects[VEGETATION].textures.push_back(0.5f);
                         objects[VEGETATION].textures.push_back(1.0f);
                     }
-
-
                 }
             }
         }
@@ -569,7 +419,7 @@ void Renderer::initializeOrbit(int orbit_height)
         std::cerr << "Failed to load texture image." << std::endl;
         return;
     }
-
+    
     // Generate and bind a texture object
     glGenTextures(1, &objects[MOON].texture[0]);
     glBindTexture(GL_TEXTURE_2D, objects[MOON].texture[0]);
@@ -1109,19 +959,8 @@ void Renderer::timerCallback(int value)
     glutTimerFunc(25, Renderer::timerCallback, 0);
 }
 
-void Renderer::drawMesh()
-{
-    // Bind the terrain texture
-    glBindTexture(GL_TEXTURE_2D, instance->objects[MESH].texture[0]);
-    
-    // Draw the terrain
-    glBindVertexArray(instance->objects[MESH].vao);
-    
-    // Enable two vertex arrays: co-ordinates and color.
-    glEnableClientState(GL_VERTEX_ARRAY);
-    glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-    glEnableClientState(GL_NORMAL_ARRAY);
-    
+void Renderer::drawTerrain()
+{    
     // If daytime, use the diffuse
     if (instance->time > 6 && instance->time < 18)
     {
@@ -1130,31 +969,21 @@ void Renderer::drawMesh()
     }
     else
     {
-        GLfloat diffuse_material[] = {0.8f, 0.8f, 0.8f, 1.0f}; // Cold color for diffuse light
+        GLfloat diffuse_material[] = {0.8f, 0.8f, 0.9f, 1.0f}; // Cold color for diffuse light
         glMaterialfv(GL_FRONT, GL_DIFFUSE, diffuse_material);
     }
-
-    Vec3<float> position = instance->camera->getPosition();
-    Vec3<float> direction = instance->camera->getDirection();
     
-    
-    float ambient_light = (1 - std::abs(static_cast<float>(instance->time) / 24.f - 0.5f))*0.3f;
+    float ambient_light = (1 - std::abs(static_cast<float>(instance->time) / 24.f - 0.5f))*0.25f;
     GLfloat ambient_material[] = {ambient_light, ambient_light, ambient_light, 1.0f};
     glMaterialfv(GL_FRONT, GL_AMBIENT, ambient_material);
     
-    glEnable(GL_PRIMITIVE_RESTART);                                                                 // Enable primitive restart
-    glDrawElements(GL_TRIANGLE_STRIP, instance->objects[MESH].indices.size(), GL_UNSIGNED_INT, 0);      // Draw the triangles
-    glDisable(GL_PRIMITIVE_RESTART);
+    // Bind the terrain texture
+    Vec2<float> position = instance->camera->getPosition2D();
+    Vec2<float> direction = instance->camera->getDirection2D();
     
-    glDisableClientState(GL_VERTEX_ARRAY);
-    glDisableClientState(GL_TEXTURE_COORD_ARRAY);
-    glDisableClientState(GL_NORMAL_ARRAY);
-    
-    // Unbind the vertex array object and texture
-    glBindVertexArray(0);
-    glBindTexture(GL_TEXTURE_2D, 0);
+    // Draw the terrain using the quadtree frustrum culling
+    instance->quadtree->render(position, direction);
 }
-
 
 void Renderer::drawWater()
 {
@@ -1346,7 +1175,7 @@ void Renderer::drawWater()
         glClipPlane(GL_CLIP_PLANE0, equation);
         glTranslatef(0.0, 2*surface_level, 0.0);
         glScalef(1.0, -1.0, 1.0);
-        instance -> drawMesh();
+        instance -> drawTerrain();
         // Change front face to counter-clockwise
         glDisable(GL_CLIP_PLANE0);
         glFrontFace(GL_CCW);
@@ -1357,6 +1186,7 @@ void Renderer::drawWater()
     
     // Bind the water texture
     glBindTexture(GL_TEXTURE_2D, instance->objects[WATER].texture[0]);
+
     // Bind the water VAO
     glBindVertexArray(instance->objects[WATER].vao);
     
@@ -1394,21 +1224,21 @@ void Renderer::drawVegetation()
     vector<float> vertices = instance->objects[VEGETATION].vertices;
     
     // Update the vertices such that the vegetation is always facing the camera
-    Vec3<float> direction = instance->camera->getDirection();
-    float radians = atan2(direction.z, direction.x);
+    Vec2<float> direction = instance->camera->getDirection2D();
+    float radians = atan2(direction.v, direction.u);
     float degrees = abs(fmod(radians * (180.0f / M_PI) + 270.0f, 360.0f) - 180.0f) / 180.0f;
     
     for (unsigned int i = 0; i < instance->objects[VEGETATION].vertices.size(); i += 12)
     {
         vertices[i] -= degrees * BUSH_SIZE * 2;                 // x1
-        vertices[i + 2] += direction.x * BUSH_SIZE;             // z1
+        vertices[i + 2] += direction.u * BUSH_SIZE;             // z1
         vertices[i + 3] -= degrees * BUSH_SIZE * 2;             // x2
-        vertices[i + 5] += direction.x * BUSH_SIZE;             // z2
+        vertices[i + 5] += direction.u * BUSH_SIZE;             // z2
         
         vertices[i + 6] += degrees * BUSH_SIZE * 2;             // x3
-        vertices[i + 8] -= direction.x * BUSH_SIZE;             // z3
+        vertices[i + 8] -= direction.u * BUSH_SIZE;             // z3
         vertices[i + 9] += degrees * BUSH_SIZE * 2;             // x4
-        vertices[i + 11] -= direction.x * BUSH_SIZE;            // z4
+        vertices[i + 11] -= direction.u * BUSH_SIZE;            // z4
     }
     
     // Bind the VBO and modify the vertices such that the vegetation is always facing the camera
@@ -1877,8 +1707,7 @@ void Renderer::draw()
         instance->drawOrbit();
         glEnable(GL_LIGHTING);
         instance->drawWater();
-        //instance->drawMesh();
-        instance->quadtree.draw();
+        instance->drawTerrain();
         instance->drawVegetation();
         instance->renderLight();
         glDisable(GL_LIGHTING);

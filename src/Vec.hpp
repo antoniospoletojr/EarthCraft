@@ -62,8 +62,8 @@ template <typename T>
 Vec2<T> subtract(const Vec2<T> &v1, const Vec2<T> &v2)
 {
     Vec2<T> result;
-    result.x = v1.u - v2.u;
-    result.y = v1.v - v2.v;
+    result.u = v1.u - v2.u;
+    result.v = v1.v - v2.v;
     return result;
 }
 
@@ -98,5 +98,37 @@ Vec3<T> normalize(const Vec3<T> &vector)
     }
     return normalized_vector;
 }
+
+template <typename T>
+Vec2<T> normalize(const Vec2<T> &vector)
+{
+    T length = std::sqrt(vector.u * vector.u + vector.v * vector.v);
+    Vec2<T> normalized_vector;
+
+    if (length != 0)
+    {
+        normalized_vector.u = vector.u / length;
+        normalized_vector.v = vector.v / length;
+    }
+    else
+    {
+        normalized_vector.u = 0;
+        normalized_vector.v = 0;
+    }
+    return normalized_vector;
+}
+
+template <typename T>
+T dot(const Vec3<T> &v1, const Vec3<T> &v2)
+{
+    return v1.x * v2.x + v1.y * v2.y + v1.z * v2.z;
+}
+
+template <typename T>
+T dot(const Vec2<T> &v1, const Vec2<T> &v2)
+{
+    return v1.u * v2.u + v1.v * v2.v;
+}
+
 
 #endif

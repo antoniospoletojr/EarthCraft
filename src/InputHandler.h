@@ -17,7 +17,7 @@ class InputHandler
         InputHandler();
         ~InputHandler();
 
-        void initialize(Camera *camera, Renderer *renderer, SoundManager *sound_manager);
+        void initialize(Camera *camera, Renderer *renderer, SoundManager *sound_manager, QuadTree *quadtree);
 
     private:
         static InputHandler *instance;           // used as a trick to access the InputHandler object from the static callback functions
@@ -26,6 +26,7 @@ class InputHandler
         Inference *inference;                    // a reference to the inference object
         SoundManager *sound_manager;             // a reference to the sound engine object
         Terrain *terrain;
+        QuadTree *quadtree;
 
         bool keys[256];                     // an array to keep track of regular key presses
         bool special_keys[256];             // an array to keep track of special key presses
