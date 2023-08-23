@@ -1,4 +1,10 @@
+/**
+@file
+@brief Terrain source file.
+*/
+
 #include "Terrain.h"
+
 
 // Default constructor
 Terrain::Terrain()
@@ -263,7 +269,7 @@ bool Terrain::checkCollision(Vec3<float> position)
     
     // Get the height of the terrain at the i,j coordinates
     float height = this->heightmap[i * this->dim + j].y;
-
+    
     // Check if the height of the terrain is greater than the height of the object (add an offset for visual purposes)
     if (height > position.y-50)
         return true;

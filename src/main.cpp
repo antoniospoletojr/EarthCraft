@@ -1,3 +1,8 @@
+/**
+@file
+@brief Center source of the program. Initializes all main objects and runs the framework.
+*/
+
 #include <GL/glew.h>
 #include <GL/freeglut.h>
 #include "Terrain.h"
@@ -17,10 +22,8 @@ SoundManager sound_manager;
 Renderer renderer;
 QuadTree quadtree;
 
-// Main routine.
 int main(int argc, char **argv)
 {
-    
     // Initialize the framework
     glut_framework.initialize(argc, argv);
     

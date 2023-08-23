@@ -1,6 +1,12 @@
+/**
+@file
+@brief GlutFramework source file.
+*/
+
 #include <GL/glew.h>
 #include <GL/freeglut.h>
 #include "GlutFramework.h"
+
 
 GlutFramework* GlutFramework::instance = nullptr;
 
@@ -44,7 +50,6 @@ void GlutFramework::initialize(int argc, char** argv)
 
     // Enable 2D texturing
     glEnable(GL_TEXTURE_2D);
-    //glEnable(GL_COLOR_MATERIAL);
     
     // Turn on OpenGL lighting.
     glEnable(GL_LIGHT0);                                // Enable spotlight diffuse light source.
@@ -61,8 +66,10 @@ void GlutFramework::initialize(int argc, char** argv)
     
     // Enable blending
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    
+    // Enable stencil test
     glEnable(GL_STENCIL_TEST);
-    glClearStencil(0); // Set clearing value for stencil buffer.
+    glClearStencil(0);
 }
 
 // OpenGL window reshape routine.
@@ -77,7 +84,7 @@ void GlutFramework::resize(int w, int h)
     // Reset the projection matrix.
     glLoadIdentity();
     
-    // Set up a perspective projection with a field of view of 118 degrees, an aspect ratio of w/h, and a near/far clipping plane of 30.0 and 100.0 respectively.
+    // Set up a perspective projection with a field of view of 50 degrees, an aspect ratio of w/h, and a near/far clipping plane of 1.0 and 300000.0 respectively.
     gluPerspective(50, (GLfloat)w / h, 1.0, 300000.0);
     
     // Switch back to the modelview matrix.
@@ -90,6 +97,7 @@ void GlutFramework::resize(int w, int h)
     glutPostRedisplay();
 }
 
+// Run the GLUT event processing loop
 void GlutFramework::run()
 {
     // Enter the GLUT event processing loop

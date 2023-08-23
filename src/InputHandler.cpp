@@ -1,3 +1,8 @@
+/**
+@file
+@brief InputHandler source file.
+*/
+
 #include "InputHandler.h"
 #include <thread>
 
@@ -36,18 +41,6 @@ void InputHandler::initialize(Camera *camera, Renderer *renderer, SoundManager *
     this->sound_manager->playBackgroundMusic();
 }
 
-void InputHandler::generate()
-{
-    instance->terrain = new Terrain();
-    
-    std::thread inference_thread([](Inference *inference) { inference->predict(); }, instance->inference);
-    inference_thread.join();
-    
-    std::thread terrain_thread([](Terrain *terrain) { terrain->initialize(WORLD_SCALE, TEXTURE_SCALE); }, instance->terrain);
-    terrain_thread.join();
-    
-    instance->keys[13] = true;
-}
 // Handle keyboard input
 void InputHandler::handleKeyboard()
 {
@@ -189,10 +182,12 @@ void InputHandler::handleKeyboard()
                 instance->renderer->initializeOrbit(orbit_height);
                 // Initialize the vegetation
                 instance->renderer->initializeVegetation();
+                // Set the starting time of the day
+                instance->renderer->setTime(STARTING_TIME);
                 
-                int z = instance->terrain->getWorldDim()/2;
-                int y = instance->terrain->getWaterLevel() + Y_OFFSET;
-                camera->setPosition(0, y, z);
+                int z = instance->terrain->getWorldDim()/2 + STARTING_Z_OFFSET;
+                int y = instance->terrain->getWaterLevel() + STARTING_Y_OFFSET;
+                camera->setPosition(0, y, z+5);
                 
                 instance->sound_manager->setWindAltitude(instance->terrain->getBounds()->max_y);
                 instance->sound_manager->playSuccessSound();
@@ -319,4 +314,18 @@ void InputHandler::idleCallback()
 {  
     instance->handleKeyboard();
     glutPostRedisplay();
+}
+
+// Generate the terrain
+void InputHandler::generate()
+{
+    instance->terrain = new Terrain();
+    
+    std::thread inference_thread([](Inference *inference) { inference->predict(); }, instance->inference);
+    inference_thread.join();
+    
+    std::thread terrain_thread([](Terrain *terrain) { terrain->initialize(WORLD_SCALE, TEXTURE_SCALE); }, instance->terrain);
+    terrain_thread.join();
+    
+    instance->keys[13] = true;
 }

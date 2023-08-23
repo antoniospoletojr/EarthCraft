@@ -1,4 +1,10 @@
+/**
+@file
+@brief SoundManager source file.
+*/
+
 #include "SoundManager.h"
+
 
 SoundManager::SoundManager()
 {

@@ -1,9 +1,14 @@
-// Terrain
+/**
+@file
+@brief Constants macros.
+*/
+
+// Terrain macros
 #define WORLD_SCALE 150
 #define TEXTURE_SCALE 20
-#define FLOODING_FACTOR 0.20
+#define FLOODING_FACTOR 0.15
 
-// Renderer
+// Renderer macros
 #define RENDERING_SCREEN -1
 #define LANDING_SCREEN 0
 #define RIDGES_SCREEN 1
@@ -36,17 +41,20 @@
 #define TOP_SKETCH_BORDER 0.13
 #define BOTTOM_SKETCH_BORDER 0.87
 
-#define Y_OFFSET 600
+#define STARTING_Y_OFFSET 600
+#define STARTING_Z_OFFSET 5
 
-// QuadTree
+#define STARTING_TIME 6
+
+// QuadTree macros
 #define CHUNK_SIZE 25
 #define FOV_ANGLE 90
 
-// Camera
+// Camera macros
 #define LOS_DISTANCE 2
 #define CULLING_ANGLE 45
 
-// Sound manager
+// Sound manager macros
 #define MUSIC 1
 #define UI 2
 #define WATER_EFFECT 3

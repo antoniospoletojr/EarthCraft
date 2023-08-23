@@ -1,3 +1,8 @@
+/**
+@file
+@brief QuadTree source file.
+*/
+
 #include "QuadTree.h"
 
 

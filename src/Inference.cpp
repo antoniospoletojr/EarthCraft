@@ -1,3 +1,8 @@
+/**
+@file
+@brief Inference source file.
+*/
+
 #include "Inference.h"
 
 
@@ -25,11 +30,12 @@ void Inference::predict()
 {
     PyGILState_STATE gil_state;
     gil_state = PyGILState_Ensure(); // Acquire the Global Interpreter Lock (GIL)
-    FILE *file = fopen("./src/predict.py", "r");
-
+    FILE *file = fopen("./src/Predict.py", "r");
+    
+    // Check if the Python script file was opened successfully
     if (file)
     {
-        PyRun_SimpleFile(file, "./src/predict.py"); // Execute the Python script
+        PyRun_SimpleFile(file, "./src/Predict.py"); // Execute the Python script
         fclose(file);
     }
     else

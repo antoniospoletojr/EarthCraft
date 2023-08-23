@@ -1,4 +1,10 @@
+/**
+@file
+@brief Camera source file.
+*/
+
 #include "Camera.h"
+
 
 // Constructor
 Camera::Camera()
@@ -195,6 +201,7 @@ void Camera::update()
     gluLookAt(eye_x, eye_y, eye_z, center_x, center_y, center_z, up_x, up_y, up_z);
 }
 
+// Returns the direction of the camera in on the x,y,z space
 Vec3<float> Camera::getDirection3D()
 {
     Vec3<float> eye = (Vec3<float>(position.x - sin(alfa), position.y, position.z - cos(alfa)));
@@ -204,6 +211,7 @@ Vec3<float> Camera::getDirection3D()
     return difference;
 }
 
+// Returns the direction of the camera in on the x,z space
 Vec2<float> Camera::getDirection2D()
 {
     Vec2<float> eye = (Vec2<float>(position.x - sin(alfa), position.z - cos(alfa)));
@@ -213,6 +221,7 @@ Vec2<float> Camera::getDirection2D()
     return difference;
 }
 
+// Returns the position of the camera in on the x,y,z space
 Vec3<float> Camera::getPosition3D()
 {
     Vec3<float> coordinates = (Vec3<float>(position.x - sin(alfa), position.y, position.z - cos(alfa)));
@@ -220,6 +229,7 @@ Vec3<float> Camera::getPosition3D()
     return coordinates;
 }
 
+// Returns the position of the camera in on the x,z space
 Vec2<float> Camera::getPosition2D()
 {
     Vec2<float> coordinates = (Vec2<float>(position.x - sin(alfa), position.z - cos(alfa)));
@@ -227,6 +237,7 @@ Vec2<float> Camera::getPosition2D()
     return coordinates;
 }
 
+// Set the terrain such that the camera can check for collisions when moving
 void Camera::setTerrain(Terrain *terrain)
 {
     this->terrain = terrain;

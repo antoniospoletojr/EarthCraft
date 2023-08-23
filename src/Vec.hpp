@@ -1,9 +1,18 @@
+/**
+@file
+@brief Vec structs.
+*/
+
 #ifndef VEC_HPP
 #define VEC_HPP
 
 #include <cmath>
 
-// 3D Vector struct
+/**
+ * @brief 3D Vector struct.
+ * 
+ * @tparam T 
+ */
 template <typename T>
 struct Vec3
 {
@@ -15,7 +24,11 @@ struct Vec3
     Vec3(T x_val, T y_val, T z_val) : x(x_val), y(y_val), z(z_val) {}
 };
 
-// 2D Vector struct
+/**
+ * @brief 2D Vector struct.
+ * 
+ * @tparam T 
+ */
 template <typename T>
 struct Vec2
 {
@@ -27,7 +40,14 @@ struct Vec2
 };
 
 
-// Addition function to add two vectors
+/**
+ * @brief Addition function to add two 3D vectors.
+ * 
+ * @tparam T 
+ * @param v1 Vector 1
+ * @param v2 Vector 2
+ * @return Vec3<T> 
+ */
 template <typename T>
 Vec3<T> add(const Vec3<T> &v1, const Vec3<T> &v2)
 {
@@ -38,6 +58,14 @@ Vec3<T> add(const Vec3<T> &v1, const Vec3<T> &v2)
     return result;
 }
 
+/**
+ * @brief Addition function to add two 2D vectors.
+ * 
+ * @tparam T 
+ * @param v1 Vector 1
+ * @param v2 Vector 2
+ * @return Vec2<T> 
+ */
 template <typename T>
 Vec2<T> add(const Vec2<T> &v1, const Vec2<T> &v2)
 {
@@ -47,7 +75,14 @@ Vec2<T> add(const Vec2<T> &v1, const Vec2<T> &v2)
     return result;
 }
 
-// Subtraction function to subtract two vectors
+/**
+ * @brief Subtraction function to subtract two 3D vectors.
+ * 
+ * @tparam T 
+ * @param v1 Vector 1
+ * @param v2 Vector 2
+ * @return Vec3<T> 
+ */
 template <typename T>
 Vec3<T> subtract(const Vec3<T> &v1, const Vec3<T> &v2)
 {
@@ -58,6 +93,14 @@ Vec3<T> subtract(const Vec3<T> &v1, const Vec3<T> &v2)
     return result;
 }
 
+/**
+ * @brief Subtraction function to subtract two 2D vectors.
+ * 
+ * @tparam T 
+ * @param v1 Vector 1
+ * @param v2 Vector 2
+ * @return Vec2<T> 
+ */
 template <typename T>
 Vec2<T> subtract(const Vec2<T> &v1, const Vec2<T> &v2)
 {
@@ -67,7 +110,14 @@ Vec2<T> subtract(const Vec2<T> &v1, const Vec2<T> &v2)
     return result;
 }
 
-// Function to perform cross product of two 3D vectors
+/**
+ * @brief Multiplication function to calculate the cross product of two 3D vectors.
+ * 
+ * @tparam T 
+ * @param v1 Vector 1
+ * @param v2 Vector 2
+ * @return Vec3<T> 
+ */
 template <typename T>
 Vec3<T> crossProduct(const Vec3<T> &v1, const Vec3<T> &v2)
 {
@@ -78,6 +128,13 @@ Vec3<T> crossProduct(const Vec3<T> &v1, const Vec3<T> &v2)
     return result;
 }
 
+/**
+ * @brief Normalization function to normalize a 3D vector.
+ * 
+ * @tparam T 
+ * @param vector Vector to normalize
+ * @return Vec3<T> 
+ */
 template <typename T>
 Vec3<T> normalize(const Vec3<T> &vector)
 {
@@ -99,6 +156,13 @@ Vec3<T> normalize(const Vec3<T> &vector)
     return normalized_vector;
 }
 
+/**
+ * @brief Normalization function to normalize a 2D vector.
+ * 
+ * @tparam T 
+ * @param vector Vector to normalize
+ * @return Vec2<T> 
+ */
 template <typename T>
 Vec2<T> normalize(const Vec2<T> &vector)
 {
@@ -118,12 +182,28 @@ Vec2<T> normalize(const Vec2<T> &vector)
     return normalized_vector;
 }
 
+/**
+ * @brief Dot product function to calculate the dot product of two 3D vectors.
+ * 
+ * @tparam T 
+ * @param v1 Vector 1
+ * @param v2 Vector 2
+ * @return T 
+ */
 template <typename T>
 T dot(const Vec3<T> &v1, const Vec3<T> &v2)
 {
     return v1.x * v2.x + v1.y * v2.y + v1.z * v2.z;
 }
 
+/**
+ * @brief Dot product function to calculate the dot product of two 2D vectors.
+ * 
+ * @tparam T 
+ * @param v1 Vector 1
+ * @param v2 Vector 2
+ * @return T 
+ */
 template <typename T>
 T dot(const Vec2<T> &v1, const Vec2<T> &v2)
 {

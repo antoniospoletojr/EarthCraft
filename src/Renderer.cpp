@@ -1,7 +1,12 @@
+/**
+@file
+@brief Renderer source file.
+*/
+
 #include "Renderer.h"
-#include <fstream>
 
 using namespace std;
+
 
 Renderer *Renderer::instance = nullptr;
 
@@ -305,7 +310,7 @@ void Renderer::initializeOrbit(int orbit_height)
 
     // Load sun texture image
     cv::Mat sun_texture = cv::imread("./assets/textures/sun.png");
-
+    
     // Check if the image was loaded successfully
     if (sun_texture.empty())
     {
@@ -575,7 +580,7 @@ void Renderer::initializeSkydome()
     for (unsigned int i = 0; i < scene->mNumMeshes; ++i)
     {
         const aiMesh *mesh = scene->mMeshes[i];
-
+        
         // For each vertexin the mesh
         for (unsigned int j = 0; j < mesh->mNumVertices; ++j)
         {
@@ -629,7 +634,7 @@ void Renderer::initializeSkydome()
     glBindBuffer(GL_ARRAY_BUFFER, objects[SKYDOME].tbo);
     glBufferData(GL_ARRAY_BUFFER, objects[SKYDOME].textures.size() * sizeof(float), objects[SKYDOME].textures.data(), GL_STATIC_DRAW);
     glTexCoordPointer(2, GL_FLOAT, 0, 0);
-
+    
     // Bind and fill the index buffer object
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, objects[SKYDOME].ibo);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, objects[SKYDOME].indices.size() * sizeof(unsigned int), objects[SKYDOME].indices.data(), GL_STATIC_DRAW);
@@ -764,40 +769,45 @@ void Renderer::takeSnapshot()
     short current_canvas = current_menu_page - 1;
 
     GLint previousViewport[4];
-    glGetIntegerv(GL_VIEWPORT, previousViewport); // Save the previous viewport
+    glGetIntegerv(GL_VIEWPORT, previousViewport); // Save the previous viewport dimensions [x, y, width, height]
 
     unsigned int framebuffer;
-    glGenFramebuffers(1, &framebuffer);
-    glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+    glGenFramebuffers(1, &framebuffer); // Generate a framebuffer object
+    glBindFramebuffer(GL_FRAMEBUFFER, framebuffer); // Bind the framebuffer for configuration
 
-    // generate texture
+    // Generate a texture for color rendering
     unsigned int textureColorbuffer;
-    glGenTextures(1, &textureColorbuffer);
-    glBindTexture(GL_TEXTURE_2D, textureColorbuffer);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 1920, 1080, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glBindTexture(GL_TEXTURE_2D, 0);
+    glGenTextures(1, &textureColorbuffer); // Generate a texture
+    glBindTexture(GL_TEXTURE_2D, textureColorbuffer); // Bind the texture for configuration
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 1920, 1080, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL); // Allocate texture memory
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR); // Set texture filtering for minification
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR); // Set texture filtering for magnification
+    glBindTexture(GL_TEXTURE_2D, 0); // Unbind the texture
 
-    // attach it to currently bound framebuffer object
+    // Attach the texture to the currently bound framebuffer object
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, textureColorbuffer, 0);
 
+    // Generate a renderbuffer for depth and stencil operations
     unsigned int rbo;
-    glGenRenderbuffers(1, &rbo);
-    glBindRenderbuffer(GL_RENDERBUFFER, rbo);
-    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, 1920, 1080);
-    glBindRenderbuffer(GL_RENDERBUFFER, 0);
+    glGenRenderbuffers(1, &rbo); // Generate a renderbuffer
+    glBindRenderbuffer(GL_RENDERBUFFER, rbo); // Bind the renderbuffer for configuration
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, 1920, 1080); // Allocate storage for the renderbuffer
+    glBindRenderbuffer(GL_RENDERBUFFER, 0); // Unbind the renderbuffer
 
+    // Attach the renderbuffer to the framebuffer's depth and stencil attachment point
     glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
 
+    // Check if the framebuffer is complete and usable
     if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
         std::cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << std::endl;
 
-    glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
-    glClearColor(1, 1, 1, 1);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // we're not using the stencil buffer now
-    glViewport(0, 0, 1920, 1080);
-    instance->drawSketch(current_canvas);
+    // Set up rendering parameters and draw
+    glBindFramebuffer(GL_FRAMEBUFFER, framebuffer); // Rebind the framebuffer for rendering
+    glClearColor(1, 1, 1, 1); // Set the clear color
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // Clear the color and depth buffers
+    glViewport(0, 0, 1920, 1080); // Set the viewport to match the framebuffer size
+    instance->drawSketch(current_canvas); // Render the sketch using the specified canvas
+    
 
     // Define the snapshot matrix
     cv::Mat snapshot(800, 800, CV_8UC3);
@@ -845,6 +855,11 @@ void Renderer::cycleDayNight()
     this->time += 0.02f;
     if (this->time > 24.f)
         this->time -= 24.0f;
+}
+
+void Renderer::setTime(int time)
+{
+    this->time = time % 24;
 }
 
 void Renderer::sketch(float x, float y)
@@ -901,7 +916,7 @@ void Renderer::resetSketches()
     }
 }
 
-void Renderer::timerCallback(int value)
+void Renderer::animateMenu()
 {
     switch (instance->current_menu_page)
     {
@@ -953,7 +968,11 @@ void Renderer::timerCallback(int value)
         instance->menu_frame.release();
         break;
     }
+}
 
+void Renderer::timerCallback(int value)
+{
+    instance->animateMenu();
     instance->cycleDayNight();
     glutPostRedisplay();
     glutTimerFunc(25, Renderer::timerCallback, 0);
