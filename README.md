@@ -2,7 +2,8 @@
 ![C++](https://img.shields.io/badge/C%2B%2B-black?logo=c%2B%2B)
 ![Python](https://img.shields.io/badge/Python-black?logo=python)
 ![OpenGL](https://img.shields.io/badge/OpenGL-legacy-white?logo=opengl)
-![YouTube](https://img.shields.io/badge/YouTube-demo-white?logo=youtube&logoColor=red&link=https%3A%2F%2Fwww.youtube.com%2Fwatch%3Fv%3Dcc-6Do9KZIU)
+
+
 
 
 *a modest, small, homemade, partially deprecated and obsolete prototype of a terrain renderer using deep learning*
