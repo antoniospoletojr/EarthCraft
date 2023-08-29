@@ -852,7 +852,7 @@ void Renderer::takeSnapshot()
 void Renderer::cycleDayNight()
 {
     // Cycle the day/night cycle using the time variable which sets the rotation for the orbit and the alpha value for the night texture
-    this->time += 0.02f;
+    this->time += 0.005f * TIME_SPEED;
     if (this->time > 24.f)
         this->time -= 24.0f;
 }
@@ -1060,7 +1060,6 @@ void Renderer::drawWater()
     glBindBuffer(GL_ARRAY_BUFFER, instance->objects[WATER].nbo);
     // Calculate updated normals for every triangle 
     std::vector<float> normals = instance->objects[WATER].normals;
-    // Calculate normals
     for (int i = 0; i < instance->objects[WATER].indices.size() - 3; i += 2)
     {
         if (instance->objects[WATER].indices[i + 1] == 0xFFFFFFFFu)
@@ -1087,12 +1086,8 @@ void Renderer::drawWater()
         v3.y = vertices[i3 * 3 + 1];
         v3.z = vertices[i3 * 3 + 2];
 
-        // Get the vertices of the triangle
-        Vec3<float> u1 = subtract(v2, v1);
-        Vec3<float> u2 = subtract(v3, v1);
-        
-        // Calculate the normal of the triangle
-        Vec3<float> normal = crossProduct(u1, u2);
+        // Calculate normals
+        Vec3<float> normal = newellMethod(v1, v2, v3);
 
         // Add the normal to the normals array
         normals[i1 * 3] += normal.x;

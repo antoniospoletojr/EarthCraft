@@ -91,12 +91,12 @@ QuadNode::QuadNode(QuadTree *quadtree, Terrain* terrain, float x, float width, f
             if (this->object.indices[i+1] == 0xFFFFFFFFu)
                 continue;
             
-            // Get the indices of the triangle
+            // Get the indices of the triangle vertices
             int i1 = this->object.indices[i];
             int i2 = this->object.indices[i + 1];
             int i3 = this->object.indices[i + 2];
             
-            // Get the vertices of the triangle into Vec2 objects
+            // Get the vertices of the triangle into Vec3 objects
             Vec3<float> v1;
             v1.x = this->object.vertices[i1 * 3];
             v1.y = this->object.vertices[i1 * 3 + 1];
@@ -112,7 +112,7 @@ QuadNode::QuadNode(QuadTree *quadtree, Terrain* terrain, float x, float width, f
             v3.y = this->object.vertices[i3 * 3 + 1];
             v3.z = this->object.vertices[i3 * 3 + 2];
             
-            // Get the vertices of the triangle
+            // Get 2 edges of the triangle
             Vec3<float> u1 = subtract(v2, v1);
             Vec3<float> u2 = subtract(v3, v1);
             

@@ -5,8 +5,8 @@
 
 // Terrain macros
 #define WORLD_SCALE 150
-#define TEXTURE_SCALE 20
-#define FLOODING_FACTOR 0.15
+#define TEXTURE_SCALE 24
+#define FLOODING_FACTOR 0.20
 
 // Renderer macros
 #define RENDERING_SCREEN -1
@@ -44,7 +44,8 @@
 #define STARTING_Y_OFFSET 600
 #define STARTING_Z_OFFSET 5
 
-#define STARTING_TIME 6
+#define STARTING_TIME 7
+#define TIME_SPEED 2
 
 // QuadTree macros
 #define CHUNK_SIZE 25

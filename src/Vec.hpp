@@ -210,5 +210,30 @@ T dot(const Vec2<T> &v1, const Vec2<T> &v2)
     return v1.u * v2.u + v1.v * v2.v;
 }
 
+/**
+ * @brief Calculate normal vector of a triangle using Newell's method.
+ * 
+ * @tparam T 
+ * @param v1 First vertex
+ * @param v2 Second vertex
+ * @param v3 Third vertex
+ * @return Vec3<T> 
+ */
+template <typename T>
+Vec3<T> newellMethod(const Vec3<T> &v1, const Vec3<T> &v2, const Vec3<T> &v3)
+{
+    Vec3<T> result;
+    result.x = (v1.y - v2.y) * (v1.z + v2.z) +
+               (v2.y - v3.y) * (v2.z + v3.z) +
+               (v3.y - v1.y) * (v3.z + v1.z);
+    result.y = (v1.z - v2.z) * (v1.x + v2.x) +
+               (v2.z - v3.z) * (v2.x + v3.x) +
+               (v3.z - v1.z) * (v3.x + v1.x);
+    result.z = (v1.x - v2.x) * (v1.y + v2.y) +
+               (v2.x - v3.x) * (v2.y + v3.y) +
+               (v3.x - v1.x) * (v3.y + v1.y);
+    return result;
+}
+
 
 #endif

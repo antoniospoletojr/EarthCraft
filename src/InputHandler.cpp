@@ -180,7 +180,7 @@ void InputHandler::handleKeyboard()
                 // Initialize the orbit
                 int orbit_height = instance->terrain->getWorldDim()/2;
                 instance->renderer->initializeOrbit(orbit_height);
-                // Initialize the vegetation
+                // InitializeglBindTexture the vegetation
                 instance->renderer->initializeVegetation();
                 // Set the starting time of the day
                 instance->renderer->setTime(STARTING_TIME);
