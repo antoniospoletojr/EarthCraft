@@ -1523,76 +1523,75 @@ void Renderer::drawSketch(short current_canvas)
         // Save the previous projection matrix
         glMatrixMode(GL_PROJECTION);
         glPushMatrix();
-        
-        // Set the projection matrix to orthographic
-        float width = glutGet(GLUT_WINDOW_WIDTH);
-        float height = glutGet(GLUT_WINDOW_HEIGHT);
-        glLoadIdentity();
-        glOrtho(0, width, 0, height, -1, 1);
+            // Set the projection matrix to orthographic
+            float width = glutGet(GLUT_WINDOW_WIDTH);
+            float height = glutGet(GLUT_WINDOW_HEIGHT);
+            glLoadIdentity();
+            glOrtho(0, width, 0, height, -1, 1);
 
-        // Update sketch_vertices to fit the screen: vertices is the non-normalized version of sketch_vertices
-        vector<float> vertices(instance->objects[SKETCH + current_canvas].vertices.size());
-        
-        for (int i = 0; i < instance->objects[SKETCH + current_canvas].vertices.size(); i = i + 3)
-        {
-            vertices[i] = instance->objects[SKETCH + current_canvas].vertices[i] * width;
-            vertices[i + 1] = instance->objects[SKETCH + current_canvas].vertices[i + 1] * height;
-            vertices[i + 2] = instance->objects[SKETCH + current_canvas].vertices[i + 2];
-        }
+            // Update sketch_vertices to fit the screen: vertices is the non-normalized version of sketch_vertices
+            vector<float> vertices(instance->objects[SKETCH + current_canvas].vertices.size());
+            
+            for (int i = 0; i < instance->objects[SKETCH + current_canvas].vertices.size(); i = i + 3)
+            {
+                vertices[i] = instance->objects[SKETCH + current_canvas].vertices[i] * width;
+                vertices[i + 1] = instance->objects[SKETCH + current_canvas].vertices[i + 1] * height;
+                vertices[i + 2] = instance->objects[SKETCH + current_canvas].vertices[i + 2];
+            }
 
-        // Enable the vertex arrays
-        glEnableClientState(GL_VERTEX_ARRAY);
-        glEnableClientState(GL_COLOR_ARRAY);
-        glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+            // Enable the vertex arrays
+            glEnableClientState(GL_VERTEX_ARRAY);
+            glEnableClientState(GL_COLOR_ARRAY);
+            glEnableClientState(GL_TEXTURE_COORD_ARRAY);
 
-        // Render the sketch
-        glBindVertexArray(instance->objects[SKETCH].vao);
-        
-        // Bind the vertex buffer object
-        glBindBuffer(GL_ARRAY_BUFFER, instance->objects[SKETCH].vbo);
-        // Update the vertex buffer data for points
-        glBufferData(GL_ARRAY_BUFFER, instance->objects[SKETCH + current_canvas].vertices.size() * sizeof(GLfloat), vertices.data(), GL_DYNAMIC_DRAW);
-        // Set the vertexattribute pointer for positions
-        glVertexPointer(3, GL_FLOAT, 0, vertices.data());
-        
-        // Bind the vertex buffer object
-        glBindBuffer(GL_ARRAY_BUFFER, instance->objects[SKETCH].cbo);
-        // Update the vertex buffer data for points
-        glBufferData(GL_ARRAY_BUFFER, instance->objects[SKETCH + current_canvas].colors.size() * sizeof(GLfloat), instance->objects[SKETCH + current_canvas].colors.data(), GL_DYNAMIC_DRAW);
-        // Set the vertexattribute pointer for colors
-        glColorPointer(3, GL_FLOAT, 0, instance->objects[SKETCH + current_canvas].colors.data());
-        
-        // Bind the index buffer object
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, instance->objects[SKETCH].ibo);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, instance->objects[SKETCH + current_canvas].indices.size() * sizeof(GLuint), instance->objects[SKETCH + current_canvas].indices.data(), GL_DYNAMIC_DRAW);
+            // Render the sketch
+            glBindVertexArray(instance->objects[SKETCH].vao);
+            
+            // Bind the vertex buffer object
+            glBindBuffer(GL_ARRAY_BUFFER, instance->objects[SKETCH].vbo);
+            // Update the vertex buffer data for points
+            glBufferData(GL_ARRAY_BUFFER, instance->objects[SKETCH + current_canvas].vertices.size() * sizeof(GLfloat), vertices.data(), GL_DYNAMIC_DRAW);
+            // Set the vertexattribute pointer for positions
+            glVertexPointer(3, GL_FLOAT, 0, vertices.data());
+            
+            // Bind the vertex buffer object
+            glBindBuffer(GL_ARRAY_BUFFER, instance->objects[SKETCH].cbo);
+            // Update the vertex buffer data for points
+            glBufferData(GL_ARRAY_BUFFER, instance->objects[SKETCH + current_canvas].colors.size() * sizeof(GLfloat), instance->objects[SKETCH + current_canvas].colors.data(), GL_DYNAMIC_DRAW);
+            // Set the vertexattribute pointer for colors
+            glColorPointer(3, GL_FLOAT, 0, instance->objects[SKETCH + current_canvas].colors.data());
+            
+            // Bind the index buffer object
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, instance->objects[SKETCH].ibo);
+            glBufferData(GL_ELEMENT_ARRAY_BUFFER, instance->objects[SKETCH + current_canvas].indices.size() * sizeof(GLuint), instance->objects[SKETCH + current_canvas].indices.data(), GL_DYNAMIC_DRAW);
 
-        // Enable primitive restart
-        glEnable(GL_PRIMITIVE_RESTART);
-        glPrimitiveRestartIndex(0xFFFFFFFFu);
-
-        // If the current page is rivers or ridges, draw lines
-        if (current_canvas == RIDGES || current_canvas == RIVERS)
-        {
-            // Increment line width
-            glLineWidth(5.0f);
-            // Draw the sketch using indices
-            glDrawElements(GL_LINE_STRIP, instance->objects[SKETCH + current_canvas].indices.size(), GL_UNSIGNED_INT, instance->objects[SKETCH + current_canvas].indices.data());
-        }
-        if (current_canvas == PEAKS || current_canvas == BASINS)
-        {
-            // Increment points size
-            glPointSize(5.0f);
-            // Draw the sketch using indices
-            glDrawElements(GL_POINTS, instance->objects[SKETCH + current_canvas].indices.size(), GL_UNSIGNED_INT, instance->objects[SKETCH + current_canvas].indices.data());
-        }
-        glDisable(GL_PRIMITIVE_RESTART);
-        
-        glDisableClientState(GL_VERTEX_ARRAY);
-        glDisableClientState(GL_COLOR_ARRAY);
-        glDisableClientState(GL_TEXTURE_COORD_ARRAY);
-        
-        // Restore the previous projection matrix
-        glMatrixMode(GL_PROJECTION);
+            // Enable primitive restart
+            glEnable(GL_PRIMITIVE_RESTART);
+            glPrimitiveRestartIndex(0xFFFFFFFFu);
+            
+            // If the current page is rivers or ridges, draw lines
+            if (current_canvas == RIDGES || current_canvas == RIVERS)
+            {
+                // Increment line width
+                glLineWidth(5.0f);
+                // Draw the sketch using indices
+                glDrawElements(GL_LINE_STRIP, instance->objects[SKETCH + current_canvas].indices.size(), GL_UNSIGNED_INT, instance->objects[SKETCH + current_canvas].indices.data());
+            }
+            if (current_canvas == PEAKS || current_canvas == BASINS)
+            {
+                // Increment points size
+                glPointSize(5.0f);
+                // Draw the sketch using indices
+                glDrawElements(GL_POINTS, instance->objects[SKETCH + current_canvas].indices.size(), GL_UNSIGNED_INT, instance->objects[SKETCH + current_canvas].indices.data());
+            }
+            glDisable(GL_PRIMITIVE_RESTART);
+            
+            glDisableClientState(GL_VERTEX_ARRAY);
+            glDisableClientState(GL_COLOR_ARRAY);
+            glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+            
+            // Restore the previous projection matrix
+            glMatrixMode(GL_PROJECTION);
         glPopMatrix();
     }
 }
