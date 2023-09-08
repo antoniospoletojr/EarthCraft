@@ -5,7 +5,7 @@
 
 // Terrain macros
 #define WORLD_SCALE 150
-#define TEXTURE_SCALE 24
+#define TEXTURE_SCALE 20
 #define FLOODING_FACTOR 0.20
 
 // Renderer macros

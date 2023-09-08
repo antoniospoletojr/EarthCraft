@@ -1667,13 +1667,7 @@ void Renderer::renderLight()
         
         GLfloat spot_direction[3] = {0.0f, -1.0f, 0.0f};
         glLightfv(GL_LIGHT0, GL_SPOT_DIRECTION, spot_direction);
-        
-        GLfloat cutoff_angle = 75.0f;
-        glLightf(GL_LIGHT0, GL_SPOT_CUTOFF, cutoff_angle);
-        
-        GLfloat exponent_value = 1.f;
-        glLightf(GL_LIGHT0, GL_SPOT_EXPONENT, exponent_value);
-        
+
         // If daytime, use diffuse sunlight
         if (instance->time > 6 && instance->time < 18)
         {

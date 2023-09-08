@@ -51,10 +51,19 @@ void GlutFramework::initialize(int argc, char** argv)
     // Enable 2D texturing
     glEnable(GL_TEXTURE_2D);
     
-    // Turn on OpenGL lighting.
-    glEnable(GL_LIGHT0);                                // Enable spotlight diffuse light source.
-    glEnable(GL_LIGHT1);                                // Enable directional ambient light source.
+    // Enable spotlight diffuse light source.
+    glEnable(GL_LIGHT0);
+
+    // Diffuse light properties.
+    GLfloat cutoff_angle = 75.0f;
+    glLightf(GL_LIGHT0, GL_SPOT_CUTOFF, cutoff_angle);
     
+    GLfloat exponent_value = 1.f;
+    glLightf(GL_LIGHT0, GL_SPOT_EXPONENT, exponent_value);
+
+    // Enable directional ambient light source.
+    glEnable(GL_LIGHT1);
+
     // Ambient light properties.
     float ambient_light[] = {1, 1, 1, 1.0};
     glLightfv(GL_LIGHT1, GL_AMBIENT, ambient_light);
