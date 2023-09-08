@@ -14,7 +14,7 @@ Terrain::Terrain()
     this->tiles[1].region = HeightRegion{0.15f, 0.35f, 0.45f};
     this->tiles[2].region = HeightRegion{0.30f, 0.50f, 0.65f};
     this->tiles[3].region = HeightRegion{0.50f, 0.70f, 0.80f};
-    this->tiles[4].region = HeightRegion{0.70f, 0.90f, 1.0f};
+    this->tiles[4].region = HeightRegion{0.70f, 0.85f, 0.90f};
     this->tiles[5].region = HeightRegion{0.85f, 0.95f, 1.0f};
     
     this->tiles[0].texture = cv::imread("assets/textures/1.jpg", cv::IMREAD_COLOR);
@@ -154,7 +154,7 @@ void Terrain::loadTexture()
             i_map = (int)floor(i * terrain_texture_ratio);
             j_map = (int)floor(j * terrain_texture_ratio);
             normalized_height = (float)(this->heightmap[j_map * this->dim + i_map].y / this->bounds.max_y);
-
+            // For each of the 6 tiles, calculate the weight based on the normalized height
             for (short k = 0; k < 6; k++)
             {
                 if (normalized_height >= this->tiles[k].region.low && normalized_height <= this->tiles[k].region.high)
@@ -187,7 +187,7 @@ void Terrain::loadTexture()
                 else
                     weights[k] = 0;
             }
-            
+            // Interpolate the pixel
             float sum = 0.0;
             for (int k = 0; k < 6; k++)
                 sum += weights[k];
@@ -198,7 +198,7 @@ void Terrain::loadTexture()
         }
     }
     // Write texture to file
-    //cv::imwrite("./assets/terrain_texture.png", texture);
+    // cv::imwrite("./assets/terrain_texture.png", texture);
 }
 
 // Return the height map

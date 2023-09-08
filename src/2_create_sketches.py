@@ -7,11 +7,7 @@ from pysheds.grid import Grid
 from skimage.morphology import skeletonize
 import multiprocessing as mp
 import pyproj
-import warnings
-
-# Suppress the FutureWarning
 pyproj.datadir.set_data_dir('/home/spoleto/.mambaforge/envs/cg/share/proj')
-warnings.simplefilter(action='ignore', category=FutureWarning)
 
 # Takes a TIFF image as input and returns two arrays, one for rivers and one for depressions
 def compute_rivers(tiff_image):
@@ -43,6 +39,9 @@ def compute_rivers(tiff_image):
     # Downsample the flow accumulation to create the river array
     downsampled_rivers = np.log(grid.view('acc') + 1)
 
+    # Upsample the depressions to create the depression array
+    upsampled_depressions = cv2.resize(np.array(depressions, dtype=np.uint8), (450, 450))
+
     # Upsample the river array
     upsampled_rivers = cv2.resize(downsampled_rivers, (450, 450))
 
@@ -62,7 +61,7 @@ def compute_rivers(tiff_image):
     skeletonized_rivers = skeletonize(thresholded_river)
 
     # Return the skeletonized river array and the upsampled depression array
-    return np.expand_dims(skeletonized_rivers, axis=-1)
+    return np.expand_dims(skeletonized_rivers, axis=-1), np.expand_dims(upsampled_depressions, axis=-1)
 
 # Similar to compute_rivers, but it computes ridges and peaks instead of rivers and depressions
 def compute_ridges(tiff_image):
@@ -86,6 +85,8 @@ def compute_ridges(tiff_image):
     grid.accumulation(data='dir', out_name='acc', dirmap=dirmap)
     # Take the logarithm of the flow accumulation to emphasize higher values
     downsampled_ridges = np.log(grid.view('acc') + 1)
+    # Upsample the peaks map to match the size of the downsampled ridges
+    upsampled_peaks = cv2.resize(np.array(peaks, dtype=np.uint8), (450, 450))
     # Upsample the ridges map to match the size of the upsampled peaks map
     upsampled_ridges = cv2.resize(downsampled_ridges, (450, 450))
     # Normalize the values of the upsampled ridges to be between 0 and 1
@@ -100,17 +101,21 @@ def compute_ridges(tiff_image):
     skeletonized_ridges = skeletonize(thresholded_ridges)
     
     # Return the skeletonized ridge map and the upsampled peaks map
-    return np.expand_dims(skeletonized_ridges, axis=-1)
+    return np.expand_dims(skeletonized_ridges, axis=-1), np.expand_dims(upsampled_peaks, axis=-1)
 
 # Computes the height map and the sketch map for a given tiff file
 def compute_sketches(filepath):
     # Load data
     data = gr.from_file(str(filepath))
+    # Skip files with a low mean value
+    if data.mean() < 5 and data.var() < 2:
+        return
+        
     # Compute rivers and basins using the compute_rivers function
-    rivers = compute_rivers(filepath)
+    rivers, basins = compute_rivers(filepath)
     # Compute ridges and peaks using the compute_ridges function
-    ridges = compute_ridges(filepath)
-    
+    ridges, peaks = compute_ridges(filepath)
+
     # Convert high-detail data to a height map
     height_map = np.array(data.raster, dtype=np.float32)
     height_map = np.expand_dims(height_map, axis=-1)
@@ -119,7 +124,7 @@ def compute_sketches(filepath):
     height_map = height_map * 2 - 1
 
     # Combine ridges, rivers, peaks, and basins into a sketch map
-    sketch_map = np.stack((ridges, rivers), axis=2)
+    sketch_map = np.stack((ridges, rivers, peaks, basins), axis=2)
     # Remove the last dimension of the sketch map (it's redundant)
     sketch_map = np.squeeze(sketch_map, axis=-1)
 

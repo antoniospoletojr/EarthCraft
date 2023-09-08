@@ -55,12 +55,13 @@ void GlutFramework::initialize(int argc, char** argv)
     glEnable(GL_LIGHT0);                                // Enable spotlight diffuse light source.
     glEnable(GL_LIGHT1);                                // Enable directional ambient light source.
     
-    // Light property vectors.
+    // Ambient light properties.
     float ambient_light[] = {1, 1, 1, 1.0};
-    
-    // Light properties.
     glLightfv(GL_LIGHT1, GL_AMBIENT, ambient_light);
     
+    GLfloat ambient_light_position[4] = {0.0f, 1.0f, 0.0f, 0.0f};
+    glLightfv(GL_LIGHT1, GL_POSITION, ambient_light_position);
+
     // Enable automatic normalization of surface normals to unit length
     glEnable(GL_NORMALIZE);
     

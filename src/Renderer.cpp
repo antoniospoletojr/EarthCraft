@@ -980,7 +980,7 @@ void Renderer::timerCallback(int value)
 
 void Renderer::drawTerrain()
 {    
-    // If daytime, use the diffuse
+    // Change the lighting color based on the time of day
     if (instance->time > 6 && instance->time < 18)
     {
         GLfloat diffuse_material[] = {1.f, 0.9f, 0.8f, 1.0f}; // Warm color for diffuse light
@@ -996,7 +996,7 @@ void Renderer::drawTerrain()
     GLfloat ambient_material[] = {ambient_light, ambient_light, ambient_light, 1.0f};
     glMaterialfv(GL_FRONT, GL_AMBIENT, ambient_material);
     
-    // Bind the terrain texture
+    // Retrieve the camera position and direction for frustrum culling
     Vec2<float> position = instance->camera->getPosition2D();
     Vec2<float> direction = instance->camera->getDirection2D();
     
@@ -1040,7 +1040,7 @@ void Renderer::drawWater()
     float micro_amplitude = WAVE_MICRO_AMPLITUDE; // Adjust the amplitude of micro waves
     float micro_frequency_x = 0.01f; // Adjust the frequency of micro waves in X direction
     float micro_frequency_z = 0.01f; // Adjust the frequency of micro waves in Z direction
-
+    
     for (unsigned int i = 0; i < instance->objects[WATER].vertices.size(); i += 3)
     {
         float x = instance->objects[WATER].vertices[i];
@@ -1655,9 +1655,6 @@ void Renderer::renderLight()
 {
     // Set the light position based on the mesh size
     static float diffuse_light_y = instance->terrain->getWorldDim()/2;
-
-    GLfloat ambient_light_position[4] = {0.0f, 1.0f, 0.0f, 0.0f};
-    glLightfv(GL_LIGHT1, GL_POSITION, ambient_light_position);
     
     glMatrixMode(GL_MODELVIEW);
     glPushMatrix();
@@ -1696,7 +1693,7 @@ void Renderer::renderLight()
         float angle = instance->time / 24.f * 360 + 180;
         glRotatef(angle, 0, 0, 1);
         glLightfv(GL_LIGHT0, GL_POSITION, light_position);
-        glPopMatrix();
+    glPopMatrix();
 }
 
 void Renderer::draw()
