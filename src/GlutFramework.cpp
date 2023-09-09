@@ -27,7 +27,7 @@ void GlutFramework::initialize(int argc, char** argv)
 {    
     glutInit(&argc, argv);
     glutInitContextProfile(GLUT_COMPATIBILITY_PROFILE);
-    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH | GLUT_STENCIL);
+    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH | GLUT_STENCIL | GLUT_MULTISAMPLE);
     glutCreateWindow("Window");
     glutFullScreen();
     glutReshapeFunc(GlutFramework::resize);
@@ -80,6 +80,9 @@ void GlutFramework::initialize(int argc, char** argv)
     // Enable stencil test
     glEnable(GL_STENCIL_TEST);
     glClearStencil(0);
+    
+    // Enable multisampling
+    glEnable(GL_MULTISAMPLE);
 }
 
 // OpenGL window reshape routine.
