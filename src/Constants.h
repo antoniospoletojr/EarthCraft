@@ -53,7 +53,6 @@
 
 // Camera macros
 #define LOS_DISTANCE 2
-#define CULLING_ANGLE 45
 
 // Sound manager macros
 #define MUSIC 1

@@ -170,17 +170,17 @@ void Renderer::initializeWater()
 
     // Bind and fill the vertex buffer object
     glBindBuffer(GL_ARRAY_BUFFER, objects[WATER].vbo);
-    glBufferData(GL_ARRAY_BUFFER, objects[WATER].vertices.size() * sizeof(float), objects[WATER].vertices.data(), GL_DYNAMIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, objects[WATER].vertices.size() * sizeof(float), objects[WATER].vertices.data(), GL_STREAM_DRAW);
     glVertexPointer(3, GL_FLOAT, 0, 0);
 
     // Bind and fill the texture coordinate buffer object
     glBindBuffer(GL_ARRAY_BUFFER, objects[WATER].tbo);
-    glBufferData(GL_ARRAY_BUFFER, objects[WATER].textures.size() * sizeof(float), objects[WATER].textures.data(), GL_DYNAMIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, objects[WATER].textures.size() * sizeof(float), objects[WATER].textures.data(), GL_STREAM_DRAW);
     glTexCoordPointer(2, GL_FLOAT, 0, 0);
     
     // Bind and fill the normals buffer object
     glBindBuffer(GL_ARRAY_BUFFER, objects[WATER].nbo);
-    glBufferData(GL_ARRAY_BUFFER, objects[WATER].normals.size() * sizeof(float), objects[WATER].normals.data(), GL_DYNAMIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, objects[WATER].normals.size() * sizeof(float), objects[WATER].normals.data(), GL_STREAM_DRAW);
     glNormalPointer(GL_FLOAT, 0, 0);
     
     // Bind and fill indices buffer.
@@ -286,12 +286,12 @@ void Renderer::initializeVegetation()
     
     // Bind and fill the vertex buffer object
     glBindBuffer(GL_ARRAY_BUFFER, objects[VEGETATION].vbo);
-    glBufferData(GL_ARRAY_BUFFER, objects[VEGETATION].vertices.size() * sizeof(float), objects[VEGETATION].vertices.data(), GL_DYNAMIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, objects[VEGETATION].vertices.size() * sizeof(float), objects[VEGETATION].vertices.data(), GL_STREAM_DRAW);
     glVertexPointer(3, GL_FLOAT, 0, 0);
 
     // Bind and fill the texture coordinate buffer object
     glBindBuffer(GL_ARRAY_BUFFER, objects[VEGETATION].tbo);
-    glBufferData(GL_ARRAY_BUFFER, objects[VEGETATION].textures.size() * sizeof(float), objects[VEGETATION].textures.data(), GL_DYNAMIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, objects[VEGETATION].textures.size() * sizeof(float), objects[VEGETATION].textures.data(), GL_STREAM_DRAW);
     glTexCoordPointer(2, GL_FLOAT, 0, 0);
 
     // Unbind everything
@@ -1028,7 +1028,7 @@ void Renderer::drawWater()
         instance->objects[WATER].textures[i] += 0.01f;
         instance->objects[WATER].textures[i + 1] += 0.01f;
     }
-    glBufferData(GL_ARRAY_BUFFER, instance->objects[WATER].textures.size() * sizeof(float), instance->objects[WATER].textures.data(), GL_DYNAMIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, instance->objects[WATER].textures.size() * sizeof(float), instance->objects[WATER].textures.data(), GL_STREAM_DRAW);
     
     // Bind the vertex buffer object
     glBindBuffer(GL_ARRAY_BUFFER, instance->objects[WATER].vbo);
@@ -1052,7 +1052,7 @@ void Renderer::drawWater()
         // Combine perlin noise and micro waves
         vertices[i + 1] += macro_wave + micro_wave_x + micro_wave_z;
     }
-    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_DYNAMIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_STREAM_DRAW);
     
     time += 0.02f;
     
@@ -1102,7 +1102,7 @@ void Renderer::drawWater()
         normals[i3 * 3 + 1] += normal.y;
         normals[i3 * 3 + 2] += normal.z;
     }
-    glBufferData(GL_ARRAY_BUFFER, normals.size() * sizeof(float), normals.data(), GL_DYNAMIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, normals.size() * sizeof(float), normals.data(), GL_STREAM_DRAW);
     
     // Disable writing of the frame and depth buffers as only the 
     // stencil buffer need be written next.
@@ -1257,7 +1257,7 @@ void Renderer::drawVegetation()
     
     // Bind the VBO and modify the vertices such that the vegetation is always facing the camera
     glBindBuffer(GL_ARRAY_BUFFER, instance->objects[VEGETATION].vbo);
-    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_DYNAMIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_STREAM_DRAW);
     
     vector<float> textures = instance->objects[VEGETATION].textures;
     // Cycle over each texture quad
@@ -1271,7 +1271,7 @@ void Renderer::drawVegetation()
     
     //Bind the TBO and modify the texture coordinates
     glBindBuffer(GL_ARRAY_BUFFER, instance->objects[VEGETATION].tbo);
-    glBufferData(GL_ARRAY_BUFFER, textures.size() * sizeof(float), textures.data(), GL_DYNAMIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, textures.size() * sizeof(float), textures.data(), GL_STREAM_DRAW);
     
     // Draw quads with glDrawArrays
     glDrawArrays(GL_QUADS, 0, vertices.size() / 3);
@@ -1550,20 +1550,20 @@ void Renderer::drawSketch(short current_canvas)
             // Bind the vertex buffer object
             glBindBuffer(GL_ARRAY_BUFFER, instance->objects[SKETCH].vbo);
             // Update the vertex buffer data for points
-            glBufferData(GL_ARRAY_BUFFER, instance->objects[SKETCH + current_canvas].vertices.size() * sizeof(GLfloat), vertices.data(), GL_DYNAMIC_DRAW);
+            glBufferData(GL_ARRAY_BUFFER, instance->objects[SKETCH + current_canvas].vertices.size() * sizeof(GLfloat), vertices.data(), GL_STREAM_DRAW);
             // Set the vertexattribute pointer for positions
             glVertexPointer(3, GL_FLOAT, 0, vertices.data());
             
             // Bind the vertex buffer object
             glBindBuffer(GL_ARRAY_BUFFER, instance->objects[SKETCH].cbo);
             // Update the vertex buffer data for points
-            glBufferData(GL_ARRAY_BUFFER, instance->objects[SKETCH + current_canvas].colors.size() * sizeof(GLfloat), instance->objects[SKETCH + current_canvas].colors.data(), GL_DYNAMIC_DRAW);
+            glBufferData(GL_ARRAY_BUFFER, instance->objects[SKETCH + current_canvas].colors.size() * sizeof(GLfloat), instance->objects[SKETCH + current_canvas].colors.data(), GL_STREAM_DRAW);
             // Set the vertexattribute pointer for colors
             glColorPointer(3, GL_FLOAT, 0, instance->objects[SKETCH + current_canvas].colors.data());
             
             // Bind the index buffer object
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, instance->objects[SKETCH].ibo);
-            glBufferData(GL_ELEMENT_ARRAY_BUFFER, instance->objects[SKETCH + current_canvas].indices.size() * sizeof(GLuint), instance->objects[SKETCH + current_canvas].indices.data(), GL_DYNAMIC_DRAW);
+            glBufferData(GL_ELEMENT_ARRAY_BUFFER, instance->objects[SKETCH + current_canvas].indices.size() * sizeof(GLuint), instance->objects[SKETCH + current_canvas].indices.data(), GL_STREAM_DRAW);
 
             // Enable primitive restart
             glEnable(GL_PRIMITIVE_RESTART);
