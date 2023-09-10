@@ -80,9 +80,6 @@ void GlutFramework::initialize(int argc, char** argv)
     // Enable stencil test
     glEnable(GL_STENCIL_TEST);
     glClearStencil(0);
-    
-    // Enable multisampling
-    glEnable(GL_MULTISAMPLE);
 }
 
 // OpenGL window reshape routine.

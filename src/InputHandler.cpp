@@ -142,6 +142,8 @@ void InputHandler::handleKeyboard()
                 instance->inference->reset();
                 instance->camera->reset();
                 instance->renderer->resetSketches();
+                // Enable multisampling
+                glEnable(GL_MULTISAMPLE);
                 glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
                 glDisable(GL_LIGHTING);
                 break;
@@ -169,6 +171,8 @@ void InputHandler::handleKeyboard()
             }
             
             case RENDERING_SCREEN:
+                // Disable multisampling
+                glDisable(GL_MULTISAMPLE);
                 generation_thread.join();
                 // Pass the terrain to the camera for collision detection and to the renderer
                 instance->camera->setTerrain(instance->terrain);
